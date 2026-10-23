@@ -2,11 +2,14 @@ import { useState, useMemo } from 'react';
 import { useUrlMontageState } from './hooks/useUrlMontageState';
 import { BRAIN_NODES } from './data/brain_nodes';
 import { CLINICAL_PRESETS, ClinicalPreset } from './data/clinical_presets';
-import { calculateTelemetry } from './utils/biophysicsEngine';
+import { calculateTelemetry, MultiChannelChannel } from './utils/biophysicsEngine';
 import { BrainViewport3D } from './components/BrainViewport3D';
 import { EegWaveVisualizer } from './components/EegWaveVisualizer';
 import { HumanImpactSimulators } from './components/HumanImpactSimulators';
 import { CellularMechanismWidget } from './components/CellularMechanismWidget';
+import { AudioSonificationModal } from './components/AudioSonificationModal';
+import { ProtocolExportModal } from './components/ProtocolExportModal';
+import { MultiChannelMatrixModal } from './components/MultiChannelMatrixModal';
 import {
   Brain,
   Zap,
@@ -18,7 +21,10 @@ import {
   ShieldCheck,
   Waves,
   Activity,
-  Sliders
+  Sliders,
+  Volume2,
+  FileText,
+  Grid
 } from 'lucide-react';
 
 export function App() {
@@ -40,6 +46,12 @@ export function App() {
   // Share link copied toast state
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Advanced Feature Modals State
+  const [isAudioOpen, setIsAudioOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isMatrixOpen, setIsMatrixOpen] = useState(false);
+  const [activeChannels, setActiveChannels] = useState<MultiChannelChannel[] | undefined>(undefined);
+
   // HD-tDCS surround cathodes configuration
   const currentPreset = useMemo(() => {
     return CLINICAL_PRESETS.find(
@@ -48,12 +60,15 @@ export function App() {
   }, [montageState.anode, montageState.cathode]);
 
   const surroundNodes = useMemo(() => {
+    if (activeChannels && activeChannels.length > 0) {
+      return activeChannels.filter((c) => c.currentMa < 0).map((c) => c.nodeId);
+    }
     if (montageState.mode === 'hd4x1') {
       if (currentPreset?.surroundNodes) return currentPreset.surroundNodes;
       return ['Fp1', 'Fz', 'C3', 'F7'];
     }
     return undefined;
-  }, [montageState.mode, currentPreset]);
+  }, [montageState.mode, currentPreset, activeChannels]);
 
   // Real-Time Biophysical Telemetry Engine Calculation
   const telemetry = useMemo(() => {
@@ -70,6 +85,7 @@ export function App() {
 
   // Handle Preset Selection
   const handleSelectPreset = (preset: ClinicalPreset) => {
+    setActiveChannels(undefined);
     updateMontageState({
       anode: preset.anode,
       cathode: preset.cathode,
@@ -78,6 +94,25 @@ export function App() {
       pad: preset.padAreaCm2,
       mode: preset.montageType,
     });
+  };
+
+  // Handle Multi-Channel HD Array Application
+  const handleApplyMultiChannel = (channels: MultiChannelChannel[]) => {
+    setActiveChannels(channels);
+    const sortedAnodes = [...channels].filter((c) => c.currentMa > 0).sort((a, b) => b.currentMa - a.currentMa);
+    const sortedCathodes = [...channels].filter((c) => c.currentMa < 0).sort((a, b) => a.currentMa - b.currentMa);
+
+    if (sortedAnodes[0]) {
+      const primaryAnode = sortedAnodes[0].nodeId;
+      const primaryCathode = sortedCathodes[0]?.nodeId || 'Fp2';
+      updateMontageState({
+        anode: primaryAnode,
+        cathode: primaryCathode,
+        ma: sortedAnodes[0].currentMa,
+        mode: 'hd4x1',
+        pad: 3.14,
+      });
+    }
   };
 
   // Flip Polarity (Swap Anode and Cathode)
@@ -217,6 +252,40 @@ export function App() {
               Labels
             </button>
           </div>
+
+          {/* Audio Sonification Button */}
+          <button
+            onClick={() => setIsAudioOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/50 rounded-lg text-xs font-mono transition"
+            title="Open Web Audio EEG Brain Wave Sonification (ASSR)"
+          >
+            <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden xl:inline">Audio ASSR</span>
+          </button>
+
+          {/* Multi-Channel Array Matrix Button */}
+          <button
+            onClick={() => setIsMatrixOpen(true)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition border ${
+              activeChannels && activeChannels.length > 0
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/70 font-bold'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-300 border-slate-700 hover:border-amber-500/50'
+            }`}
+            title="Configure Custom Multi-Channel Array Matrix (HD-tDCS)"
+          >
+            <Grid className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden xl:inline">HD Matrix</span>
+          </button>
+
+          {/* Export Protocol Report Button */}
+          <button
+            onClick={() => setIsExportOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-lg text-xs font-mono transition"
+            title="Export Clinical Protocol Record (Print/PDF)"
+          >
+            <FileText className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden xl:inline">Export Protocol</span>
+          </button>
 
           {/* Polarity Flip Button */}
           <button
@@ -613,6 +682,29 @@ export function App() {
           </div>
         </aside>
       </div>
+
+      {/* Advanced Feature Modals */}
+      <AudioSonificationModal
+        isOpen={isAudioOpen}
+        onClose={() => setIsAudioOpen(false)}
+        activeBandRecommendation="alpha"
+      />
+
+      <ProtocolExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        data={{
+          montageState,
+          telemetry,
+        }}
+      />
+
+      <MultiChannelMatrixModal
+        isOpen={isMatrixOpen}
+        onClose={() => setIsMatrixOpen(false)}
+        initialChannels={activeChannels}
+        onApplyChannels={handleApplyMultiChannel}
+      />
     </div>
   );
 }

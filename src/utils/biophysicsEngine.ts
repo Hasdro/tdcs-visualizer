@@ -313,3 +313,200 @@ export function calculateTelemetry(params: BiophysicalParams): BiophysicalTeleme
     }
   };
 }
+
+export interface MultiChannelChannel {
+  nodeId: string;
+  currentMa: number; // positive = anode, negative = cathode
+}
+
+export interface MultiChannelTelemetry extends BiophysicalTelemetry {
+  kirchhoffSumMa: number;
+  isKirchhoffBalanced: boolean;
+  totalAnodalMa: number;
+  totalCathodalMa: number;
+}
+
+/**
+ * Computes electric field superposition from arbitrary multi-channel electrode configurations.
+ */
+export function computeMultiChannelEFieldAtPoint(
+  p: [number, number, number],
+  channels: MultiChannelChannel[],
+  padAreaCm2: number = 3.14
+): { potential: number; eNormal: number; eMagnitude: number } {
+  const dSkull = 0.16;
+  const dSkullSq = dSkull * dSkull;
+  const sigma = 0.14 * Math.sqrt(Math.max(padAreaCm2, 3) / 12.0);
+  const twoSigmaSq = 2.0 * sigma * sigma;
+  const etaTrans = 0.38;
+
+  let phiTotal = 0;
+  let exTotal = 0;
+  let eyTotal = 0;
+  let ezTotal = 0;
+
+  for (const ch of channels) {
+    if (Math.abs(ch.currentMa) < 0.001) continue;
+    const node = BRAIN_NODES[ch.nodeId];
+    if (!node) continue;
+
+    const kField = 0.42 * ch.currentMa * etaTrans;
+    const pN = node.posCortical;
+    const rSq = (p[0] - pN[0]) ** 2 + (p[1] - pN[1]) ** 2 + (p[2] - pN[2]) ** 2;
+    const effDist = Math.sqrt(rSq + dSkullSq);
+    const weight = Math.exp(-rSq / twoSigmaSq);
+    const phi = (kField * weight) / effDist;
+
+    phiTotal += phi;
+    const gradX = -phi * ((p[0] - pN[0]) / (effDist * effDist) + (p[0] - pN[0]) / (sigma * sigma));
+    const gradY = -phi * ((p[1] - pN[1]) / (effDist * effDist) + (p[1] - pN[1]) / (sigma * sigma));
+    const gradZ = -phi * ((p[2] - pN[2]) / (effDist * effDist) + (p[2] - pN[2]) / (sigma * sigma));
+
+    exTotal -= gradX;
+    eyTotal -= gradY;
+    ezTotal -= gradZ;
+  }
+
+  const eMagnitude = Math.sqrt(exTotal * exTotal + eyTotal * eyTotal + ezTotal * ezTotal);
+  // Normal projection (positive outwards along gyrus)
+  const eNormal = exTotal * p[0] + eyTotal * p[1] + ezTotal * p[2];
+
+  return { potential: phiTotal, eNormal, eMagnitude };
+}
+
+/**
+ * Calculates telemetry for a multi-channel electrode array
+ */
+export function calculateMultiChannelTelemetry(
+  channels: MultiChannelChannel[],
+  durationMin: number,
+  padAreaCm2: number = 3.14
+): MultiChannelTelemetry {
+  let totalAnodalMa = 0;
+  let totalCathodalMa = 0;
+  let kirchhoffSum = 0;
+
+  for (const ch of channels) {
+    kirchhoffSum += ch.currentMa;
+    if (ch.currentMa > 0) totalAnodalMa += ch.currentMa;
+    else totalCathodalMa += Math.abs(ch.currentMa);
+  }
+
+  const maxChannelMa = Math.max(...channels.map((c) => Math.abs(c.currentMa)), 0.001);
+  const currentDensityMaCm2 = maxChannelMa / padAreaCm2;
+  const currentDensityAM2 = currentDensityMaCm2 * 10;
+  const totalChargeCoulombs = (totalAnodalMa * (durationMin * 60)) / 1000;
+  const chargeDensityCCm2 = totalChargeCoulombs / padAreaCm2;
+
+  let peakE = 0;
+  let sumE = 0;
+  let count = 0;
+  const activeAnodalNodes: Array<{ id: string; name: string; eField: number; membraneShiftMv: number }> = [];
+  const activeCathodalNodes: Array<{ id: string; name: string; eField: number; membraneShiftMv: number }> = [];
+
+  let compFocus = 0;
+  let compMood = 0;
+  let compMotor = 0;
+  let compLang = 0;
+  let compPain = 0;
+  let compVision = 0;
+
+  for (const key of Object.keys(BRAIN_NODES)) {
+    if (key.startsWith('EX_')) continue;
+    const node = BRAIN_NODES[key];
+    const { eNormal, eMagnitude } = computeMultiChannelEFieldAtPoint(node.posCortical, channels, padAreaCm2);
+
+    sumE += eMagnitude;
+    count++;
+    if (eMagnitude > peakE) peakE = eMagnitude;
+
+    const dVm = eNormal * 2.2;
+
+    if (eNormal > 0.12) {
+      activeAnodalNodes.push({
+        id: node.id,
+        name: node.shortName,
+        eField: parseFloat(eNormal.toFixed(3)),
+        membraneShiftMv: parseFloat(dVm.toFixed(2))
+      });
+      const w = Math.min(1.2, eNormal / 0.5);
+      compFocus += node.anodalEffects.cognitiveMetrics.focus * w;
+      compMood += node.anodalEffects.cognitiveMetrics.mood * w;
+      compMotor += node.anodalEffects.cognitiveMetrics.motorSpeed * w;
+      compLang += node.anodalEffects.cognitiveMetrics.language * w;
+      compPain += node.anodalEffects.cognitiveMetrics.painThreshold * w;
+      compVision += node.anodalEffects.cognitiveMetrics.visualAcuity * w;
+    } else if (eNormal < -0.12) {
+      activeCathodalNodes.push({
+        id: node.id,
+        name: node.shortName,
+        eField: parseFloat(eNormal.toFixed(3)),
+        membraneShiftMv: parseFloat(dVm.toFixed(2))
+      });
+      const w = Math.min(1.2, Math.abs(eNormal) / 0.5);
+      compFocus += node.cathodalEffects.cognitiveMetrics.focus * w;
+      compMood += node.cathodalEffects.cognitiveMetrics.mood * w;
+      compMotor += node.cathodalEffects.cognitiveMetrics.motorSpeed * w;
+      compLang += node.cathodalEffects.cognitiveMetrics.language * w;
+      compPain += node.cathodalEffects.cognitiveMetrics.painThreshold * w;
+      compVision += node.cathodalEffects.cognitiveMetrics.visualAcuity * w;
+    }
+  }
+
+  activeAnodalNodes.sort((a, b) => b.eField - a.eField);
+  activeCathodalNodes.sort((a, b) => a.eField - b.eField);
+
+  const peakEFieldVm = parseFloat(Math.min(1.3, Math.max(0.1, peakE * 1.15)).toFixed(3));
+  const meanCorticalEFieldVm = parseFloat((sumE / Math.max(count, 1)).toFixed(3));
+  const maxMembraneShiftMv = parseFloat((peakEFieldVm * 2.2).toFixed(2));
+
+  const isKirchhoffBalanced = Math.abs(kirchhoffSum) < 0.05;
+
+  let safetyIndex: BiophysicalTelemetry['safetyIndex'] = 'OPTIMAL';
+  let safetyMessage = isKirchhoffBalanced
+    ? 'Multi-channel array satisfies Kirchhoff current balance (sum I ≈ 0).'
+    : 'CAUTION: Array currents are unbalanced (sum I ≠ 0). Net charge accumulation risk.';
+
+  if (currentDensityMaCm2 > 0.25) {
+    safetyIndex = 'THRESHOLD_EXCEEDED';
+    safetyMessage = 'CAUTION: Individual channel current density exceeds 0.25 mA/cm².';
+  } else if (!isKirchhoffBalanced) {
+    safetyIndex = 'CAUTION';
+  }
+
+  const clamp100 = (v: number) => Math.min(100, Math.max(-100, Math.round(v)));
+
+  return {
+    currentDensityMaCm2: parseFloat(currentDensityMaCm2.toFixed(4)),
+    currentDensityAM2: parseFloat(currentDensityAM2.toFixed(3)),
+    totalChargeCoulombs: parseFloat(totalChargeCoulombs.toFixed(2)),
+    chargeDensityCCm2: parseFloat(chargeDensityCCm2.toFixed(4)),
+    shuntPercentage: 58.5,
+    peakEFieldVm,
+    meanCorticalEFieldVm,
+    maxMembraneShiftMv,
+    safetyIndex,
+    safetyMessage,
+    activeAnodalNodes,
+    activeCathodalNodes,
+    compositeMetrics: {
+      focus: clamp100(compFocus),
+      mood: clamp100(compMood),
+      motorSpeed: clamp100(compMotor),
+      language: clamp100(compLang),
+      painThreshold: clamp100(compPain),
+      visualAcuity: clamp100(compVision),
+    },
+    sideEffectProfile: {
+      tinglingScore: Math.min(10, Math.round(currentDensityMaCm2 * 75)),
+      metallicTaste: false,
+      phospheneRisk: false,
+      skinErythemaRisk: Math.min(10, Math.round(chargeDensityCCm2 * 70)),
+    },
+    kirchhoffSumMa: parseFloat(kirchhoffSum.toFixed(3)),
+    isKirchhoffBalanced,
+    totalAnodalMa: parseFloat(totalAnodalMa.toFixed(2)),
+    totalCathodalMa: parseFloat(totalCathodalMa.toFixed(2)),
+  };
+}
+
