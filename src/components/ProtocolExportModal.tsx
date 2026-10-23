@@ -5,7 +5,7 @@ import { Printer, Download, X, FileText, CheckCircle2 } from 'lucide-react';
 interface ProtocolExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  data: Omit<ProtocolReportData, 'investigatorName' | 'subjectId' | 'clinicalNotes'>;
+  data: Omit<ProtocolReportData, 'subjectId' | 'clinicalNotes'>;
 }
 
 export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
@@ -14,7 +14,6 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
   data,
 }) => {
   const [subjectId, setSubjectId] = useState('TDCS-SUBJ-001');
-  const [investigatorName, setInvestigatorName] = useState('Dr. Alex Morgan, MD/PhD');
   const [clinicalNotes, setClinicalNotes] = useState(
     'Stimulation protocol tolerated well. Impedance < 5 kΩ maintained throughout. No persistent erythema or phosphenes reported post-session.'
   );
@@ -25,7 +24,6 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
     printProtocolReport({
       ...data,
       subjectId,
-      investigatorName,
       clinicalNotes,
     });
   };
@@ -34,7 +32,6 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
     exportProtocolMarkdown({
       ...data,
       subjectId,
-      investigatorName,
       clinicalNotes,
     });
   };
@@ -62,6 +59,7 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close modal"
             className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
           >
             <X className="w-4 h-4" />
@@ -86,32 +84,18 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
             </div>
           </div>
 
-          {/* Subject ID & Investigator */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                SUBJECT IDENTIFIER
-              </label>
-              <input
-                type="text"
-                value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
-                className="w-full bg-[#070B12] border border-slate-700 text-slate-200 text-xs rounded-lg p-2 font-mono focus:border-cyan-500 focus:outline-none"
-                placeholder="TDCS-SUBJ-001"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                INVESTIGATOR / CLINICIAN
-              </label>
-              <input
-                type="text"
-                value={investigatorName}
-                onChange={(e) => setInvestigatorName(e.target.value)}
-                className="w-full bg-[#070B12] border border-slate-700 text-slate-200 text-xs rounded-lg p-2 font-mono focus:border-cyan-500 focus:outline-none"
-                placeholder="Dr. Investigator"
-              />
-            </div>
+          {/* Subject ID (Video Feedback #10: Doctor name removed) */}
+          <div>
+            <label className="text-[11px] font-mono text-slate-300 block mb-1">
+              SUBJECT / TRIAL IDENTIFIER
+            </label>
+            <input
+              type="text"
+              value={subjectId}
+              onChange={(e) => setSubjectId(e.target.value)}
+              className="w-full bg-[#070B12] border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 font-mono focus:border-cyan-500 focus:outline-none"
+              placeholder="TDCS-SUBJ-001"
+            />
           </div>
 
           {/* Clinical Notes */}

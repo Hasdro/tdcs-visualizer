@@ -1,18 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BiophysicalTelemetry } from '../utils/biophysicsEngine';
 import { BRAIN_NODES } from '../data/brain_nodes';
-import {
-  Brain,
-  Crosshair,
-  Gauge,
-  AlertTriangle,
-  Zap,
-  Activity,
-  Smile,
-  MessageSquare,
-  Eye,
-  ShieldAlert
-} from 'lucide-react';
 
 interface HumanImpactSimulatorsProps {
   anodeId: string;
@@ -264,12 +252,23 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
   const simulatedFilterEfficiency = Math.round(62 + metrics.focus * 0.32);
   const motorJitterMs = Math.max(6, Math.round(28 - metrics.motorSpeed * 0.18));
 
+  // Dynamic protocol impact summary & state emoji badge (Video Feedback #7 & #8)
+  const dynamicStateBadge = React.useMemo(() => {
+    if (metrics.focus >= 25) return { emoji: '🎯', label: 'Deep Focus & Executive Drive', color: 'text-emerald-400 bg-emerald-950/60 border-emerald-800' };
+    if (metrics.mood >= 25) return { emoji: '😄', label: 'High Mood Uplift & Motivation', color: 'text-amber-400 bg-amber-950/60 border-amber-800' };
+    if (metrics.motorSpeed >= 18) return { emoji: '⚡', label: 'Corticospinal Motor Priming', color: 'text-cyan-400 bg-cyan-950/60 border-cyan-800' };
+    if (metrics.focus <= -15) return { emoji: '🧘', label: 'Cortical De-arousal & Calming', color: 'text-purple-400 bg-purple-950/60 border-purple-800' };
+    return { emoji: '🌟', label: 'Normative Balanced Modulation', color: 'text-sky-400 bg-sky-950/60 border-sky-800' };
+  }, [metrics]);
+
+  const moodEmoji = metrics.mood >= 25 ? '😄' : metrics.mood > 0 ? '😊' : metrics.mood === 0 ? '😐' : '😔';
+
   return (
     <div className="flex flex-col h-full bg-[#0F1623] border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
       {/* Header Bar */}
       <div className="p-3 bg-[#131B2C] border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Brain className="w-4 h-4 text-emerald-400" />
+          <span className="text-base">🧠</span>
           <h3 className="font-mono text-xs font-bold text-slate-100 tracking-wider uppercase">
             Human Performance & Biophysical Impact
           </h3>
@@ -281,13 +280,22 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3.5 custom-scrollbar">
+        {/* Dynamic State Banner with Emojis */}
+        <div className={`p-2.5 rounded-lg border flex items-center justify-between text-xs font-mono ${dynamicStateBadge.color}`}>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{dynamicStateBadge.emoji}</span>
+            <span className="font-bold tracking-tight">{dynamicStateBadge.label}</span>
+          </div>
+          <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">Active Mode</span>
+        </div>
+
         {/* Section 1: Live Interactive Mini-Simulation Suite */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 shadow-md">
           {/* Simulation Selector Tabs */}
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
             <span className="text-[11px] font-mono font-bold text-cyan-400 flex items-center gap-1.5">
-              <Crosshair className="w-3.5 h-3.5 text-cyan-400" />
+              <span>🎮</span>
               LIVE TASK MINI-SIMULATOR
             </span>
             <div className="flex items-center gap-1 font-mono text-[10px]">
@@ -299,7 +307,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                1. Focus / S-N Ratio
+                🎯 1. Focus / S-N Ratio
               </button>
               <button
                 onClick={() => setActiveSimTab('motor')}
@@ -309,7 +317,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                2. Motor Tap Reflex
+                ⚡ 2. Motor Tap Reflex
               </button>
             </div>
           </div>
@@ -320,7 +328,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
               <div className="relative w-full h-36 bg-[#070B12] rounded-lg border border-slate-800/80 overflow-hidden">
                 <canvas ref={focusCanvasRef} className="w-full h-full block" />
                 <div className="absolute top-2 left-2 text-[9px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
-                  Target Lock Coherence
+                  🎯 Target Lock Coherence
                 </div>
                 <div className="absolute bottom-2 right-2 text-[9px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">
                   Filtering: {simulatedFilterEfficiency}%
@@ -329,10 +337,10 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
 
               {/* Explanatory Caption */}
               <div className="mt-2 flex items-center justify-between text-[11px] font-mono bg-slate-950/60 p-2 rounded border border-slate-800/50">
-                <span className="text-slate-400">n-Back Reaction Time:</span>
+                <span className="text-slate-400">⏱️ Reaction Time:</span>
                 <span className="text-amber-300 font-bold">{simulatedRT} ms</span>
                 <span className="text-slate-600">|</span>
-                <span className="text-slate-400">Distractor Rejection:</span>
+                <span className="text-slate-400">🛡️ Distractor Rejection:</span>
                 <span className="text-emerald-300 font-bold">+{metrics.focus}%</span>
               </div>
             </div>
@@ -341,7 +349,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
               <div className="relative w-full h-36 bg-[#070B12] rounded-lg border border-slate-800/80 overflow-hidden">
                 <canvas ref={motorCanvasRef} className="w-full h-full block" />
                 <div className="absolute top-2 left-2 text-[9px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
-                  Corticospinal Conduction Velocity
+                  ⚡ Conduction Velocity
                 </div>
                 <div className="absolute bottom-2 right-2 text-[9px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/60">
                   Jitter: ±{motorJitterMs} ms
@@ -349,21 +357,21 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
               </div>
 
               <div className="mt-2 flex items-center justify-between text-[11px] font-mono bg-slate-950/60 p-2 rounded border border-slate-800/50">
-                <span className="text-slate-400">Motor Excitability:</span>
+                <span className="text-slate-400">⚡ Excitability:</span>
                 <span className="text-cyan-300 font-bold">+{metrics.motorSpeed}%</span>
                 <span className="text-slate-600">|</span>
-                <span className="text-slate-400">Pain Gate Mod:</span>
+                <span className="text-slate-400">🩹 Pain Modulation:</span>
                 <span className="text-amber-300 font-bold">+{metrics.painThreshold}%</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* Section 2: Six Bidirectional Behavioral Gauges (-100% to +100%) */}
+        {/* Section 2: Six Bidirectional Behavioral Gauges with Emojis */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-3 shadow-md space-y-3">
           <div className="flex items-center justify-between text-slate-400 pb-1.5 border-b border-slate-800">
             <span className="font-mono text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
-              <Gauge className="w-3.5 h-3.5 text-cyan-400" />
+              <span>📊</span>
               COGNITIVE & MOTOR OUTCOME GAUGES
             </span>
             <span className="text-[10px] font-mono text-slate-400">vs Baseline Norm (0%)</span>
@@ -373,7 +381,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-300 flex items-center gap-1.5 font-medium">
-                <Crosshair className="w-3 h-3 text-cyan-400" /> Executive Focus & Working Memory
+                <span>🎯</span> Executive Focus & Working Memory
               </span>
               <span className={`font-mono font-bold ${metrics.focus >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {metrics.focus >= 0 ? `+${metrics.focus}%` : `${metrics.focus}%`}
@@ -393,7 +401,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-300 flex items-center gap-1.5 font-medium">
-                <Smile className="w-3 h-3 text-amber-400" /> Mood Valence & Approach Motivation
+                <span>{moodEmoji}</span> Mood Valence & Approach Motivation
               </span>
               <span className={`font-mono font-bold ${metrics.mood >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {metrics.mood >= 0 ? `+${metrics.mood}%` : `${metrics.mood}%`}
@@ -413,7 +421,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-300 flex items-center gap-1.5 font-medium">
-                <Zap className="w-3 h-3 text-rose-400" /> Motor Speed & Corticospinal Excitability
+                <span>⚡</span> Motor Speed & Corticospinal Excitability
               </span>
               <span className={`font-mono font-bold ${metrics.motorSpeed >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {metrics.motorSpeed >= 0 ? `+${metrics.motorSpeed}%` : `${metrics.motorSpeed}%`}
@@ -433,7 +441,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-300 flex items-center gap-1.5 font-medium">
-                <MessageSquare className="w-3 h-3 text-purple-400" /> Speech & Verbal Fluency
+                <span>💬</span> Speech & Verbal Fluency
               </span>
               <span className={`font-mono font-bold ${metrics.language >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {metrics.language >= 0 ? `+${metrics.language}%` : `${metrics.language}%`}
@@ -453,7 +461,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-300 flex items-center gap-1.5 font-medium">
-                <Activity className="w-3 h-3 text-sky-400" /> Pain Tolerance / Descending Analgesia
+                <span>🛡️</span> Pain Tolerance / Descending Analgesia
               </span>
               <span className={`font-mono font-bold ${metrics.painThreshold >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {metrics.painThreshold >= 0 ? `+${metrics.painThreshold}%` : `${metrics.painThreshold}%`}
@@ -473,7 +481,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-300 flex items-center gap-1.5 font-medium">
-                <Eye className="w-3 h-3 text-indigo-400" /> Visual Contrast Sensitivity
+                <span>👁️</span> Visual Contrast Sensitivity
               </span>
               <span className={`font-mono font-bold ${metrics.visualAcuity >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {metrics.visualAcuity >= 0 ? `+${metrics.visualAcuity}%` : `${metrics.visualAcuity}%`}
@@ -490,11 +498,11 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
           </div>
         </div>
 
-        {/* Section 3: Physical Sensations & Adverse Effect Monitor */}
+        {/* Section 3: Physical Sensations & Adverse Effect Monitor with Emojis */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-3 shadow-md space-y-2.5">
           <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
             <span className="font-mono text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+              <span>⚠️</span>
               SENSORY & SIDE-EFFECT MONITOR
             </span>
             <span className="text-[10px] font-mono text-slate-400">Real-Time Telemetry</span>
@@ -503,7 +511,9 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
           <div className="grid grid-cols-2 gap-2 text-xs font-mono">
             {/* Scalp Tingling */}
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/60">
-              <div className="text-[10px] text-slate-400">Scalp Tingling / Itching</div>
+              <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                <span>🐜</span> Scalp Tingling / Itching
+              </div>
               <div className="text-sm font-bold text-amber-300 mt-0.5">
                 {telemetry.sideEffectProfile.tinglingScore} / 10
               </div>
@@ -511,7 +521,9 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
 
             {/* Erythema */}
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/60">
-              <div className="text-[10px] text-slate-400">Skin Erythema (Redness)</div>
+              <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                <span>🔴</span> Skin Erythema (Redness)
+              </div>
               <div className="text-sm font-bold text-rose-300 mt-0.5">
                 {telemetry.sideEffectProfile.skinErythemaRisk} / 10
               </div>
@@ -520,7 +532,9 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
             {/* Metallic Taste */}
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/60 col-span-2 flex items-center justify-between">
               <div>
-                <div className="text-[10px] text-slate-400">Metallic Taste (Lingual Nerve)</div>
+                <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                  <span>👅</span> Metallic Taste (Lingual Nerve)
+                </div>
                 <div className="text-[11px] text-slate-300">
                   {telemetry.sideEffectProfile.metallicTaste
                     ? 'Active (electrode near frontotemporal branch)'
@@ -541,7 +555,7 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
             {/* Phosphenes */}
             {telemetry.sideEffectProfile.phospheneRisk && (
               <div className="bg-rose-950/30 p-2 rounded border border-rose-800/50 col-span-2 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span className="text-base shrink-0 mt-0.5">💡</span>
                 <div className="text-[11px] text-slate-200">
                   <span className="font-bold text-rose-300">Retinal Phosphene Risk: </span>
                   Electrode proximity to frontopolar / supraorbital sites may trigger mild visual flashes during current ramp-up/down.

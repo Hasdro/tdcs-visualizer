@@ -115,13 +115,28 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
         ctx.setLineDash([3, 3]);
 
         const baseAmp = Math.min(channelHeight * 0.28, 16);
-        const freqRad = band.centerFreq * Math.PI * 2;
+
+        // Distinct physiological spatial cycles across the display width (Video Feedback #12)
+        const spatialCyclesMap: Record<string, number> = {
+          delta: 2.5,
+          theta: 4.8,
+          alpha: 8.2,
+          lowBeta: 12.5,
+          highBeta: 16.5,
+          gamma: 21.0
+        };
+        const cycles = spatialCyclesMap[band.id] || (band.centerFreq * 0.55);
+
+        // Calibrated smooth clinical oscilloscope sweep speed (slow and legible)
+        const sweepSpeed = 0.45 + (cycles / 22.0) * 0.35;
+        const phase = elapsed * sweepSpeed * Math.PI * 2;
 
         for (let x = 0; x < width; x += 2) {
-          const t = elapsed + (x / width) * 2.0;
+          const normX = x / width;
+          const spatialAngle = normX * cycles * Math.PI * 2 - phase;
           // Harmonic wave equation
-          const y = centerY + Math.sin(t * freqRad) * baseAmp * 0.75 +
-            Math.sin(t * freqRad * 0.5 + 0.5) * baseAmp * 0.25;
+          const y = centerY + Math.sin(spatialAngle) * baseAmp * 0.75 +
+            Math.sin(spatialAngle * 0.5 + 0.5) * baseAmp * 0.25;
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
@@ -138,11 +153,11 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
         const liveAmp = baseAmp * Math.max(0.2, amplitudeMod);
 
         for (let x = 0; x < width; x += 2) {
-          const t = elapsed + (x / width) * 2.0;
-          // Phase shift and amplitude modulation
-          const phaseJitter = (shiftPct > 0 ? 0.05 : -0.05) * Math.sin(t * 1.5);
-          const y = centerY + Math.sin(t * freqRad + phaseJitter) * liveAmp * 0.75 +
-            Math.sin(t * freqRad * 0.5 + 0.5) * liveAmp * 0.25;
+          const normX = x / width;
+          const phaseJitter = (shiftPct > 0 ? 0.08 : -0.08) * Math.sin(elapsed * 1.5 + normX * 3.0);
+          const spatialAngle = normX * cycles * Math.PI * 2 - phase + phaseJitter;
+          const y = centerY + Math.sin(spatialAngle) * liveAmp * 0.75 +
+            Math.sin(spatialAngle * 0.5 + 0.5) * liveAmp * 0.25;
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }

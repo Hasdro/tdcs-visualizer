@@ -26,7 +26,7 @@ export const CLINICAL_PRESETS: ClinicalPreset[] = [
   {
     id: 'classic-dlpfc',
     name: 'Classic Left DLPFC (Mood & Executive Focus)',
-    shortLabel: 'Left DLPFC (Mood)',
+    shortLabel: '🧠 Left DLPFC (Mood)',
     category: 'Mood / Executive',
     evidenceLevel: 'Level A (Definite)',
     anode: 'F3',
@@ -48,7 +48,7 @@ export const CLINICAL_PRESETS: ClinicalPreset[] = [
   {
     id: 'bifrontal-anti-rumination',
     name: 'Bifrontal Cognitive Control & Anti-Rumination',
-    shortLabel: 'Bifrontal Control',
+    shortLabel: '⚖️ Bifrontal Control',
     category: 'Mood / Executive',
     evidenceLevel: 'Level A (Definite)',
     anode: 'F3',
@@ -70,7 +70,7 @@ export const CLINICAL_PRESETS: ClinicalPreset[] = [
   {
     id: 'm1-so-motor-learning',
     name: 'M1-SO Motor Learning & Pain Modulation',
-    shortLabel: 'M1 Motor / Pain',
+    shortLabel: '🏃 M1 Motor / Pain',
     category: 'Motor / Rehab',
     evidenceLevel: 'Level B (Probable)',
     anode: 'C3',
@@ -92,7 +92,7 @@ export const CLINICAL_PRESETS: ClinicalPreset[] = [
   {
     id: 'stroke-bihemispheric',
     name: 'Bi-Hemispheric Motor Stroke Rehabilitation',
-    shortLabel: 'Stroke Bi-Hemispheric',
+    shortLabel: '⚡ Stroke Rehab',
     category: 'Motor / Rehab',
     evidenceLevel: 'Level B (Probable)',
     anode: 'C3',
@@ -114,7 +114,7 @@ export const CLINICAL_PRESETS: ClinicalPreset[] = [
   {
     id: 'broca-fluency',
     name: 'Broca’s Speech & Verbal Fluency Boost',
-    shortLabel: 'Broca Verbal Fluency',
+    shortLabel: '💬 Broca Fluency',
     category: 'Language / Speech',
     evidenceLevel: 'Level B (Probable)',
     anode: 'F7',
@@ -136,7 +136,7 @@ export const CLINICAL_PRESETS: ClinicalPreset[] = [
   {
     id: 'parietal-spatial-math',
     name: 'Parietal Numerical & Spatial Attention',
-    shortLabel: 'Parietal Math / Attention',
+    shortLabel: '📚 Parietal Attention',
     category: 'Cognitive / Attention',
     evidenceLevel: 'Translational Research',
     anode: 'P3',
@@ -158,7 +158,7 @@ export const CLINICAL_PRESETS: ClinicalPreset[] = [
   {
     id: 'v1-contrast-plasticity',
     name: 'Visual Cortex Contrast & V1 Plasticity',
-    shortLabel: 'Visual V1 Contrast',
+    shortLabel: '👁️ Visual V1',
     category: 'Sensory / Visual',
     evidenceLevel: 'Level B (Probable)',
     anode: 'Oz',
@@ -180,7 +180,7 @@ export const CLINICAL_PRESETS: ClinicalPreset[] = [
   {
     id: 'hd-tdcs-focal-dlpfc',
     name: 'Focal HD-tDCS (4×1 Ring) Left DLPFC',
-    shortLabel: 'Focal HD-tDCS (4×1)',
+    shortLabel: '🎯 Focal HD 4×1',
     category: 'HD-tDCS Focal',
     evidenceLevel: 'Level B (Probable)',
     anode: 'F3',

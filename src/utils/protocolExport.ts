@@ -5,7 +5,6 @@ import { MontageUrlState } from '../hooks/useUrlMontageState';
 export interface ProtocolReportData {
   montageState: MontageUrlState;
   telemetry: BiophysicalTelemetry;
-  investigatorName?: string;
   subjectId?: string;
   clinicalNotes?: string;
 }
@@ -15,7 +14,7 @@ export interface ProtocolReportData {
  * and triggers window.print()
  */
 export function printProtocolReport(data: ProtocolReportData): void {
-  const { montageState, telemetry, investigatorName = 'Clinical Investigator', subjectId = 'TDCS-SUBJ-001', clinicalNotes = 'Routine research protocol session.' } = data;
+  const { montageState, telemetry, subjectId = 'TDCS-SUBJ-001', clinicalNotes = 'Routine research protocol session.' } = data;
   const anodeNode = BRAIN_NODES[montageState.anode] || BRAIN_NODES['F3'];
   const cathodeNode = BRAIN_NODES[montageState.cathode] || BRAIN_NODES['Fp2'];
   const timestamp = new Date().toUTCString();
@@ -196,7 +195,6 @@ export function printProtocolReport(data: ProtocolReportData): void {
       <div class="card-title">Session Metadata</div>
       <table>
         <tr><th>Date & Time (UTC)</th><td>${timestamp}</td></tr>
-        <tr><th>Investigator</th><td>${investigatorName}</td></tr>
         <tr><th>Subject Identifier</th><td>${subjectId}</td></tr>
         <tr><th>Montage Mode</th><td>${montageState.mode === 'hd4x1' ? 'HD-tDCS (4x1 Ring Array)' : 'Standard Sponge Pads'}</td></tr>
       </table>
@@ -300,14 +298,13 @@ export function printProtocolReport(data: ProtocolReportData): void {
  * Exports protocol record as a formatted Markdown file
  */
 export function exportProtocolMarkdown(data: ProtocolReportData): void {
-  const { montageState, telemetry, subjectId = 'TDCS-SUBJ-001', investigatorName = 'Investigator' } = data;
+  const { montageState, telemetry, subjectId = 'TDCS-SUBJ-001' } = data;
   const anodeNode = BRAIN_NODES[montageState.anode] || BRAIN_NODES['F3'];
   const cathodeNode = BRAIN_NODES[montageState.cathode] || BRAIN_NODES['Fp2'];
 
   const md = `# NEUROFLOW tDCS — CLINICAL PROTOCOL REPORT
 **Subject ID:** ${subjectId}  
 **Date:** ${new Date().toISOString()}  
-**Investigator:** ${investigatorName}  
 **Safety Status:** ${telemetry.safetyIndex}
 
 ---

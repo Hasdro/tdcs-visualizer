@@ -13,8 +13,6 @@ import { MultiChannelMatrixModal } from './components/MultiChannelMatrixModal';
 import {
   Brain,
   Zap,
-  Clock,
-  Square,
   ArrowLeftRight,
   Share2,
   Check,
@@ -24,7 +22,11 @@ import {
   Sliders,
   Volume2,
   FileText,
-  Grid
+  Grid,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen
 } from 'lucide-react';
 
 export function App() {
@@ -36,10 +38,15 @@ export function App() {
   // Layer Visibility Toggles
   const [showScalpGrid, setShowScalpGrid] = useState(true);
   const [showShuntHalo, setShowShuntHalo] = useState(true);
+  const [showHumanFace, setShowHumanFace] = useState(true);
   const [showEField, setShowEField] = useState(true);
   const [showStreamlines, setShowStreamlines] = useState(true);
   const [showPointCloud, setShowPointCloud] = useState(true);
   const [showBrodmannLabels, setShowBrodmannLabels] = useState(false);
+
+  // Collapsible Docks (Video Feedback #9 & #10)
+  const [isLeftDockCollapsed, setIsLeftDockCollapsed] = useState(false);
+  const [isRightDockCollapsed, setIsRightDockCollapsed] = useState(false);
 
   // Track viewport width for responsive mobile elements (BUG-11)
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1280);
@@ -164,25 +171,20 @@ export function App() {
     <div className="flex flex-col w-screen h-screen bg-[#070B12] text-slate-100 overflow-hidden font-sans">
       {/* TOP BAR: Header, 8 Clinical Presets, URL Share, Layer Pills */}
       <header className="h-14 bg-[#0A101D] border-b border-slate-800 flex items-center justify-between px-4 z-20 shrink-0">
-        {/* Brand & Mode Title */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600 via-sky-500 to-amber-500 p-[1px] shadow-glow-cyan">
+        {/* Brand & Mode Title (Clean, vertically centered, non-overlapping - Video Feedback #6) */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600 via-sky-500 to-amber-500 p-[1px] shadow-glow-cyan shrink-0">
             <div className="w-full h-full bg-[#0A101D] rounded-lg flex items-center justify-center">
               <Brain className="w-5 h-5 text-cyan-400" />
             </div>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-mono text-sm font-bold tracking-tight text-white">
-                NEUROFLOW <span className="text-cyan-400 font-extrabold">tDCS</span>
-              </h1>
-              <span className="text-[10px] font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 px-1.5 py-0.5 rounded">
-                CLINICAL 3D
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400 font-mono hidden md:block">
-              Electrode Biophysics → Cortical E-Field (V/m) → EEG Wave Synth → Human Impact
-            </p>
+          <div className="flex items-center gap-2">
+            <h1 className="font-mono text-sm font-bold tracking-tight text-white whitespace-nowrap">
+              NEUROFLOW <span className="text-cyan-400 font-extrabold">tDCS</span>
+            </h1>
+            <span className="text-[10px] font-mono font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-700/80 px-2 py-0.5 rounded shadow-sm">
+              CLINICAL 3D
+            </span>
           </div>
         </div>
 
@@ -215,6 +217,15 @@ export function App() {
         <div className="flex items-center gap-2">
           {/* Layer Pills */}
           <div className="hidden lg:flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-lg border border-slate-800 text-[10px] font-mono">
+            <button
+              onClick={() => setShowHumanFace(!showHumanFace)}
+              className={`px-2 py-1 rounded transition flex items-center gap-1 ${
+                showHumanFace ? 'bg-slate-800 text-sky-300 font-bold' : 'text-slate-500'
+              }`}
+              title="Toggle 3D Human Face Overlay (Anterior/Front Landmark - Video Feedback #1)"
+            >
+              <span>👤</span> Face Overlay
+            </button>
             <button
               onClick={() => setShowScalpGrid(!showScalpGrid)}
               className={`px-2 py-1 rounded transition ${
@@ -332,12 +343,42 @@ export function App() {
       </header>
 
       {/* MAIN VIEWPORT LAYOUT: Left Dock (280px) | Center Stage 3D | Right Dock (380px) */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* LEFT DOCK (280px): Montage Selector, Dosimetry, Safety Telemetry (BUG-09) */}
-        <aside className="w-[280px] bg-[#0F1623] border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto custom-scrollbar z-10 select-none">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Dock Floating Expand Button (Video Feedback #9 & #10) */}
+        {isLeftDockCollapsed && (
+          <button
+            onClick={() => setIsLeftDockCollapsed(false)}
+            className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-[#0F1623]/95 backdrop-blur-md border border-slate-700 hover:border-cyan-500 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg shadow-2xl text-xs font-mono transition-all group cursor-pointer"
+            title="Expand Controls & Dosimetry Panel"
+          >
+            <PanelLeftOpen className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition" />
+            <span>⚙️ Montage & Controls</span>
+          </button>
+        )}
+
+        {/* LEFT DOCK (280px): Montage Selector, Dosimetry, Safety Telemetry (Collapsible) */}
+        <aside
+          className={`${
+            isLeftDockCollapsed ? 'w-0 border-r-0 overflow-hidden opacity-0 pointer-events-none' : 'w-[280px] border-r overflow-y-auto opacity-100'
+          } bg-[#0F1623] border-slate-800 flex flex-col shrink-0 custom-scrollbar z-10 select-none transition-all duration-300 ease-in-out relative`}
+        >
+          {/* Header Row with Collapse Button */}
+          <div className="p-3 border-b border-slate-800/80 bg-[#0E1524] flex items-center justify-between shrink-0">
+            <span className="text-[11px] font-mono font-bold text-slate-200 flex items-center gap-1.5">
+              <span>⚙️</span> CONFIG & DOSIMETRY
+            </span>
+            <button
+              onClick={() => setIsLeftDockCollapsed(true)}
+              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              title="Collapse Panel to see full 3D brain"
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* Preset Selector Dropdown (mobile/tablet fallback, mounted only when viewport < 1280px BUG-11) */}
           {isMobile && (
-            <div className="p-3 border-b border-slate-800/80">
+            <div className="p-3 border-b border-slate-800/80 shrink-0">
               <label htmlFor="mobile-preset-select" className="text-[11px] font-mono font-semibold text-slate-400 block mb-1">
                 CLINICAL MONTAGE PRESET
               </label>
@@ -361,7 +402,7 @@ export function App() {
           )}
 
           {/* Montage Configuration */}
-          <div className="p-3 border-b border-slate-800/80 space-y-3">
+          <div className="p-3 border-b border-slate-800/80 space-y-3 shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-mono font-bold text-slate-200 flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-cyan-400" />
@@ -372,12 +413,12 @@ export function App() {
               </span>
             </div>
 
-            {/* Anode Selection Card */}
+            {/* Anode Selection Card with Emoji */}
             <div className="bg-slate-900/80 border border-red-900/40 rounded-lg p-2.5 space-y-1.5">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-red-400 font-bold flex items-center gap-1">
+                <span className="text-red-400 font-bold flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-glow-anode" />
-                  ANODE (+ DEP.)
+                  🔴 ANODE (+ DEP.)
                 </span>
                 <button
                   onClick={() => setActivePlacementMode(activePlacementMode === 'anode' ? null : 'anode')}
@@ -408,12 +449,12 @@ export function App() {
               </div>
             </div>
 
-            {/* Cathode Selection Card */}
+            {/* Cathode Selection Card with Emoji */}
             <div className="bg-slate-900/80 border border-cyan-900/40 rounded-lg p-2.5 space-y-1.5">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-cyan-400 font-bold flex items-center gap-1">
+                <span className="text-cyan-400 font-bold flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-glow-cathode" />
-                  CATHODE (– HYP.)
+                  🔵 CATHODE (– HYP.)
                 </span>
                 <button
                   onClick={() => setActivePlacementMode(activePlacementMode === 'cathode' ? null : 'cathode')}
@@ -472,8 +513,8 @@ export function App() {
             </div>
           </div>
 
-          {/* Dosimetry Sliders */}
-          <div className="p-3 border-b border-slate-800/80 space-y-3.5">
+          {/* Dosimetry Sliders with Emojis */}
+          <div className="p-3 border-b border-slate-800/80 space-y-3.5 shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-mono font-bold text-slate-200 flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-amber-400" />
@@ -486,7 +527,7 @@ export function App() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-slate-300 flex items-center gap-1">
-                  <Zap className="w-3 h-3 text-amber-400" /> Current (I)
+                  <span>⚡</span> Current (I)
                 </span>
                 <span className="text-amber-300 font-bold bg-amber-950/60 border border-amber-800/50 px-1.5 py-0.5 rounded">
                   {montageState.ma.toFixed(1)} mA
@@ -513,7 +554,7 @@ export function App() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-slate-300 flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-cyan-400" /> Duration (t)
+                  <span>⏱️</span> Duration (t)
                 </span>
                 <span className="text-cyan-300 font-bold bg-cyan-950/60 border border-cyan-800/50 px-1.5 py-0.5 rounded">
                   {montageState.dur} min
@@ -540,7 +581,7 @@ export function App() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-slate-300 flex items-center gap-1">
-                  <Square className="w-3 h-3 text-purple-400" /> Pad Area (A)
+                  <span>🔲</span> Pad Area (A)
                 </span>
                 <span className="text-purple-300 font-bold bg-purple-950/60 border border-purple-800/50 px-1.5 py-0.5 rounded">
                   {montageState.pad} cm²
@@ -589,11 +630,11 @@ export function App() {
           </div>
 
           {/* Live Biophysical Safety Telemetry Card */}
-          <div className="p-3 space-y-2.5 flex-1">
+          <div className="p-3 space-y-2.5 flex-1 shrink-0">
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="font-bold text-slate-200 flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                SAFETY TELEMETRY
+                <span>🛡️</span> SAFETY TELEMETRY
               </span>
               <span
                 className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
@@ -649,19 +690,37 @@ export function App() {
             onSelectNode={handleSelectNode}
             showScalpGrid={showScalpGrid}
             showShuntHalo={showShuntHalo}
+            showHumanFace={showHumanFace}
             showEField={showEField}
             showStreamlines={showStreamlines}
             showPointCloud={showPointCloud}
             showBrodmannLabels={showBrodmannLabels}
             activePlacementMode={activePlacementMode}
             setActivePlacementMode={setActivePlacementMode}
+            isLeftDockCollapsed={isLeftDockCollapsed}
           />
         </main>
 
-        {/* RIGHT DOCK (380px): 3 Tabbed Inspector Panels (BUG-09) */}
-        <aside className="w-[380px] bg-[#0F1623] border-l border-slate-800 flex flex-col shrink-0 overflow-hidden z-10 select-none">
+        {/* Right Dock Floating Expand Button (Video Feedback #9 & #10) */}
+        {isRightDockCollapsed && (
+          <button
+            onClick={() => setIsRightDockCollapsed(false)}
+            className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-[#0F1623]/95 backdrop-blur-md border border-slate-700 hover:border-cyan-500 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg shadow-2xl text-xs font-mono transition-all group cursor-pointer"
+            title="Expand Inspector & Impact Panel"
+          >
+            <span>📊 Inspector & Impact</span>
+            <PanelRightOpen className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition" />
+          </button>
+        )}
+
+        {/* RIGHT DOCK (380px): 3 Tabbed Inspector Panels (Collapsible) */}
+        <aside
+          className={`${
+            isRightDockCollapsed ? 'w-0 border-l-0 overflow-hidden opacity-0 pointer-events-none' : 'w-[380px] border-l opacity-100'
+          } bg-[#0F1623] border-slate-800 flex flex-col shrink-0 overflow-hidden z-10 select-none transition-all duration-300 ease-in-out relative`}
+        >
           {/* Tab Selector Header */}
-          <div className="flex items-center border-b border-slate-800 bg-[#0E1524]">
+          <div className="flex items-center border-b border-slate-800 bg-[#0E1524] shrink-0">
             <button
               onClick={() => setRightTab('eeg')}
               className={`flex-1 py-2.5 px-2 text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition border-b-2 ${
@@ -696,6 +755,15 @@ export function App() {
             >
               <Zap className="w-3.5 h-3.5" />
               <span>Cellular Vm</span>
+            </button>
+
+            {/* Collapse Right Dock Button */}
+            <button
+              onClick={() => setIsRightDockCollapsed(true)}
+              className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 transition border-l border-slate-800/80 cursor-pointer"
+              title="Collapse Inspector Panel to see full 3D brain"
+            >
+              <PanelRightClose className="w-4 h-4" />
             </button>
           </div>
 
