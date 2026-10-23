@@ -274,11 +274,11 @@ export function create1020MeridianArcs(): THREE.BufferGeometry {
 
   // Sagittal Midline Arc: Fpz -> Fz -> Cz -> Pz -> Oz
   const sagittalNodes = [
-    new THREE.Vector3(0.0, 0.22, 0.98),
-    new THREE.Vector3(0.0, 0.76, 0.62),
-    new THREE.Vector3(0.0, 0.97, 0.0),
-    new THREE.Vector3(0.0, 0.75, -0.64),
-    new THREE.Vector3(0.0, 0.15, -0.98)
+    new THREE.Vector3(0.0, 0.231, 1.008),
+    new THREE.Vector3(0.0, 0.765, 0.604),
+    new THREE.Vector3(0.0, 0.940, 0.0),
+    new THREE.Vector3(0.0, 0.749, -0.628),
+    new THREE.Vector3(0.0, 0.162, -1.024)
   ];
   const sagittalCurve = new THREE.CatmullRomCurve3(sagittalNodes);
   const sagPoints = sagittalCurve.getPoints(50);
@@ -289,11 +289,11 @@ export function create1020MeridianArcs(): THREE.BufferGeometry {
 
   // Coronal Central Arc: T7 -> C3 -> Cz -> C4 -> T8
   const coronalNodes = [
-    new THREE.Vector3(-0.94, 0.08, 0.0),
-    new THREE.Vector3(-0.62, 0.70, 0.0),
-    new THREE.Vector3(0.0, 0.97, 0.0),
-    new THREE.Vector3(0.62, 0.70, 0.0),
-    new THREE.Vector3(0.94, 0.08, 0.0)
+    new THREE.Vector3(-0.877, 0.076, 0.0),
+    new THREE.Vector3(-0.604, 0.684, 0.0),
+    new THREE.Vector3(0.0, 0.940, 0.0),
+    new THREE.Vector3(0.604, 0.684, 0.0),
+    new THREE.Vector3(0.877, 0.076, 0.0)
   ];
   const coronalCurve = new THREE.CatmullRomCurve3(coronalNodes);
   const corPoints = coronalCurve.getPoints(50);
@@ -304,11 +304,11 @@ export function create1020MeridianArcs(): THREE.BufferGeometry {
 
   // Frontal Arc: F7 -> F3 -> Fz -> F4 -> F8
   const frontalNodes = [
-    new THREE.Vector3(-0.76, 0.20, 0.62),
-    new THREE.Vector3(-0.50, 0.62, 0.62),
-    new THREE.Vector3(0.0, 0.76, 0.62),
-    new THREE.Vector3(0.50, 0.62, 0.62),
-    new THREE.Vector3(0.76, 0.20, 0.62)
+    new THREE.Vector3(-0.716, 0.172, 0.573),
+    new THREE.Vector3(-0.471, 0.589, 0.589),
+    new THREE.Vector3(0.0, 0.765, 0.604),
+    new THREE.Vector3(0.471, 0.589, 0.589),
+    new THREE.Vector3(0.716, 0.172, 0.573)
   ];
   const frontalCurve = new THREE.CatmullRomCurve3(frontalNodes);
   const fPoints = frontalCurve.getPoints(50);
@@ -319,11 +319,11 @@ export function create1020MeridianArcs(): THREE.BufferGeometry {
 
   // Parietal Arc: P7 -> P3 -> Pz -> P4 -> P8
   const parietalNodes = [
-    new THREE.Vector3(-0.76, 0.04, -0.64),
-    new THREE.Vector3(-0.50, 0.60, -0.64),
-    new THREE.Vector3(0.0, 0.75, -0.64),
-    new THREE.Vector3(0.50, 0.60, -0.64),
-    new THREE.Vector3(0.76, 0.04, -0.64)
+    new THREE.Vector3(-0.721, 0.019, -0.596),
+    new THREE.Vector3(-0.472, 0.570, -0.610),
+    new THREE.Vector3(0.0, 0.749, -0.628),
+    new THREE.Vector3(0.472, 0.570, -0.610),
+    new THREE.Vector3(0.721, 0.019, -0.596)
   ];
   const parietalCurve = new THREE.CatmullRomCurve3(parietalNodes);
   const pPoints = parietalCurve.getPoints(50);
@@ -334,19 +334,19 @@ export function create1020MeridianArcs(): THREE.BufferGeometry {
 
   // Circumferential Headband: Fpz -> Fp1 -> F7 -> T7 -> P7 -> O1 -> Oz -> O2 -> P8 -> T8 -> F8 -> Fp2 -> Fpz
   const equatorNodes = [
-    new THREE.Vector3(0.0, 0.22, 0.98),
-    new THREE.Vector3(-0.33, 0.26, 0.92),
-    new THREE.Vector3(-0.76, 0.20, 0.62),
-    new THREE.Vector3(-0.94, 0.08, 0.0),
-    new THREE.Vector3(-0.76, 0.04, -0.64),
-    new THREE.Vector3(-0.31, 0.16, -0.94),
-    new THREE.Vector3(0.0, 0.15, -0.98),
-    new THREE.Vector3(0.31, 0.16, -0.94),
-    new THREE.Vector3(0.76, 0.04, -0.64),
-    new THREE.Vector3(0.94, 0.08, 0.0),
-    new THREE.Vector3(0.76, 0.20, 0.62),
-    new THREE.Vector3(0.33, 0.26, 0.92),
-    new THREE.Vector3(0.0, 0.22, 0.98)
+    new THREE.Vector3(0.0, 0.231, 1.008),
+    new THREE.Vector3(-0.328, 0.256, 0.922),
+    new THREE.Vector3(-0.716, 0.172, 0.573),
+    new THREE.Vector3(-0.877, 0.076, 0.0),
+    new THREE.Vector3(-0.721, 0.019, -0.596),
+    new THREE.Vector3(-0.312, 0.156, -0.957),
+    new THREE.Vector3(0.0, 0.162, -1.024),
+    new THREE.Vector3(0.312, 0.156, -0.957),
+    new THREE.Vector3(0.721, 0.019, -0.596),
+    new THREE.Vector3(0.877, 0.076, 0.0),
+    new THREE.Vector3(0.716, 0.172, 0.573),
+    new THREE.Vector3(0.328, 0.256, 0.922),
+    new THREE.Vector3(0.0, 0.231, 1.008)
   ];
   const equatorCurve = new THREE.CatmullRomCurve3(equatorNodes);
   const eqPoints = equatorCurve.getPoints(80);
@@ -357,5 +357,115 @@ export function create1020MeridianArcs(): THREE.BufferGeometry {
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+  return geo;
+}
+
+/**
+ * Creates curved rectangular pad geometry conforming flush to the calvarium's spherical curvature.
+ * Prevents edge clipping at Oz and air gaps at T7 (BUG-07).
+ */
+export function createCurvedPadGeometry(
+  width = 0.16,
+  height = 0.16,
+  thickness = 0.024,
+  curveRadius = 1.0
+): THREE.BufferGeometry {
+  const geo = new THREE.BoxGeometry(width, height, thickness, 8, 8, 1);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const rSq = x * x + y * y;
+    const sagitta = rSq / (2.0 * curveRadius);
+    pos.setXYZ(i, x, y, z - sagitta);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/**
+ * Creates stylized futuristic neck and shoulder wireframe anatomy for extracephalic reference nodes (BUG-06).
+ */
+export function createNeckAndShoulderGeometry(): THREE.BufferGeometry {
+  const lines: number[] = [];
+
+  // 1. Neck rings
+  const neckLevels = [-0.35, -0.50, -0.65, -0.78];
+  for (const y of neckLevels) {
+    const progress = (-y - 0.35) / 0.43;
+    const rx = 0.38 + progress * 0.06;
+    const rz = 0.40 + progress * 0.06;
+    const segments = 24;
+    for (let i = 0; i < segments; i++) {
+      const th1 = (i / segments) * Math.PI * 2;
+      const th2 = ((i + 1) / segments) * Math.PI * 2;
+      lines.push(Math.sin(th1) * rx, y, Math.cos(th1) * rz);
+      lines.push(Math.sin(th2) * rx, y, Math.cos(th2) * rz);
+    }
+  }
+
+  // 2. Neck vertical ribs
+  for (let i = 0; i < 8; i++) {
+    const th = (i / 8) * Math.PI * 2;
+    for (let k = 0; k < neckLevels.length - 1; k++) {
+      const y1 = neckLevels[k];
+      const y2 = neckLevels[k + 1];
+      const prog1 = (-y1 - 0.35) / 0.43;
+      const prog2 = (-y2 - 0.35) / 0.43;
+      lines.push(Math.sin(th) * (0.38 + prog1 * 0.06), y1, Math.cos(th) * (0.40 + prog1 * 0.06));
+      lines.push(Math.sin(th) * (0.38 + prog2 * 0.06), y2, Math.cos(th) * (0.40 + prog2 * 0.06));
+    }
+  }
+
+  // 3. Sloping shoulder / clavicle arches connecting to deltoid nodes (EX_L at -1.4, -1.2, EX_R at +1.4, -1.2)
+  for (const side of [-1, 1]) {
+    const shoulderCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side * 0.44, -0.78, 0.0),
+      new THREE.Vector3(side * 0.75, -0.92, 0.05),
+      new THREE.Vector3(side * 1.10, -1.08, 0.02),
+      new THREE.Vector3(side * 1.40, -1.20, 0.0),
+      new THREE.Vector3(side * 1.48, -1.30, 0.0)
+    ]);
+    const pts = shoulderCurve.getPoints(20);
+    for (let i = 0; i < pts.length - 1; i++) {
+      lines.push(pts[i].x, pts[i].y, pts[i].z);
+      lines.push(pts[i + 1].x, pts[i + 1].y, pts[i + 1].z);
+    }
+
+    // Trapezius posterior arch
+    const trapCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side * 0.38, -0.75, -0.22),
+      new THREE.Vector3(side * 0.72, -0.96, -0.20),
+      new THREE.Vector3(side * 1.25, -1.18, -0.12),
+      new THREE.Vector3(side * 1.40, -1.20, 0.0)
+    ]);
+    const trapPts = trapCurve.getPoints(16);
+    for (let i = 0; i < trapPts.length - 1; i++) {
+      lines.push(trapPts[i].x, trapPts[i].y, trapPts[i].z);
+      lines.push(trapPts[i + 1].x, trapPts[i + 1].y, trapPts[i + 1].z);
+    }
+
+    // Deltoid pad cradle circle
+    const deltoidCenter = new THREE.Vector3(side * 1.40, -1.20, 0.0);
+    const deltoidRadius = 0.14;
+    for (let i = 0; i < 16; i++) {
+      const a1 = (i / 16) * Math.PI * 2;
+      const a2 = ((i + 1) / 16) * Math.PI * 2;
+      lines.push(
+        deltoidCenter.x + Math.sin(a1) * 0.05,
+        deltoidCenter.y + Math.cos(a1) * deltoidRadius,
+        deltoidCenter.z + Math.sin(a1) * deltoidRadius
+      );
+      lines.push(
+        deltoidCenter.x + Math.sin(a2) * 0.05,
+        deltoidCenter.y + Math.cos(a2) * deltoidRadius,
+        deltoidCenter.z + Math.sin(a2) * deltoidRadius
+      );
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(lines, 3));
   return geo;
 }

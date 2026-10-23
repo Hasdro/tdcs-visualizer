@@ -4,7 +4,9 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Text, Html } from '@react-three/drei';
 import {
   createBiHemisphericBrainGeometry,
-  create1020MeridianArcs
+  create1020MeridianArcs,
+  createCurvedPadGeometry,
+  createNeckAndShoulderGeometry
 } from '../utils/brainGeometry';
 import { BRAIN_NODES } from '../data/brain_nodes';
 import { StreamlineParticles } from './StreamlineParticles';
@@ -22,6 +24,7 @@ interface BrainViewport3DProps {
   telemetry: BiophysicalTelemetry;
   onSelectNode: (nodeId: string, polarity: 'anode' | 'cathode') => void;
   showScalpGrid: boolean;
+  showShuntHalo: boolean;
   showEField: boolean;
   showStreamlines: boolean;
   showPointCloud: boolean;
@@ -275,6 +278,8 @@ interface BrainSceneProps {
   surroundNodes?: string[];
   onSelectNode: (nodeId: string, polarity: 'anode' | 'cathode') => void;
   showScalpGrid: boolean;
+  showShuntHalo: boolean;
+  shuntPercentage: number;
   showEField: boolean;
   showStreamlines: boolean;
   showPointCloud: boolean;
@@ -292,6 +297,8 @@ const BrainScene: React.FC<BrainSceneProps> = ({
   surroundNodes,
   onSelectNode,
   showScalpGrid,
+  showShuntHalo,
+  shuntPercentage,
   showEField,
   showStreamlines,
   showPointCloud,
@@ -300,6 +307,8 @@ const BrainScene: React.FC<BrainSceneProps> = ({
   setActivePlacementMode
 }) => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [draggingElectrode, setDraggingElectrode] = useState<'anode' | 'cathode' | null>(null);
+  const [magneticCandidateNode, setMagneticCandidateNode] = useState<string | null>(null);
 
   const { cortexGeometry, pointCloudGeometry, wireframeGeometry, headSilhouetteGeometry } = useMemo(
     () => createBiHemisphericBrainGeometry(),
@@ -307,6 +316,8 @@ const BrainScene: React.FC<BrainSceneProps> = ({
   );
 
   const meridianArcsGeo = useMemo(() => create1020MeridianArcs(), []);
+  const curvedPadGeo = useMemo(() => createCurvedPadGeometry(0.16, 0.16, 0.024, 1.0), []);
+  const neckShouldersGeo = useMemo(() => createNeckAndShoulderGeometry(), []);
 
   const anodeNode = BRAIN_NODES[anodeId] || BRAIN_NODES['F3'];
   const cathodeNode = BRAIN_NODES[cathodeId] || BRAIN_NODES['Fp2'];
@@ -370,6 +381,7 @@ const BrainScene: React.FC<BrainSceneProps> = ({
         minDistance={1.4}
         maxDistance={4.8}
         target={[0, 0.15, 0]}
+        enabled={!draggingElectrode && activePlacementMode === null}
       />
 
       {/* Layer 1: Anatomical Bi-Hemispheric Cortical Mesh */}
@@ -413,7 +425,52 @@ const BrainScene: React.FC<BrainSceneProps> = ({
       {/* Layer 3: Outer Translucent Scalp & 10-20 Coordinate Cage */}
       {showScalpGrid && (
         <group>
-          <mesh geometry={headSilhouetteGeometry}>
+          <mesh
+            geometry={headSilhouetteGeometry}
+            onPointerMove={(e) => {
+              if (draggingElectrode || activePlacementMode) {
+                e.stopPropagation();
+                const hit = e.point;
+                let closest: string | null = null;
+                let minDist = Infinity;
+                for (const [id, node] of Object.entries(BRAIN_NODES)) {
+                  const nodeVec = new THREE.Vector3(...node.pos3D);
+                  const d = hit.distanceTo(nodeVec);
+                  if (d < minDist) {
+                    minDist = d;
+                    closest = id;
+                  }
+                }
+                if (closest && minDist < 0.45) {
+                  setMagneticCandidateNode(closest);
+                  setHoveredNode(closest);
+                } else {
+                  setMagneticCandidateNode(null);
+                }
+              }
+            }}
+            onPointerUp={(e) => {
+              if (draggingElectrode && magneticCandidateNode) {
+                e.stopPropagation();
+                onSelectNode(magneticCandidateNode, draggingElectrode);
+                setDraggingElectrode(null);
+                setMagneticCandidateNode(null);
+                document.body.style.cursor = 'auto';
+              } else if (draggingElectrode) {
+                setDraggingElectrode(null);
+                setMagneticCandidateNode(null);
+                document.body.style.cursor = 'auto';
+              }
+            }}
+            onClick={(e) => {
+              if (activePlacementMode && magneticCandidateNode) {
+                e.stopPropagation();
+                onSelectNode(magneticCandidateNode, activePlacementMode);
+                setActivePlacementMode(null);
+                setMagneticCandidateNode(null);
+              }
+            }}
+          >
             <meshBasicMaterial
               color="#38BDF8"
               wireframe
@@ -434,6 +491,54 @@ const BrainScene: React.FC<BrainSceneProps> = ({
         </group>
       )}
 
+      {/* Layer 3.5: Skull Shunt Halo (Outer Calvarium Current Mantle - BUG-04) */}
+      {showShuntHalo && (
+        <mesh geometry={headSilhouetteGeometry} scale={[1.028, 1.028, 1.028]}>
+          <meshStandardMaterial
+            color="#38BDF8"
+            emissive="#00D2FF"
+            emissiveIntensity={0.25 + (shuntPercentage / 100) * 0.45 * Math.min(1.5, currentMa)}
+            transparent
+            opacity={0.14 + (shuntPercentage / 100) * 0.12}
+            roughness={0.2}
+            metalness={0.7}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
+
+      {/* Stylized Neck and Shoulder Wireframe Anatomy for Extracephalic Nodes (BUG-06) */}
+      <lineSegments geometry={neckShouldersGeo}>
+        <lineBasicMaterial
+          color="#38BDF8"
+          transparent
+          opacity={0.25}
+          depthWrite={false}
+        />
+      </lineSegments>
+
+      {/* Magnetic Snapping Candidate Ring Visual Indicator (BUG-05) */}
+      {(draggingElectrode || activePlacementMode) && magneticCandidateNode && BRAIN_NODES[magneticCandidateNode] && (
+        <group
+          position={[
+            BRAIN_NODES[magneticCandidateNode].pos3D[0] + BRAIN_NODES[magneticCandidateNode].normal[0] * 0.016,
+            BRAIN_NODES[magneticCandidateNode].pos3D[1] + BRAIN_NODES[magneticCandidateNode].normal[1] * 0.016,
+            BRAIN_NODES[magneticCandidateNode].pos3D[2] + BRAIN_NODES[magneticCandidateNode].normal[2] * 0.016
+          ]}
+        >
+          <mesh>
+            <sphereGeometry args={[0.048, 16, 16]} />
+            <meshBasicMaterial
+              color={draggingElectrode === 'anode' || activePlacementMode === 'anode' ? '#FF4D4D' : '#00D2FF'}
+              wireframe
+              transparent
+              opacity={0.85}
+            />
+          </mesh>
+        </group>
+      )}
+
       {/* Animated 3D Current Streamlines */}
       <StreamlineParticles
         anodeId={anodeId}
@@ -444,17 +549,31 @@ const BrainScene: React.FC<BrainSceneProps> = ({
         visible={showStreamlines}
       />
 
-      {/* Anode Pad (+) */}
+      {/* Anode Pad (+) - Curved to conform flush to calvarium without clipping or floating (BUG-07) */}
       <group
         position={[
-          anodeNode.pos3D[0] + anodeNode.normal[0] * 0.02,
-          anodeNode.pos3D[1] + anodeNode.normal[1] * 0.02,
-          anodeNode.pos3D[2] + anodeNode.normal[2] * 0.02
+          anodeNode.pos3D[0] + anodeNode.normal[0] * 0.012,
+          anodeNode.pos3D[1] + anodeNode.normal[1] * 0.012,
+          anodeNode.pos3D[2] + anodeNode.normal[2] * 0.012
         ]}
         quaternion={anodeQuat}
       >
-        <mesh position={[0, 0, 0.012]}>
-          <boxGeometry args={[0.16, 0.16, 0.024]} />
+        <mesh
+          geometry={curvedPadGeo}
+          position={[0, 0, 0.012]}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            setDraggingElectrode('anode');
+            document.body.style.cursor = 'grabbing';
+          }}
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            if (!draggingElectrode) document.body.style.cursor = 'grab';
+          }}
+          onPointerOut={() => {
+            if (!draggingElectrode) document.body.style.cursor = 'auto';
+          }}
+        >
           <meshStandardMaterial
             color="#FF3333"
             emissive="#FF1111"
@@ -486,9 +605,9 @@ const BrainScene: React.FC<BrainSceneProps> = ({
             <group
               key={sId}
               position={[
-                sNode.pos3D[0] + sNode.normal[0] * 0.02,
-                sNode.pos3D[1] + sNode.normal[1] * 0.02,
-                sNode.pos3D[2] + sNode.normal[2] * 0.02
+                sNode.pos3D[0] + sNode.normal[0] * 0.012,
+                sNode.pos3D[1] + sNode.normal[1] * 0.012,
+                sNode.pos3D[2] + sNode.normal[2] * 0.012
               ]}
               quaternion={q}
             >
@@ -511,14 +630,28 @@ const BrainScene: React.FC<BrainSceneProps> = ({
       ) : (
         <group
           position={[
-            cathodeNode.pos3D[0] + cathodeNode.normal[0] * 0.02,
-            cathodeNode.pos3D[1] + cathodeNode.normal[1] * 0.02,
-            cathodeNode.pos3D[2] + cathodeNode.normal[2] * 0.02
+            cathodeNode.pos3D[0] + cathodeNode.normal[0] * 0.012,
+            cathodeNode.pos3D[1] + cathodeNode.normal[1] * 0.012,
+            cathodeNode.pos3D[2] + cathodeNode.normal[2] * 0.012
           ]}
           quaternion={cathodeQuat}
         >
-          <mesh position={[0, 0, 0.012]}>
-            <boxGeometry args={[0.16, 0.16, 0.024]} />
+          <mesh
+            geometry={curvedPadGeo}
+            position={[0, 0, 0.012]}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              setDraggingElectrode('cathode');
+              document.body.style.cursor = 'grabbing';
+            }}
+            onPointerOver={(e) => {
+              e.stopPropagation();
+              if (!draggingElectrode) document.body.style.cursor = 'grab';
+            }}
+            onPointerOut={() => {
+              if (!draggingElectrode) document.body.style.cursor = 'auto';
+            }}
+          >
             <meshStandardMaterial
               color="#00D2FF"
               emissive="#0099DD"
@@ -641,6 +774,7 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
   telemetry,
   onSelectNode,
   showScalpGrid,
+  showShuntHalo,
   showEField,
   showStreamlines,
   showPointCloud,
@@ -667,6 +801,8 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
               surroundNodes={surroundNodes}
               onSelectNode={onSelectNode}
               showScalpGrid={showScalpGrid}
+              showShuntHalo={showShuntHalo}
+              shuntPercentage={telemetry.shuntPercentage}
               showEField={showEField}
               showStreamlines={showStreamlines}
               showPointCloud={showPointCloud}

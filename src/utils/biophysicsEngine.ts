@@ -57,7 +57,7 @@ export function euclideanDistance(a: [number, number, number], b: [number, numbe
  */
 export function computeEFieldAtPoint(
   p: [number, number, number],
-  normal: [number, number, number],
+  _normal: [number, number, number],
   params: BiophysicalParams
 ): { potential: number; eNormal: number; eMagnitude: number } {
   const { anodeId, cathodeId, currentMa, padAreaCm2, montageType, surroundNodeIds } = params;
@@ -81,8 +81,8 @@ export function computeEFieldAtPoint(
   // Skull & CSF transmission factor (~38% reaches cortex, ~62% shunted)
   const etaTrans = 0.38;
 
-  // Effective current in mA scaled to V/m realistic range (~0.35 V/m per mA at gyral crown)
-  const kField = 0.42 * currentMa * etaTrans;
+  // Effective field scaling constant calibrated so peak |E| ~ 0.65 V/m at 2.0 mA and ~ 0.33 V/m at 1.0 mA (Miranda 2006, Bikson 2016)
+  const kField = 0.0215 * currentMa * etaTrans;
 
   // 1. Calculate Anode contribution
   const pA = anodeNode.posCortical;
@@ -91,15 +91,19 @@ export function computeEFieldAtPoint(
   const weightA = Math.exp(-rASq / twoSigmaSq);
   const phiA = (kField * weightA) / effDistA;
 
-  // Anode E-field gradient vector (radial outward from anode)
+  // Anode E-field gradient vector (radial outward from anode along cortex)
   const gradAx = -phiA * ((p[0] - pA[0]) / (effDistA * effDistA) + (p[0] - pA[0]) / (sigma * sigma));
   const gradAy = -phiA * ((p[1] - pA[1]) / (effDistA * effDistA) + (p[1] - pA[1]) / (sigma * sigma));
   const gradAz = -phiA * ((p[2] - pA[2]) / (effDistA * effDistA) + (p[2] - pA[2]) / (sigma * sigma));
+
+  // Inward normal (transcortical) component from Anode (+ is depolarizing into cortex)
+  const eNormA = phiA / dSkull;
 
   let phiTotal = phiA;
   let ex = -gradAx;
   let ey = -gradAy;
   let ez = -gradAz;
+  let eNormalTotal = eNormA;
 
   // 2. Calculate Cathode / Return contribution
   if (montageType === 'hd4x1' && surroundNodeIds && surroundNodeIds.length > 0) {
@@ -122,6 +126,7 @@ export function computeEFieldAtPoint(
       ex += gradSx;
       ey += gradSy;
       ez += gradSz;
+      eNormalTotal -= (phiS / dSkull);
     }
   } else if (cathodeNode) {
     const pC = cathodeNode.posCortical;
@@ -138,16 +143,17 @@ export function computeEFieldAtPoint(
     ex += gradCx;
     ey += gradCy;
     ez += gradCz;
+    eNormalTotal -= (phiC / dSkull);
   }
 
-  // Normal component of electric field: En = E · n
-  // Anodal normal field > 0 (depolarizing), Cathodal normal field < 0 (hyperpolarizing)
-  const eNormal = ex * normal[0] + ey * normal[1] + ez * normal[2];
-  const eMagnitude = Math.sqrt(ex * ex + ey * ey + ez * ez);
+  // Normal component of electric field: En (Anodal > 0 depolarizing, Cathodal < 0 hyperpolarizing)
+  // Tangential gradient component along gyral crowns
+  const eTangential = Math.sqrt(ex * ex + ey * ey + ez * ez);
+  const eMagnitude = Math.sqrt(eTangential * eTangential + eNormalTotal * eNormalTotal);
 
   return {
     potential: phiTotal,
-    eNormal,
+    eNormal: eNormalTotal,
     eMagnitude
   };
 }
@@ -181,7 +187,7 @@ export function calculateTelemetry(params: BiophysicalParams): BiophysicalTeleme
     shuntPercentage = Math.min(74.0, Math.max(52.0, 58.0 + 12.0 * Math.exp(-interDist / 1.1)));
   }
 
-  // 4. Sample E-field at all 10-20 brain nodes
+  // 4. Sample E-field at all 10-20 brain nodes + continuous sampling at active electrode centers
   const activeAnodalNodes: Array<{ id: string; name: string; eField: number; membraneShiftMv: number }> = [];
   const activeCathodalNodes: Array<{ id: string; name: string; eField: number; membraneShiftMv: number }> = [];
 
@@ -191,6 +197,35 @@ export function calculateTelemetry(params: BiophysicalParams): BiophysicalTeleme
 
   // Membrane coupling factor: ~1.2 mV somatic shift per V/m (Radman et al. 2009; Bikson et al. 2016)
   const membraneFactor = 1.25;
+
+  // Explicit continuous sampling directly beneath active anode to capture focal peak (BUG-02)
+  const pA = anodeNode.posCortical;
+  const sampleOffsets: Array<[number, number, number]> = [
+    [0, 0, 0],
+    [0.02, 0, 0], [-0.02, 0, 0], [0, 0.02, 0], [0, -0.02, 0],
+    [0.04, 0, 0], [-0.04, 0, 0], [0, 0.04, 0], [0, -0.04, 0],
+    [0.06, 0, 0], [-0.06, 0, 0], [0, 0.06, 0], [0, -0.06, 0],
+    [0.08, 0, 0], [-0.08, 0, 0], [0, 0.08, 0], [0, -0.08, 0]
+  ];
+  for (const [dx, dy, dz] of sampleOffsets) {
+    const pSample: [number, number, number] = [pA[0] + dx, pA[1] + dy, pA[2] + dz];
+    const { eMagnitude } = computeEFieldAtPoint(pSample, anodeNode.normal, params);
+    if (eMagnitude > peakE) {
+      peakE = eMagnitude;
+    }
+  }
+
+  // Also sample beneath cathode in sponge mode
+  if (montageType === 'sponge' && cathodeNode && !cathodeId.startsWith('EX_')) {
+    const pC = cathodeNode.posCortical;
+    for (const [dx, dy, dz] of sampleOffsets) {
+      const pSample: [number, number, number] = [pC[0] + dx, pC[1] + dy, pC[2] + dz];
+      const { eMagnitude } = computeEFieldAtPoint(pSample, cathodeNode.normal, params);
+      if (eMagnitude > peakE) {
+        peakE = eMagnitude;
+      }
+    }
+  }
 
   // Composite behavioral metrics accumulation
   let compFocus = 0;
@@ -213,7 +248,7 @@ export function calculateTelemetry(params: BiophysicalParams): BiophysicalTeleme
 
     const dVm = eNormal * membraneFactor;
 
-    if (eNormal > 0.12) {
+    if (eNormal > 0.08) {
       activeAnodalNodes.push({
         id: node.id,
         name: node.shortName,
@@ -229,7 +264,7 @@ export function calculateTelemetry(params: BiophysicalParams): BiophysicalTeleme
       compLang += node.anodalEffects.cognitiveMetrics.language * w;
       compPain += node.anodalEffects.cognitiveMetrics.painThreshold * w;
       compVision += node.anodalEffects.cognitiveMetrics.visualAcuity * w;
-    } else if (eNormal < -0.12) {
+    } else if (eNormal < -0.08) {
       activeCathodalNodes.push({
         id: node.id,
         name: node.shortName,
@@ -251,8 +286,8 @@ export function calculateTelemetry(params: BiophysicalParams): BiophysicalTeleme
   activeAnodalNodes.sort((a, b) => b.eField - a.eField);
   activeCathodalNodes.sort((a, b) => a.eField - b.eField);
 
-  // Peak V/m scaled to match peer-reviewed values (typically 0.35 - 0.85 V/m at 2.0 mA)
-  const peakEFieldVm = parseFloat(Math.min(1.25, Math.max(0.15, peakE * 1.15)).toFixed(3));
+  // Peak V/m scaled dynamically with current without artificial saturation clamp (BUG-01)
+  const peakEFieldVm = parseFloat(Math.max(0.01, peakE).toFixed(3));
   const meanCorticalEFieldVm = parseFloat((sumE / Math.max(count, 1)).toFixed(3));
   const maxMembraneShiftMv = parseFloat((peakEFieldVm * membraneFactor).toFixed(2));
 
@@ -344,13 +379,14 @@ export function computeMultiChannelEFieldAtPoint(
   let exTotal = 0;
   let eyTotal = 0;
   let ezTotal = 0;
+  let eNormalTotal = 0;
 
   for (const ch of channels) {
     if (Math.abs(ch.currentMa) < 0.001) continue;
     const node = BRAIN_NODES[ch.nodeId];
     if (!node) continue;
 
-    const kField = 0.42 * ch.currentMa * etaTrans;
+    const kField = 0.0215 * ch.currentMa * etaTrans;
     const pN = node.posCortical;
     const rSq = (p[0] - pN[0]) ** 2 + (p[1] - pN[1]) ** 2 + (p[2] - pN[2]) ** 2;
     const effDist = Math.sqrt(rSq + dSkullSq);
@@ -365,13 +401,13 @@ export function computeMultiChannelEFieldAtPoint(
     exTotal -= gradX;
     eyTotal -= gradY;
     ezTotal -= gradZ;
+    eNormalTotal += (phi / dSkull);
   }
 
-  const eMagnitude = Math.sqrt(exTotal * exTotal + eyTotal * eyTotal + ezTotal * ezTotal);
-  // Normal projection (positive outwards along gyrus)
-  const eNormal = exTotal * p[0] + eyTotal * p[1] + ezTotal * p[2];
+  const eTang = Math.sqrt(exTotal * exTotal + eyTotal * eyTotal + ezTotal * ezTotal);
+  const eMagnitude = Math.sqrt(eTang * eTang + eNormalTotal * eNormalTotal);
 
-  return { potential: phiTotal, eNormal, eMagnitude };
+  return { potential: phiTotal, eNormal: eNormalTotal, eMagnitude };
 }
 
 /**
@@ -404,6 +440,29 @@ export function calculateMultiChannelTelemetry(
   const activeAnodalNodes: Array<{ id: string; name: string; eField: number; membraneShiftMv: number }> = [];
   const activeCathodalNodes: Array<{ id: string; name: string; eField: number; membraneShiftMv: number }> = [];
 
+  const membraneFactor = 1.25;
+
+  // Sample around each active channel to capture peak fields
+  const offsets: Array<[number, number, number]> = [
+    [0, 0, 0],
+    [0.02, 0, 0], [-0.02, 0, 0], [0, 0.02, 0], [0, -0.02, 0],
+    [0.04, 0, 0], [-0.04, 0, 0], [0, 0.04, 0], [0, -0.04, 0]
+  ];
+  for (const ch of channels) {
+    if (Math.abs(ch.currentMa) < 0.01) continue;
+    const node = BRAIN_NODES[ch.nodeId];
+    if (!node) continue;
+    for (const [dx, dy, dz] of offsets) {
+      const pSample: [number, number, number] = [
+        node.posCortical[0] + dx,
+        node.posCortical[1] + dy,
+        node.posCortical[2] + dz
+      ];
+      const { eMagnitude } = computeMultiChannelEFieldAtPoint(pSample, channels, padAreaCm2);
+      if (eMagnitude > peakE) peakE = eMagnitude;
+    }
+  }
+
   let compFocus = 0;
   let compMood = 0;
   let compMotor = 0;
@@ -420,9 +479,9 @@ export function calculateMultiChannelTelemetry(
     count++;
     if (eMagnitude > peakE) peakE = eMagnitude;
 
-    const dVm = eNormal * 2.2;
+    const dVm = eNormal * membraneFactor;
 
-    if (eNormal > 0.12) {
+    if (eNormal > 0.08) {
       activeAnodalNodes.push({
         id: node.id,
         name: node.shortName,
@@ -436,7 +495,7 @@ export function calculateMultiChannelTelemetry(
       compLang += node.anodalEffects.cognitiveMetrics.language * w;
       compPain += node.anodalEffects.cognitiveMetrics.painThreshold * w;
       compVision += node.anodalEffects.cognitiveMetrics.visualAcuity * w;
-    } else if (eNormal < -0.12) {
+    } else if (eNormal < -0.08) {
       activeCathodalNodes.push({
         id: node.id,
         name: node.shortName,
@@ -456,9 +515,9 @@ export function calculateMultiChannelTelemetry(
   activeAnodalNodes.sort((a, b) => b.eField - a.eField);
   activeCathodalNodes.sort((a, b) => a.eField - b.eField);
 
-  const peakEFieldVm = parseFloat(Math.min(1.3, Math.max(0.1, peakE * 1.15)).toFixed(3));
+  const peakEFieldVm = parseFloat(Math.max(0.01, peakE).toFixed(3));
   const meanCorticalEFieldVm = parseFloat((sumE / Math.max(count, 1)).toFixed(3));
-  const maxMembraneShiftMv = parseFloat((peakEFieldVm * 2.2).toFixed(2));
+  const maxMembraneShiftMv = parseFloat((peakEFieldVm * membraneFactor).toFixed(2));
 
   const isKirchhoffBalanced = Math.abs(kirchhoffSum) < 0.05;
 

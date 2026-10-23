@@ -67,7 +67,40 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
       const lateralOffset = right.clone().multiplyScalar(Math.cos(spreadAngle) * spreadRadius)
         .add(actualUp.clone().multiplyScalar(Math.sin(spreadAngle) * spreadRadius));
 
-      if (isShunt) {
+      const isExtra = targetC.y < -0.8 || pA.y < -0.8;
+
+      if (isExtra) {
+        // Extracephalic Downward Deep Pathway (Head to Shoulder/Deltoid - BUG-06)
+        // Directs vertical current vector through deep subcortical/brainstem nuclei into shoulder
+        const pDeep = pACortical.clone();
+        const pBrainstem = new THREE.Vector3(pA.x * 0.25, -0.42, pA.z * 0.25);
+        const pNeck = new THREE.Vector3(targetC.x * 0.45, -0.82, targetC.z * 0.45 + (Math.random() - 0.5) * 0.08);
+        const pShoulder = new THREE.Vector3(targetC.x * 0.85, -1.10, targetC.z * 0.85).add(lateralOffset.clone().multiplyScalar(0.6));
+
+        const curve = isShunt
+          ? new THREE.CatmullRomCurve3([
+              pA.clone(),
+              new THREE.Vector3(pA.x * 1.04, -0.28, pA.z * 1.04),
+              new THREE.Vector3(targetC.x * 0.52, -0.72, targetC.z * 0.52 + 0.08),
+              new THREE.Vector3(targetC.x * 0.85, -1.05, targetC.z * 0.85),
+              targetC.clone()
+            ])
+          : new THREE.CatmullRomCurve3([
+              pA.clone(),
+              pDeep,
+              pBrainstem,
+              pNeck,
+              pShoulder,
+              targetC.clone()
+            ]);
+        generatedPaths.push(curve);
+
+        const curvePts = curve.getPoints(24);
+        for (let k = 0; k < curvePts.length - 1; k++) {
+          linePositions.push(curvePts[k].x, curvePts[k].y, curvePts[k].z);
+          linePositions.push(curvePts[k + 1].x, curvePts[k + 1].y, curvePts[k + 1].z);
+        }
+      } else if (isShunt) {
         // Superficial Shunt Path: Arcs across scalp surface outside calvarium
         const midPoint = pA.clone().lerp(targetC, 0.5);
         // Push outward toward scalp perimeter

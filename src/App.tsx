@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useUrlMontageState } from './hooks/useUrlMontageState';
 import { BRAIN_NODES } from './data/brain_nodes';
 import { CLINICAL_PRESETS, ClinicalPreset } from './data/clinical_presets';
@@ -35,10 +35,19 @@ export function App() {
 
   // Layer Visibility Toggles
   const [showScalpGrid, setShowScalpGrid] = useState(true);
+  const [showShuntHalo, setShowShuntHalo] = useState(true);
   const [showEField, setShowEField] = useState(true);
   const [showStreamlines, setShowStreamlines] = useState(true);
   const [showPointCloud, setShowPointCloud] = useState(true);
   const [showBrodmannLabels, setShowBrodmannLabels] = useState(false);
+
+  // Track viewport width for responsive mobile elements (BUG-11)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1280);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1280);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Active 3D placement tool: null | 'anode' | 'cathode'
   const [activePlacementMode, setActivePlacementMode] = useState<'anode' | 'cathode' | null>(null);
@@ -216,6 +225,15 @@ export function App() {
               Scalp 10-20
             </button>
             <button
+              onClick={() => setShowShuntHalo(!showShuntHalo)}
+              className={`px-2 py-1 rounded transition ${
+                showShuntHalo ? 'bg-slate-800 text-rose-300 font-bold' : 'text-slate-500'
+              }`}
+              title="Toggle Scalp/CSF Skull Shunt Halo (BUG-04)"
+            >
+              Skull Shunt Halo
+            </button>
+            <button
               onClick={() => setShowEField(!showEField)}
               className={`px-2 py-1 rounded transition ${
                 showEField ? 'bg-slate-800 text-amber-300 font-bold' : 'text-slate-500'
@@ -313,31 +331,34 @@ export function App() {
         </div>
       </header>
 
-      {/* MAIN VIEWPORT LAYOUT: Left Dock (280px) | Center Stage 3D | Right Dock (400px) */}
+      {/* MAIN VIEWPORT LAYOUT: Left Dock (280px) | Center Stage 3D | Right Dock (380px) */}
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT DOCK (280px): Montage Selector, Dosimetry, Safety Telemetry */}
-        <aside className="w-72 bg-[#0A101D] border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto custom-scrollbar z-10 select-none">
-          {/* Preset Selector Dropdown (mobile/tablet fallback) */}
-          <div className="p-3 border-b border-slate-800/80 xl:hidden">
-            <label className="text-[11px] font-mono font-semibold text-slate-400 block mb-1">
-              CLINICAL MONTAGE PRESET
-            </label>
-            <select
-              value={currentPreset?.id || ''}
-              onChange={(e) => {
-                const p = CLINICAL_PRESETS.find((cp) => cp.id === e.target.value);
-                if (p) handleSelectPreset(p);
-              }}
-              className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg p-2 font-mono"
-            >
-              <option value="">Custom Montage</option>
-              {CLINICAL_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* LEFT DOCK (280px): Montage Selector, Dosimetry, Safety Telemetry (BUG-09) */}
+        <aside className="w-[280px] bg-[#0F1623] border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto custom-scrollbar z-10 select-none">
+          {/* Preset Selector Dropdown (mobile/tablet fallback, mounted only when viewport < 1280px BUG-11) */}
+          {isMobile && (
+            <div className="p-3 border-b border-slate-800/80">
+              <label htmlFor="mobile-preset-select" className="text-[11px] font-mono font-semibold text-slate-400 block mb-1">
+                CLINICAL MONTAGE PRESET
+              </label>
+              <select
+                id="mobile-preset-select"
+                value={currentPreset?.id || ''}
+                onChange={(e) => {
+                  const p = CLINICAL_PRESETS.find((cp) => cp.id === e.target.value);
+                  if (p) handleSelectPreset(p);
+                }}
+                className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg p-2 font-mono"
+              >
+                <option value="">Custom Montage</option>
+                {CLINICAL_PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Montage Configuration */}
           <div className="p-3 border-b border-slate-800/80 space-y-3">
@@ -525,20 +546,44 @@ export function App() {
                   {montageState.pad} cm²
                 </span>
               </div>
-              <input
-                type="range"
-                min="3.14"
-                max="35"
-                step="1"
-                value={montageState.pad}
-                onChange={(e) => updateMontageState({ pad: parseFloat(e.target.value) })}
-                className="w-full accent-purple-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-              />
+              {montageState.mode === 'hd4x1' ? (
+                <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-900/90 rounded border border-purple-900/40 text-xs font-mono text-purple-300">
+                  <span>3.14 cm² (Focal HD 4×1 Ring)</span>
+                  <span className="text-[10px] text-slate-400">Fixed</span>
+                </div>
+              ) : (
+                <input
+                  type="range"
+                  min="10"
+                  max="35"
+                  step="1"
+                  value={montageState.pad}
+                  onChange={(e) => updateMontageState({ pad: parseInt(e.target.value, 10) })}
+                  className="w-full accent-purple-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+                />
+              )}
               <div className="flex justify-between text-[9px] font-mono text-slate-500">
-                <span>3.14 (HD)</span>
-                <span>16 (4x4)</span>
-                <span>25 (5x5)</span>
-                <span>35 (5x7)</span>
+                <button
+                  type="button"
+                  onClick={() => montageState.mode === 'sponge' && updateMontageState({ pad: 16 })}
+                  className="hover:text-purple-300 transition cursor-pointer"
+                >
+                  16 (4x4)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => montageState.mode === 'sponge' && updateMontageState({ pad: 25 })}
+                  className="hover:text-purple-300 transition cursor-pointer"
+                >
+                  25 (5x5)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => montageState.mode === 'sponge' && updateMontageState({ pad: 35 })}
+                  className="hover:text-purple-300 transition cursor-pointer"
+                >
+                  35 (5x7)
+                </button>
               </div>
             </div>
           </div>
@@ -566,7 +611,9 @@ export function App() {
             <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-xs font-mono">
               <div className="flex justify-between">
                 <span className="text-slate-400">Current Density J:</span>
-                <span className="text-cyan-300 font-bold">{telemetry.currentDensityMaCm2} mA/cm²</span>
+                <span className="text-cyan-300 font-bold">
+                  {telemetry.currentDensityMaCm2} mA/cm² ({telemetry.currentDensityAM2} A/m²)
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Total Charge Q:</span>
@@ -601,6 +648,7 @@ export function App() {
             telemetry={telemetry}
             onSelectNode={handleSelectNode}
             showScalpGrid={showScalpGrid}
+            showShuntHalo={showShuntHalo}
             showEField={showEField}
             showStreamlines={showStreamlines}
             showPointCloud={showPointCloud}
@@ -610,8 +658,8 @@ export function App() {
           />
         </main>
 
-        {/* RIGHT DOCK (390px): 3 Tabbed Inspector Panels */}
-        <aside className="w-96 bg-[#0A101D] border-l border-slate-800 flex flex-col shrink-0 overflow-hidden z-10 select-none">
+        {/* RIGHT DOCK (380px): 3 Tabbed Inspector Panels (BUG-09) */}
+        <aside className="w-[380px] bg-[#0F1623] border-l border-slate-800 flex flex-col shrink-0 overflow-hidden z-10 select-none">
           {/* Tab Selector Header */}
           <div className="flex items-center border-b border-slate-800 bg-[#0E1524]">
             <button
