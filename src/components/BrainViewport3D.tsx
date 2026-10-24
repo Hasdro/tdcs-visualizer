@@ -7,6 +7,7 @@ import {
   createHumanFaceGeometry,
   create1020MeridianArcs,
   createCurvedPadGeometry,
+  createLeadWireGeometry,
   createNeckAndShoulderGeometry
 } from '../utils/brainGeometry';
 import { BRAIN_NODES } from '../data/brain_nodes';
@@ -77,7 +78,7 @@ class CanvasErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
-// Custom Cortical E-field Shader Material with Realistic Living Brain Tissue Shading
+// Custom Cortical E-field Shader Material with Realistic Biological Living Brain Tissue Shading
 const CorticalHeatmapShader = {
   uniforms: {
     uAnodePos: { value: new THREE.Vector3() },
@@ -130,51 +131,67 @@ const CorticalHeatmapShader = {
     varying float vCurvature;
 
     void main() {
-      // 1. Realistic biological cortical grey matter tissue tones:
+      // 1. Biological Cortical Grey Matter Tones:
       // Deep sulcal valleys: rich shadowed burgundy-umber
-      vec3 deepSulcus = vec3(0.24, 0.12, 0.11);
+      vec3 deepSulcus = vec3(0.24, 0.09, 0.09);
       // Mid-cortex grey matter: warm lifelike biological pinkish-tan
-      vec3 midCortex = vec3(0.78, 0.61, 0.54);
+      vec3 midCortex = vec3(0.76, 0.60, 0.54);
       // Gyral crowns: glistening soft cream-pink
-      vec3 gyrusCrown = vec3(0.88, 0.73, 0.67);
+      vec3 gyrusCrown = vec3(0.88, 0.74, 0.68);
 
-      vec3 baseColor = mix(deepSulcus, midCortex, smoothstep(0.0, 0.50, vCurvature));
-      baseColor = mix(baseColor, gyrusCrown, smoothstep(0.50, 1.0, vCurvature));
+      vec3 baseColor = mix(deepSulcus, midCortex, smoothstep(0.0, 0.48, vCurvature));
+      baseColor = mix(baseColor, gyrusCrown, smoothstep(0.48, 1.0, vCurvature));
 
-      // 2. Anatomical living tissue Blinn-Phong lighting:
+      // Delicate micro-vascular sulcal capillaries
+      float microPia = sin(vPosition.x * 48.0 + sin(vPosition.y * 36.0)) *
+                       cos(vPosition.z * 48.0 + cos(vPosition.x * 36.0));
+      if (vCurvature < 0.45 && microPia > 0.65) {
+        baseColor = mix(baseColor, vec3(0.38, 0.06, 0.06), 0.35);
+      }
+
+      // 2. Anatomical Living Tissue Lighting:
       vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-      vec3 lightDir1 = normalize(vec3(3.0, 4.0, 2.5));
-      vec3 lightDir2 = normalize(vec3(-2.0, -1.0, 2.0));
+      vec3 keyLight = normalize(vec3(2.5, 3.8, 2.8));
+      vec3 fillLight = normalize(vec3(-2.5, -1.2, 1.5));
+      vec3 rimLight = normalize(vec3(0.0, 2.0, -3.0));
 
-      float diff1 = max(dot(vWorldNormal, lightDir1), 0.0);
-      float diff2 = max(dot(vWorldNormal, lightDir2), 0.0);
-      baseColor *= (0.35 + 0.50 * diff1 + 0.15 * diff2);
+      // Normal micro-perturbation for organic living tissue feel
+      vec3 perturbedNormal = normalize(vWorldNormal + vec3(
+        sin(vPosition.y * 32.0 + vPosition.z * 24.0) * 0.06,
+        cos(vPosition.x * 32.0 + vPosition.z * 24.0) * 0.06,
+        sin(vPosition.x * 32.0 + vPosition.y * 24.0) * 0.06
+      ));
 
-      // Moist glistening pia mater specular highlight
-      vec3 halfDir = normalize(lightDir1 + viewDir);
-      float spec = pow(max(dot(vWorldNormal, halfDir), 0.0), 32.0);
-      baseColor += vec3(0.95, 0.90, 0.88) * spec * 0.40 * (0.35 + 0.65 * vCurvature);
+      // Diffuse wrap lighting (subsurface scattering approximation for soft organic tissue)
+      float diffKey = max(0.0, (dot(perturbedNormal, keyLight) + 0.25) / 1.25);
+      float diffFill = max(0.0, (dot(perturbedNormal, fillLight) + 0.20) / 1.20);
+      float diffRim = max(0.0, dot(perturbedNormal, rimLight));
 
-      // Subsurface scattering / warm Fresnel rim glow
-      float fresnel = pow(1.0 - max(dot(vWorldNormal, viewDir), 0.0), 2.8);
-      baseColor += vec3(0.92, 0.46, 0.38) * fresnel * 0.36;
+      baseColor *= (0.28 + 0.52 * diffKey + 0.14 * diffFill + 0.06 * diffRim);
 
-      // 3. E-field potential computation:
-      float sigma = (uMontageType == 1) ? 0.18 : (0.24 * sqrt(max(uPadArea, 9.0) / 25.0));
+      // Pia mater wet glistening specular highlight
+      vec3 halfDir = normalize(keyLight + viewDir);
+      float spec = pow(max(dot(perturbedNormal, halfDir), 0.0), 38.0);
+      vec3 piaSpecular = vec3(0.98, 0.94, 0.92) * spec * 0.45 * (0.30 + 0.70 * vCurvature);
+      baseColor += piaSpecular;
+
+      // Organic tissue Fresnel edge glow (warm biological subsurface rim)
+      float fresnel = pow(1.0 - max(dot(perturbedNormal, viewDir), 0.0), 3.0);
+      baseColor += vec3(0.92, 0.42, 0.32) * fresnel * 0.28;
+
+      // 3. Smooth Physical E-Field Potential Field:
+      float sigma = (uMontageType == 1) ? 0.16 : (0.22 * sqrt(max(uPadArea, 9.0) / 25.0));
       float twoSigmaSq = 2.0 * sigma * sigma;
-      float dSkullSq = 0.025;
+      float dSkullSq = 0.028;
 
+      // Anodal potential field
       float distAnodeSq = dot(vPosition - uAnodePos, vPosition - uAnodePos);
       float effAnodeDist = sqrt(distAnodeSq + dSkullSq);
       float weightAnode = exp(-distAnodeSq / twoSigmaSq);
-      float phiA = (uCurrentMa * 0.45 * weightAnode) / effAnodeDist;
+      float phiA = (uCurrentMa * 0.35 * weightAnode) / effAnodeDist;
 
-      vec3 dirA = vPosition - uAnodePos;
-      float eAnodeNorm = dot(dirA / (effAnodeDist * effAnodeDist), vNormal) * phiA * 2.8;
-
+      // Cathodal potential field
       float phiC = 0.0;
-      float eCathodeNorm = 0.0;
-
       if (uMontageType == 1) {
         vec3 ring[4];
         ring[0] = uSurroundPos0;
@@ -185,45 +202,108 @@ const CorticalHeatmapShader = {
         for (int i = 0; i < 4; i++) {
           float dSq = dot(vPosition - ring[i], vPosition - ring[i]);
           float effDist = sqrt(dSq + dSkullSq);
-          float w = exp(-dSq / (twoSigmaSq * 0.8));
-          float p = (uCurrentMa * 0.45 * 0.25 * w) / effDist;
-          phiC += p;
-          eCathodeNorm += dot((vPosition - ring[i]) / (effDist * effDist), vNormal) * p * 2.8;
+          float w = exp(-dSq / (twoSigmaSq * 0.85));
+          phiC += (uCurrentMa * 0.35 * 0.25 * w) / effDist;
         }
       } else {
         float distCathodeSq = dot(vPosition - uCathodePos, vPosition - uCathodePos);
         float effCathodeDist = sqrt(distCathodeSq + dSkullSq);
         float weightCathode = exp(-distCathodeSq / twoSigmaSq);
-        phiC = (uCurrentMa * 0.45 * weightCathode) / effCathodeDist;
-        vec3 dirC = vPosition - uCathodePos;
-        eCathodeNorm = dot(dirC / (effCathodeDist * effCathodeDist), vNormal) * phiC * 2.8;
+        phiC = (uCurrentMa * 0.35 * weightCathode) / effCathodeDist;
       }
 
-      float eNormal = (eAnodeNorm - eCathodeNorm);
-      float pulse = 1.0 + 0.06 * sin(uTime * 4.0 + vPosition.x * 10.0);
+      // Gyral crown depth modulation: preserves dark sulcal crevices
+      float gyralModulation = 0.65 + 0.35 * vCurvature;
+      float netField = (phiA - phiC) * gyralModulation;
+
+      float pulse = 1.0 + 0.03 * sin(uTime * 3.5 + vPosition.x * 6.0);
+      float peakField = max(0.8, uCurrentMa * 1.8);
 
       vec3 finalColor = baseColor;
 
-      // 4. Smooth E-Field Heatmap Overlay over Biological Tissue
+      // 4. Smooth Clinical E-Field Heatmap Overlay over Biological Tissue
       if (uShowEField > 0.5) {
-        if (eNormal > 0.02) {
-          float t = clamp(eNormal / 0.50, 0.0, 1.0) * pulse;
-          // Anodal excitation corona: fiery amber-gold to vivid coral
-          vec3 anodalHot = mix(vec3(1.0, 0.42, 0.15), vec3(1.0, 0.88, 0.28), smoothstep(0.2, 0.8, t));
-          float heatFactor = smoothstep(0.02, 0.42, eNormal) * (0.65 + 0.35 * vCurvature);
-          finalColor = mix(finalColor, anodalHot, heatFactor * 0.85);
-          finalColor += anodalHot * t * 0.25;
-        } else if (eNormal < -0.02) {
-          float t = clamp(abs(eNormal) / 0.50, 0.0, 1.0) * pulse;
-          // Cathodal inhibition corona: electric indigo-cyan to glacier ice
-          vec3 cathodalCool = mix(vec3(0.08, 0.45, 0.90), vec3(0.18, 0.85, 1.0), smoothstep(0.2, 0.8, t));
-          float coolFactor = smoothstep(0.02, 0.42, abs(eNormal)) * (0.65 + 0.35 * vCurvature);
-          finalColor = mix(finalColor, cathodalCool, coolFactor * 0.85);
-          finalColor += cathodalCool * t * 0.25;
+        if (netField > 0.03) {
+          float t = clamp((netField - 0.03) / (peakField * 0.75), 0.0, 1.0) * pulse;
+          // Anodal Excitation: deep coral-rose -> fiery amber -> golden yellow -> sunburst cream
+          vec3 c1 = vec3(0.88, 0.24, 0.14); // coral rose
+          vec3 c2 = vec3(0.98, 0.54, 0.10); // fiery amber
+          vec3 c3 = vec3(1.00, 0.82, 0.20); // golden yellow
+          vec3 c4 = vec3(1.00, 0.94, 0.58); // sunburst cream
+
+          vec3 anodalHot = (t < 0.28) ? mix(c1, c2, t / 0.28) :
+                           (t < 0.65) ? mix(c2, c3, (t - 0.28) / 0.37) :
+                                        mix(c3, c4, (t - 0.65) / 0.35);
+
+          // Blend with tissue preserving sulcal depth shadows
+          float heatBlend = smoothstep(0.03, peakField * 0.60, netField) * (0.50 + 0.50 * vCurvature);
+          finalColor = mix(finalColor, anodalHot, heatBlend * 0.72);
+          finalColor += anodalHot * pow(t, 2.0) * 0.22 * (0.35 + 0.65 * vCurvature);
+        } else if (netField < -0.03) {
+          float t = clamp((-netField - 0.03) / (peakField * 0.75), 0.0, 1.0) * pulse;
+          // Cathodal Inhibition: twilight navy -> sapphire -> electric cyan -> ice aquamarine
+          vec3 c1 = vec3(0.10, 0.26, 0.68); // navy
+          vec3 c2 = vec3(0.06, 0.52, 0.95); // sapphire
+          vec3 c3 = vec3(0.12, 0.85, 1.00); // cyan
+          vec3 c4 = vec3(0.60, 0.95, 1.00); // ice aquamarine
+
+          vec3 cathodalCool = (t < 0.28) ? mix(c1, c2, t / 0.28) :
+                              (t < 0.65) ? mix(c2, c3, (t - 0.28) / 0.37) :
+                                           mix(c3, c4, (t - 0.65) / 0.35);
+
+          // Blend with tissue preserving sulcal depth shadows
+          float coolBlend = smoothstep(0.03, peakField * 0.60, -netField) * (0.50 + 0.50 * vCurvature);
+          finalColor = mix(finalColor, cathodalCool, coolBlend * 0.72);
+          finalColor += cathodalCool * pow(t, 2.0) * 0.22 * (0.35 + 0.65 * vCurvature);
         }
       }
 
       gl_FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
+    }
+  `
+};
+
+// Holographic Medical Face Shader with Fresnel Silhouette Rim Lighting
+const HolographicFaceShader = {
+  uniforms: {
+    uColor: { value: new THREE.Color('#38BDF8') },
+    uTime: { value: 0.0 },
+    uOpacity: { value: 0.85 },
+  },
+  vertexShader: `
+    varying vec3 vWorldNormal;
+    varying vec3 vWorldPosition;
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      vWorldNormal = normalize(normalMatrix * normal);
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = worldPos.xyz;
+      gl_Position = projectionMatrix * viewMatrix * worldPos;
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 uColor;
+    uniform float uTime;
+    uniform float uOpacity;
+    varying vec3 vWorldNormal;
+    varying vec3 vWorldPosition;
+    varying vec2 vUv;
+
+    void main() {
+      vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+      float nDotV = max(dot(vWorldNormal, viewDir), 0.0);
+      // Fresnel silhouette rim glow
+      float fresnel = pow(1.0 - nDotV, 2.8);
+
+      // Soft holographic cyan glow on contours (profile, nose, lips, chin, ears)
+      vec3 glowColor = mix(vec3(0.04, 0.20, 0.36), uColor, fresnel);
+      glowColor += vec3(0.5, 0.85, 1.0) * pow(fresnel, 4.0) * 0.5;
+
+      // Optical transparency: high clarity when facing camera (0.05), luminous glow at edges (0.80)
+      float alpha = clamp(0.04 + fresnel * 0.72, 0.0, 0.88) * uOpacity;
+
+      gl_FragColor = vec4(glowColor, alpha);
     }
   `
 };
@@ -344,25 +424,44 @@ const BrainScene: React.FC<BrainSceneProps> = ({
     []
   );
 
-  const { facialContoursGeometry, facialMaskGeometry } = useMemo(
+  const { facialContoursGeometry, facialMaskGeometry, orientationRingGeometry } = useMemo(
     () => createHumanFaceGeometry(),
     []
   );
 
   const meridianArcsGeo = useMemo(() => create1020MeridianArcs(), []);
 
-  // Dynamically scale curved pad geometry with padAreaCm2 slider (Video Feedback #11)
-  const curvedPadGeo = useMemo(() => {
-    const scale = Math.sqrt(Math.max(4.0, padAreaCm2) / 25.0);
-    const w = 0.16 * scale;
-    const h = 0.16 * scale;
-    return createCurvedPadGeometry(w, h, 0.024, 1.0);
+  // Dynamically scale curved pad geometry with padAreaCm2 slider
+  const padScale = useMemo(() => {
+    return Math.sqrt(Math.max(4.0, padAreaCm2) / 25.0);
   }, [padAreaCm2]);
+
+  const curvedPadGeo = useMemo(() => {
+    const w = 0.16 * padScale;
+    const h = 0.16 * padScale;
+    return createCurvedPadGeometry(w, h, 0.024, 1.0);
+  }, [padScale]);
 
   const neckShouldersGeo = useMemo(() => createNeckAndShoulderGeometry(), []);
 
   const anodeNode = BRAIN_NODES[anodeId] || BRAIN_NODES['F3'];
   const cathodeNode = BRAIN_NODES[cathodeId] || BRAIN_NODES['Fp2'];
+
+  const anodeLeadWireGeo = useMemo(() => {
+    return createLeadWireGeometry(
+      anodeNode.pos3D,
+      anodeNode.normal,
+      [0.18, -0.75, -0.65]
+    );
+  }, [anodeNode]);
+
+  const cathodeLeadWireGeo = useMemo(() => {
+    return createLeadWireGeometry(
+      cathodeNode.pos3D,
+      cathodeNode.normal,
+      [-0.18, -0.75, -0.65]
+    );
+  }, [cathodeNode]);
 
   const heatmapMatRef = useRef<THREE.ShaderMaterial>(null);
   const pointCloudMatRef = useRef<THREE.ShaderMaterial>(null);
@@ -546,30 +645,37 @@ const BrainScene: React.FC<BrainSceneProps> = ({
             <lineBasicMaterial
               color="#38BDF8"
               transparent
-              opacity={0.75}
+              opacity={0.80}
               depthWrite={false}
             />
           </lineSegments>
 
-          {/* Translucent facial skin surface mask */}
+          {/* Continuous 3D Holographic Head and Face Mesh */}
           <mesh geometry={facialMaskGeometry}>
-            <meshStandardMaterial
-              color="#38BDF8"
-              emissive="#0284C7"
-              emissiveIntensity={0.25}
+            <shaderMaterial
+              vertexShader={HolographicFaceShader.vertexShader}
+              fragmentShader={HolographicFaceShader.fragmentShader}
+              uniforms={HolographicFaceShader.uniforms}
               transparent
-              opacity={0.16}
-              roughness={0.4}
-              metalness={0.2}
               depthWrite={false}
-              side={THREE.DoubleSide}
+              side={THREE.FrontSide}
             />
           </mesh>
 
+          {/* Skull Base Orientation Compass Ring */}
+          <lineSegments geometry={orientationRingGeometry}>
+            <lineBasicMaterial
+              color="#38BDF8"
+              transparent
+              opacity={0.50}
+              depthWrite={false}
+            />
+          </lineSegments>
+
           {/* Anterior orientation indicator text */}
           <Text
-            position={[0, -0.66, 1.02]}
-            fontSize={0.038}
+            position={[0, -0.66, 1.22]}
+            fontSize={0.040}
             color="#38BDF8"
             anchorX="center"
             anchorY="top"
@@ -637,7 +743,7 @@ const BrainScene: React.FC<BrainSceneProps> = ({
         visible={showStreamlines}
       />
 
-      {/* Anode Pad (+) - Dynamic scaled size conforming flush to calvarium (BUG-07 & Video Feedback #11) */}
+      {/* Anode Assembly: Sponge Sleeve, Conductive Core, Silicone Rim, Gold Rivet, Lead Wire, and Clinical Status Badge */}
       <group
         position={[
           anodeNode.pos3D[0] + anodeNode.normal[0] * 0.012,
@@ -646,6 +752,7 @@ const BrainScene: React.FC<BrainSceneProps> = ({
         ]}
         quaternion={anodeQuat}
       >
+        {/* 1. Base Saline Sponge Pad */}
         <mesh
           geometry={curvedPadGeo}
           position={[0, 0, 0.012]}
@@ -663,24 +770,80 @@ const BrainScene: React.FC<BrainSceneProps> = ({
           }}
         >
           <meshStandardMaterial
-            color="#FF3333"
-            emissive="#FF1111"
-            emissiveIntensity={0.85}
-            roughness={0.3}
+            color="#E2E8F0"
+            roughness={0.72}
+            metalness={0.04}
           />
         </mesh>
-        <Text
-          position={[0, 0, 0.026]}
-          fontSize={padLabelFontSize}
-          color="#FFFFFF"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {`+ ${anodeNode.id}`}
-        </Text>
+
+        {/* 2. Silicone Perimeter Frame (Clinical Red) */}
+        <mesh position={[0, 0, 0.022]} scale={[1.02, 1.02, 0.22]}>
+          <boxGeometry args={[0.16 * padScale, 0.16 * padScale, 0.012]} />
+          <meshStandardMaterial
+            color="#EF4444"
+            emissive="#DC2626"
+            emissiveIntensity={0.65}
+            roughness={0.35}
+          />
+        </mesh>
+
+        {/* 3. Conductive Carbon Rubber Plate Core */}
+        <mesh position={[0, 0, 0.024]} scale={[0.82, 0.82, 0.28]}>
+          <boxGeometry args={[0.16 * padScale, 0.16 * padScale, 0.012]} />
+          <meshStandardMaterial
+            color="#1E293B"
+            roughness={0.88}
+            metalness={0.15}
+          />
+        </mesh>
+
+        {/* 4. Center Machined Gold Snap Connector Stud */}
+        <mesh position={[0, 0, 0.036]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.018, 0.018, 0.014, 20]} />
+          <meshStandardMaterial
+            color="#F59E0B"
+            metalness={0.92}
+            roughness={0.18}
+            emissive="#D97706"
+            emissiveIntensity={0.35}
+          />
+        </mesh>
+
+        {/* 5. Strain-Relief Boot Collar */}
+        <mesh position={[0, 0, 0.044]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.012, 0.016, 0.012, 16]} />
+          <meshStandardMaterial color="#334155" roughness={0.5} />
+        </mesh>
+
+        {/* 6. Clinical Status Badge */}
+        <group position={[0, 0.088 * padScale + 0.032, 0.032]}>
+          <mesh>
+            <planeGeometry args={[0.16, 0.044]} />
+            <meshBasicMaterial color="#0B132B" transparent opacity={0.90} side={THREE.DoubleSide} />
+          </mesh>
+          <Text
+            position={[0, 0, 0.005]}
+            fontSize={padLabelFontSize * 0.52}
+            color="#EF4444"
+            anchorX="center"
+            anchorY="middle"
+            fontWeight="bold"
+          >
+            {`+ ANODE (${anodeNode.id})`}
+          </Text>
+        </group>
       </group>
 
-      {/* Cathode Pad (-) or HD 4x1 Rings */}
+      {/* Anode Flexible Medical Lead Wire Cable */}
+      <mesh geometry={anodeLeadWireGeo}>
+        <meshStandardMaterial
+          color="#EF4444"
+          roughness={0.35}
+          metalness={0.15}
+        />
+      </mesh>
+
+      {/* Cathode Assembly or HD 4x1 Rings */}
       {montageType === 'hd4x1' && surroundNodes ? (
         surroundNodes.map((sId) => {
           const sNode = BRAIN_NODES[sId];
@@ -699,13 +862,24 @@ const BrainScene: React.FC<BrainSceneProps> = ({
               ]}
               quaternion={q}
             >
+              {/* Soterix Ag/AgCl Delrin collar ring */}
               <mesh position={[0, 0, 0.012]}>
-                <ringGeometry args={[0.04, 0.08, 24]} />
-                <meshBasicMaterial color="#00D2FF" side={THREE.DoubleSide} />
+                <torusGeometry args={[0.048, 0.010, 16, 28]} />
+                <meshStandardMaterial color="#F1F5F9" roughness={0.3} metalness={0.1} />
+              </mesh>
+              {/* Inner conductive Ag/AgCl ring */}
+              <mesh position={[0, 0, 0.012]}>
+                <ringGeometry args={[0.034, 0.046, 24]} />
+                <meshStandardMaterial color="#CBD5E1" metalness={0.85} roughness={0.2} side={THREE.DoubleSide} />
+              </mesh>
+              {/* Central conductive electrolyte gel */}
+              <mesh position={[0, 0, 0.010]}>
+                <circleGeometry args={[0.034, 24]} />
+                <meshStandardMaterial color="#00D2FF" transparent opacity={0.65} side={THREE.DoubleSide} />
               </mesh>
               <Text
-                position={[0, 0, 0.025]}
-                fontSize={0.038}
+                position={[0, 0, 0.026]}
+                fontSize={0.032}
                 color="#38BDF8"
                 anchorX="center"
                 anchorY="middle"
@@ -716,47 +890,106 @@ const BrainScene: React.FC<BrainSceneProps> = ({
           );
         })
       ) : (
-        <group
-          position={[
-            cathodeNode.pos3D[0] + cathodeNode.normal[0] * 0.012,
-            cathodeNode.pos3D[1] + cathodeNode.normal[1] * 0.012,
-            cathodeNode.pos3D[2] + cathodeNode.normal[2] * 0.012
-          ]}
-          quaternion={cathodeQuat}
-        >
-          <mesh
-            geometry={curvedPadGeo}
-            position={[0, 0, 0.012]}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setDraggingElectrode('cathode');
-              document.body.style.cursor = 'grabbing';
-            }}
-            onPointerOver={(e) => {
-              e.stopPropagation();
-              if (!draggingElectrode) document.body.style.cursor = 'grab';
-            }}
-            onPointerOut={() => {
-              if (!draggingElectrode) document.body.style.cursor = 'auto';
-            }}
+        <>
+          <group
+            position={[
+              cathodeNode.pos3D[0] + cathodeNode.normal[0] * 0.012,
+              cathodeNode.pos3D[1] + cathodeNode.normal[1] * 0.012,
+              cathodeNode.pos3D[2] + cathodeNode.normal[2] * 0.012
+            ]}
+            quaternion={cathodeQuat}
           >
+            {/* 1. Base Saline Sponge Pad */}
+            <mesh
+              geometry={curvedPadGeo}
+              position={[0, 0, 0.012]}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                setDraggingElectrode('cathode');
+                document.body.style.cursor = 'grabbing';
+              }}
+              onPointerOver={(e) => {
+                e.stopPropagation();
+                if (!draggingElectrode) document.body.style.cursor = 'grab';
+              }}
+              onPointerOut={() => {
+                if (!draggingElectrode) document.body.style.cursor = 'auto';
+              }}
+            >
+              <meshStandardMaterial
+                color="#E2E8F0"
+                roughness={0.72}
+                metalness={0.04}
+              />
+            </mesh>
+
+            {/* 2. Silicone Perimeter Frame (Clinical Blue) */}
+            <mesh position={[0, 0, 0.022]} scale={[1.02, 1.02, 0.22]}>
+              <boxGeometry args={[0.16 * padScale, 0.16 * padScale, 0.012]} />
+              <meshStandardMaterial
+                color="#0EA5E9"
+                emissive="#0284C7"
+                emissiveIntensity={0.65}
+                roughness={0.35}
+              />
+            </mesh>
+
+            {/* 3. Conductive Carbon Rubber Plate Core */}
+            <mesh position={[0, 0, 0.024]} scale={[0.82, 0.82, 0.28]}>
+              <boxGeometry args={[0.16 * padScale, 0.16 * padScale, 0.012]} />
+              <meshStandardMaterial
+                color="#1E293B"
+                roughness={0.88}
+                metalness={0.15}
+              />
+            </mesh>
+
+            {/* 4. Center Machined Chrome Snap Connector Stud */}
+            <mesh position={[0, 0, 0.036]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.018, 0.018, 0.014, 20]} />
+              <meshStandardMaterial
+                color="#E2E8F0"
+                metalness={0.95}
+                roughness={0.15}
+                emissive="#38BDF8"
+                emissiveIntensity={0.25}
+              />
+            </mesh>
+
+            {/* 5. Strain-Relief Boot Collar */}
+            <mesh position={[0, 0, 0.044]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.012, 0.016, 0.012, 16]} />
+              <meshStandardMaterial color="#334155" roughness={0.5} />
+            </mesh>
+
+            {/* 6. Clinical Status Badge */}
+            <group position={[0, 0.088 * padScale + 0.032, 0.032]}>
+              <mesh>
+                <planeGeometry args={[0.17, 0.044]} />
+                <meshBasicMaterial color="#0B132B" transparent opacity={0.90} side={THREE.DoubleSide} />
+              </mesh>
+              <Text
+                position={[0, 0, 0.005]}
+                fontSize={padLabelFontSize * 0.52}
+                color="#0EA5E9"
+                anchorX="center"
+                anchorY="middle"
+                fontWeight="bold"
+              >
+                {`- CATHODE (${cathodeNode.id})`}
+              </Text>
+            </group>
+          </group>
+
+          {/* Cathode Flexible Medical Lead Wire Cable */}
+          <mesh geometry={cathodeLeadWireGeo}>
             <meshStandardMaterial
-              color="#00D2FF"
-              emissive="#0099DD"
-              emissiveIntensity={0.85}
-              roughness={0.3}
+              color="#0284C7"
+              roughness={0.35}
+              metalness={0.15}
             />
           </mesh>
-          <Text
-            position={[0, 0, 0.026]}
-            fontSize={padLabelFontSize}
-            color="#FFFFFF"
-            anchorX="center"
-            anchorY="middle"
-          >
-            {`- ${cathodeNode.id}`}
-          </Text>
-        </group>
+        </>
       )}
 
       {/* Interactive 10-20 Scalp Target Nodes - High Visibility & Glowing Halo (Video Feedback #4 & #5) */}

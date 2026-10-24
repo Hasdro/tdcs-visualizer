@@ -10,6 +10,14 @@ export interface BrainGeometryData {
 export interface HumanFaceGeometryData {
   facialContoursGeometry: THREE.BufferGeometry;
   facialMaskGeometry: THREE.BufferGeometry;
+  orientationRingGeometry: THREE.BufferGeometry;
+  fiducials: {
+    nasion: [number, number, number];
+    inion: [number, number, number];
+    lpa: [number, number, number];
+    rpa: [number, number, number];
+    cz: [number, number, number];
+  };
 }
 
 /**
@@ -18,9 +26,8 @@ export interface HumanFaceGeometryData {
  * biological anatomical lobes, serpentine gyral folds, and deep sulcal fissures.
  */
 export function createBiHemisphericBrainGeometry(): BrainGeometryData {
-  // Ultra-detailed hemisphere resolution
-  const uSegments = 88;
-  const vSegments = 88;
+  const uSegments = 80;
+  const vSegments = 80;
 
   const positions: number[] = [];
   const normals: number[] = [];
@@ -35,51 +42,47 @@ export function createBiHemisphericBrainGeometry(): BrainGeometryData {
     curvature: number;
   } {
     // Spherical base mapping: theta around pole (0 to PI), phi around equator
-    const theta = v * Math.PI; // 0 (superior crown) to PI (inferior base)
+    const theta = v * Math.PI * 0.94; // Crown down to cerebellar base
     const phi = isRightHemisphere
-      ? (u * Math.PI * 0.965) + 0.018 // right hemisphere
-      : (u * Math.PI * 0.965) + Math.PI + 0.018; // left hemisphere
+      ? (u * Math.PI * 0.97) + 0.015
+      : (u * Math.PI * 0.97) + Math.PI + 0.015;
 
     // Base unit sphere coordinates
     let x = Math.sin(theta) * Math.sin(phi);
     let y = Math.cos(theta);
     let z = Math.sin(theta) * Math.cos(phi);
 
-    // Cranial anatomical proportions (Brodmann/Talairach proportions)
-    // X: lateral width (~0.73)
-    // Y: superior-inferior height (~0.76)
-    // Z: anterior-posterior length (~0.90)
-    let rx = 0.73;
+    // Cranial anatomical proportions (Brodmann / Talairach standard)
+    let rx = 0.72;
     let ry = 0.76;
-    let rz = 0.90;
+    let rz = 0.88;
 
-    // 1. Anterior frontal pole tapering (Z > 0.2)
-    if (z > 0.20) {
-      const fTaper = 1.0 - 0.16 * ((z - 0.20) / 0.70);
+    // 1. Anterior frontal pole tapering (Z > 0.16)
+    if (z > 0.16) {
+      const fTaper = 1.0 - 0.15 * Math.min(1.0, (z - 0.16) / 0.64);
       rx *= fTaper;
     }
 
-    // 2. Parietal boss expansion (dorsal posterior Z in [-0.5, 0.2])
-    if (z < 0.20 && z > -0.55 && y > 0.0) {
-      const pExpand = 1.0 + 0.08 * Math.sin(((z + 0.55) / 0.75) * Math.PI);
+    // 2. Parietal lateral expansion (dorsal posterior Z in [-0.52, 0.16])
+    if (z < 0.16 && z > -0.52 && y > 0.02) {
+      const pExpand = 1.0 + 0.075 * Math.sin(((z + 0.52) / 0.68) * Math.PI);
       rx *= pExpand;
     }
 
     // 3. Temporal lobe lateral & inferior bulge (T7 / T8 area)
-    if (y < 0.10 && y > -0.48 && z > -0.32 && z < 0.42) {
-      const tempFactor = Math.cos(((y + 0.18) / 0.32) * Math.PI * 0.5) *
-                         Math.cos(((z - 0.05) / 0.38) * Math.PI * 0.5);
-      rx += 0.085 * Math.max(0, tempFactor);
-      ry -= 0.035 * Math.max(0, tempFactor);
+    if (y < 0.10 && y > -0.46 && z > -0.32 && z < 0.40) {
+      const tempFact = Math.cos(((y + 0.18) / 0.28) * Math.PI * 0.5) *
+                       Math.cos(((z - 0.04) / 0.36) * Math.PI * 0.5);
+      rx += 0.095 * Math.max(0, tempFact);
+      ry -= 0.035 * Math.max(0, tempFact);
     }
 
-    // 4. Occipital pole narrowing and ventral notch for cerebellum
-    if (z < -0.38) {
-      const occTaper = 1.0 - 0.14 * Math.min(1.0, (-z - 0.38) / 0.52);
+    // 4. Occipital pole tapering and cerebellar fossa
+    if (z < -0.36) {
+      const occTaper = 1.0 - 0.14 * Math.min(1.0, (-z - 0.36) / 0.52);
       rx *= occTaper;
-      if (y < -0.12) {
-        // Indentation for cerebellar fossa
-        ry *= 0.84;
+      if (y < -0.14) {
+        ry *= 0.86;
         rz *= 0.94;
       }
     }
@@ -88,51 +91,61 @@ export function createBiHemisphericBrainGeometry(): BrainGeometryData {
     let py = y * ry;
     let pz = z * rz;
 
-    // 5. Interhemispheric Longitudinal Fissure
-    // As x approaches 0 near midline, carve deeply inward
+    // 5. Interhemispheric Longitudinal Fissure (Deep medial cleft separating left and right)
     const medialDist = Math.abs(px);
-    if (py > -0.32 && pz > -0.82) {
-      const fissureDepth = 0.135 * Math.exp(-(medialDist * medialDist) / 0.0075);
+    if (py > -0.38 && pz > -0.85) {
+      const fissureDepth = 0.145 * Math.exp(-(medialDist * medialDist) / 0.006);
       if (isRightHemisphere) {
-        px = Math.max(0.016, px - fissureDepth * 0.5);
+        px = Math.max(0.015, px - fissureDepth * 0.55);
       } else {
-        px = Math.min(-0.016, px + fissureDepth * 0.5);
+        px = Math.min(-0.015, px + fissureDepth * 0.55);
       }
     }
 
-    // 6. Realistic biological gyri & sulci with domain warping
-    // Creates organic serpentine convolutions rather than uniform mathematical checkerboards
-    const warpX = Math.sin(py * 8.5 + pz * 7.2) * 0.14;
-    const warpY = Math.cos(px * 8.2 + pz * 6.8) * 0.14;
-    const warpZ = Math.sin(px * 7.5 + py * 7.5) * 0.14;
+    // 6. 3D Vector Domain Warping for Organic Serpentine Gyri
+    // Twists folds into natural labyrinthine convolutions rather than linear bands
+    const warpX = Math.sin(py * 7.5 + pz * 6.2) * 0.16 + Math.cos(pz * 12.0) * 0.05;
+    const warpY = Math.cos(px * 7.2 + pz * 6.5) * 0.16 + Math.sin(px * 12.0) * 0.05;
+    const warpZ = Math.sin(px * 6.8 + py * 7.2) * 0.16 + Math.cos(py * 12.0) * 0.05;
 
-    const g1 = Math.sin((px + warpX) * 14.0 + (py + warpY) * 11.5);
-    const g2 = Math.cos((pz + warpZ) * 16.0 + (py - warpX) * 9.8);
-    const g3 = Math.sin((px * 24.0) + Math.cos(pz * 22.0)) * 0.5;
+    const pWarpX = px + warpX;
+    const pWarpY = py + warpY;
+    const pWarpZ = pz + warpZ;
 
-    // Biological fold equation: rounded crowns (gyri) with deep narrow fissures (sulci)
-    const rawFold = 0.58 * g1 + 0.42 * g2 + 0.22 * g3;
-    // Power-law shaping creates steep narrow sulcal valleys and broad rounded gyral crowns
-    const gyralProfile = Math.sign(rawFold) * Math.pow(Math.abs(rawFold), 0.82);
+    // 4-octave multi-frequency harmonic gyral convolutions
+    const g1 = Math.sin(pWarpX * 12.5 + pWarpY * 10.0 + pWarpZ * 6.5);
+    const g2 = Math.cos(pWarpY * 11.0 - pWarpZ * 13.5 + pWarpX * 7.2);
+    const g3 = Math.sin(pWarpZ * 16.0 + pWarpX * 11.5 - pWarpY * 8.0);
+    const g4 = Math.cos(pWarpX * 20.0 + pWarpY * 18.0 + pWarpZ * 17.0) * 0.5;
 
-    // Anatomical Sylvian (Lateral) Fissure indentation
-    let sylvianDepth = 0;
-    if (y > -0.22 && y < 0.12 && z > -0.25 && z < 0.35 && Math.abs(x) > 0.45) {
-      sylvianDepth = 0.038 * Math.cos(((y + 0.05) / 0.17) * Math.PI * 0.5) *
-                             Math.cos(((z - 0.05) / 0.30) * Math.PI * 0.5);
+    const rawFold = 0.44 * g1 + 0.38 * g2 + 0.26 * g3 + 0.14 * g4;
+    // Power-law shaping: steep narrow sulcal valleys and broad rounded gyral crowns
+    const gyralProfile = Math.sign(rawFold) * Math.pow(Math.abs(rawFold), 0.76);
+
+    // 7. Major Anatomical Sulci
+    // Central sulcus (Rolandic fissure) dividing precentral motor and postcentral sensory cortex
+    let centralSulcus = 0;
+    const rolandicPlane = pz - 0.28 * py - 0.02;
+    if (Math.abs(rolandicPlane) < 0.07 && py > 0.12) {
+      centralSulcus = 0.034 * Math.cos((rolandicPlane / 0.07) * Math.PI * 0.5);
     }
 
-    // Anatomical Central Sulcus groove (coronal band around z ~ 0.0)
-    let centralSulcusDepth = 0;
-    if (Math.abs(pz - 0.02) < 0.06 && py > 0.15) {
-      centralSulcusDepth = 0.025 * Math.cos(((pz - 0.02) / 0.06) * Math.PI * 0.5);
+    // Sylvian (lateral) fissure separating temporal lobe from frontal/parietal
+    let sylvianFissure = 0;
+    if (y > -0.22 && y < 0.10 && z > -0.24 && z < 0.34 && Math.abs(x) > 0.42) {
+      sylvianFissure = 0.042 * Math.cos(((y + 0.06) / 0.16) * Math.PI * 0.5) *
+                              Math.cos(((z - 0.05) / 0.29) * Math.PI * 0.5);
     }
 
-    const displacement = (0.046 * gyralProfile) - sylvianDepth - centralSulcusDepth;
+    // Cerebellar transverse horizontal fissure
+    let cerebellarFissure = 0;
+    if (pz < -0.32 && py < -0.16 && py > -0.40) {
+      cerebellarFissure = 0.038 * Math.cos(((py + 0.28) / 0.12) * Math.PI * 0.5);
+    }
 
-    // Unit normal before displacement
-    const baseNorm = new THREE.Vector3(px, py * 1.05, pz * 0.92).normalize();
+    const displacement = (0.048 * gyralProfile) - centralSulcus - sylvianFissure - cerebellarFissure;
 
+    const baseNorm = new THREE.Vector3(px, py * 1.05, pz * 0.95).normalize();
     px += baseNorm.x * displacement;
     py += baseNorm.y * displacement;
     pz += baseNorm.z * displacement;
@@ -250,31 +263,8 @@ export function createBiHemisphericBrainGeometry(): BrainGeometryData {
   const wireframeGeometry = new THREE.BufferGeometry();
   wireframeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
 
-  // Layer 3: Smooth outer head silhouette (calvarium shell)
-  const headSilhouetteGeometry = new THREE.SphereGeometry(1.0, 48, 48);
-  const headPositions = headSilhouetteGeometry.attributes.position;
-  for (let i = 0; i < headPositions.count; i++) {
-    let hx = headPositions.getX(i);
-    let hy = headPositions.getY(i);
-    let hz = headPositions.getZ(i);
-
-    hx *= 0.88;
-    hy *= 0.94;
-    hz *= 1.04;
-
-    if (hy < -0.2) {
-      const neckTaper = 1.0 - 0.25 * ((-hy - 0.2) / 0.8);
-      hx *= neckTaper;
-      hz *= neckTaper;
-    }
-
-    if (hz > 0.85 && hy < 0.1 && hy > -0.3) {
-      hz += 0.05 * Math.sin(((hy + 0.3) / 0.4) * Math.PI);
-    }
-
-    headPositions.setXYZ(i, hx, hy, hz);
-  }
-  headSilhouetteGeometry.computeVertexNormals();
+  // Layer 3: Scalp Silhouette Geodesic Coordinate Shell
+  const headSilhouetteGeometry = new THREE.SphereGeometry(1.035, 48, 36);
 
   return {
     cortexGeometry,
@@ -285,257 +275,305 @@ export function createBiHemisphericBrainGeometry(): BrainGeometryData {
 }
 
 /**
- * Creates 3D Human Face Geometry:
- * - Landmark contours: nose bridge & tip, nostrils, philtrum, upper & lower lips, chin, jawline, eye orbits, brows, and ears.
- * - Translucent face surface mask: conformal facial skin surface in front of the brain/skull ($+z$).
- * This guarantees instantaneous detection of anterior (front) vs posterior (back).
+ * Procedurally generates realistic 3D anatomical human head and face geometry:
+ * - Complete, continuous 3D anatomical head & face mesh encompassing cranium, forehead,
+ *   eye orbits, 3D nose bridge/tip/alar wings, lips, chin, jawline, ears, and neck.
+ * - High-contrast anatomical landmark wireframe contours (brow, eyelids, mouth, ears).
+ * - Calibrated fiducial landmark positions (Nasion, Inion, LPA, RPA, Cz).
  */
 export function createHumanFaceGeometry(): HumanFaceGeometryData {
   const lineSegments: number[] = [];
 
-  // Helper to add Catmull-Rom curve as line segments
   function addCurve(points: THREE.Vector3[], segments = 16) {
     const curve = new THREE.CatmullRomCurve3(points);
-    const pts = curve.getPoints(segments);
-    for (let i = 0; i < pts.length - 1; i++) {
-      lineSegments.push(pts[i].x, pts[i].y, pts[i].z);
-      lineSegments.push(pts[i + 1].x, pts[i + 1].y, pts[i + 1].z);
+    const curvePts = curve.getPoints(segments);
+    for (let i = 0; i < curvePts.length - 1; i++) {
+      lineSegments.push(curvePts[i].x, curvePts[i].y, curvePts[i].z);
+      lineSegments.push(curvePts[i + 1].x, curvePts[i + 1].y, curvePts[i + 1].z);
     }
   }
 
-  // Helper to add closed loop
   function addClosedLoop(points: THREE.Vector3[], segments = 20) {
     const curve = new THREE.CatmullRomCurve3(points, true);
-    const pts = curve.getPoints(segments);
-    for (let i = 0; i < pts.length - 1; i++) {
-      lineSegments.push(pts[i].x, pts[i].y, pts[i].z);
-      lineSegments.push(pts[i + 1].x, pts[i + 1].y, pts[i + 1].z);
+    const curvePts = curve.getPoints(segments);
+    for (let i = 0; i < curvePts.length; i++) {
+      const p1 = curvePts[i];
+      const p2 = curvePts[(i + 1) % curvePts.length];
+      lineSegments.push(p1.x, p1.y, p1.z);
+      lineSegments.push(p2.x, p2.y, p2.z);
     }
   }
 
-  // 1. Sagittal Nasal Bridge & Nose Profile (Prominent anterior feature along +z)
+  // 1. Forehead & Eyebrow Arches
+  for (const side of [-1, 1]) {
+    addCurve([
+      new THREE.Vector3(side * 0.08, 0.22, 1.01),
+      new THREE.Vector3(side * 0.22, 0.25, 0.99),
+      new THREE.Vector3(side * 0.42, 0.22, 0.92),
+      new THREE.Vector3(side * 0.54, 0.16, 0.82),
+    ], 16);
+  }
+
+  // 2. Glabella & Nose Ridge
   addCurve([
-    new THREE.Vector3(0.0, 0.24, 1.01),   // Glabella / lower forehead
-    new THREE.Vector3(0.0, 0.14, 1.03),   // Nasion dip
-    new THREE.Vector3(0.0, 0.04, 1.13),   // Rhinion / nasal bone
-    new THREE.Vector3(0.0, -0.05, 1.22),  // Supratip break
-    new THREE.Vector3(0.0, -0.10, 1.28),  // Pronasale (Nose Tip forward protrusion)
-    new THREE.Vector3(0.0, -0.16, 1.20),  // Columella
-    new THREE.Vector3(0.0, -0.22, 1.08),  // Subnasale
-  ], 24);
+    new THREE.Vector3(0.0, 0.24, 1.01),
+    new THREE.Vector3(0.0, 0.12, 1.02),
+    new THREE.Vector3(0.0, -0.02, 1.07),
+    new THREE.Vector3(0.0, -0.12, 1.14), // Pronasale (tip)
+    new THREE.Vector3(0.0, -0.16, 1.08), // Columella base
+  ], 20);
 
-  // 2. Left & Right Nostril / Alar Wings
+  // 3. Nostril Wings (Alar Bases)
   for (const side of [-1, 1]) {
     addCurve([
-      new THREE.Vector3(0.0, -0.10, 1.28),          // Tip
-      new THREE.Vector3(side * 0.06, -0.12, 1.22),  // Alar curve superior
-      new THREE.Vector3(side * 0.11, -0.15, 1.14),  // Alar flare lateral
-      new THREE.Vector3(side * 0.09, -0.19, 1.08),  // Alar base
-      new THREE.Vector3(0.0, -0.22, 1.08),          // Subnasale
-    ], 16);
-  }
-
-  // 3. Eyebrows (Supraorbital Arches)
-  for (const side of [-1, 1]) {
-    addCurve([
-      new THREE.Vector3(side * 0.10, 0.21, 1.02),   // Medial head
-      new THREE.Vector3(side * 0.28, 0.25, 0.98),   // Arch peak
-      new THREE.Vector3(side * 0.46, 0.22, 0.86),   // Lateral body
-      new THREE.Vector3(side * 0.58, 0.16, 0.74),   // Lateral tail
-    ], 16);
-  }
-
-  // 4. Eye Orbits (Almond-shaped eyelids & pupil indicator)
-  for (const side of [-1, 1]) {
-    // Upper eyelid
-    addCurve([
-      new THREE.Vector3(side * 0.15, 0.08, 1.00),   // Inner canthus
-      new THREE.Vector3(side * 0.28, 0.14, 0.97),   // Upper lid apex
-      new THREE.Vector3(side * 0.44, 0.09, 0.89),   // Outer canthus
+      new THREE.Vector3(0.0, -0.12, 1.14),
+      new THREE.Vector3(side * 0.08, -0.13, 1.11),
+      new THREE.Vector3(side * 0.12, -0.16, 1.06),
+      new THREE.Vector3(side * 0.05, -0.17, 1.04),
+      new THREE.Vector3(0.0, -0.16, 1.08)
     ], 14);
-
-    // Lower eyelid
-    addCurve([
-      new THREE.Vector3(side * 0.15, 0.08, 1.00),   // Inner canthus
-      new THREE.Vector3(side * 0.28, 0.03, 0.96),   // Lower lid
-      new THREE.Vector3(side * 0.44, 0.09, 0.89),   // Outer canthus
-    ], 14);
-
-    // Pupil / Iris circle
-    const eyeCenter = new THREE.Vector3(side * 0.29, 0.085, 0.965);
-    const pupilPts: THREE.Vector3[] = [];
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2;
-      pupilPts.push(new THREE.Vector3(
-        eyeCenter.x + Math.cos(a) * 0.035,
-        eyeCenter.y + Math.sin(a) * 0.035,
-        eyeCenter.z
-      ));
-    }
-    addClosedLoop(pupilPts, 12);
   }
 
-  // 5. Philtrum Columns (Upper lip ridges)
+  // 4. Eyes & Orbital Rims
+  for (const side of [-1, 1]) {
+    addClosedLoop([
+      new THREE.Vector3(side * 0.16, 0.10, 0.99),
+      new THREE.Vector3(side * 0.28, 0.16, 0.96),
+      new THREE.Vector3(side * 0.44, 0.10, 0.89),
+      new THREE.Vector3(side * 0.30, 0.02, 0.94),
+    ], 20);
+
+    // Eyelid slit
+    addCurve([
+      new THREE.Vector3(side * 0.16, 0.09, 0.99),
+      new THREE.Vector3(side * 0.29, 0.08, 0.965),
+      new THREE.Vector3(side * 0.43, 0.09, 0.89),
+    ], 12);
+  }
+
+  // 5. Philtrum & Mouth Lips
   for (const side of [-1, 1]) {
     addCurve([
-      new THREE.Vector3(side * 0.025, -0.22, 1.08),
-      new THREE.Vector3(side * 0.035, -0.27, 1.10)
+      new THREE.Vector3(side * 0.025, -0.18, 1.07),
+      new THREE.Vector3(side * 0.035, -0.25, 1.09)
     ], 6);
   }
 
-  // 6. Mouth & Lips
-  // Upper lip vermilion (Cupid's bow)
+  // Upper Lip (Cupid's bow)
   addCurve([
-    new THREE.Vector3(-0.20, -0.32, 1.00), // Left commissure (mouth corner)
-    new THREE.Vector3(-0.04, -0.27, 1.10), // Left peak
-    new THREE.Vector3(0.0, -0.28, 1.09),   // Cupid's notch
-    new THREE.Vector3(0.04, -0.27, 1.10),  // Right peak
-    new THREE.Vector3(0.20, -0.32, 1.00),  // Right commissure
-  ], 20);
+    new THREE.Vector3(-0.19, -0.30, 1.00),
+    new THREE.Vector3(-0.04, -0.26, 1.09),
+    new THREE.Vector3(0.0, -0.27, 1.08),
+    new THREE.Vector3(0.04, -0.26, 1.09),
+    new THREE.Vector3(0.19, -0.30, 1.00),
+  ], 18);
 
-  // Stomion (lip seal line)
+  // Stomion (lip seal)
   addCurve([
-    new THREE.Vector3(-0.20, -0.32, 1.00),
-    new THREE.Vector3(0.0, -0.32, 1.08),
-    new THREE.Vector3(0.20, -0.32, 1.00),
+    new THREE.Vector3(-0.19, -0.30, 1.00),
+    new THREE.Vector3(0.0, -0.30, 1.07),
+    new THREE.Vector3(0.19, -0.30, 1.00),
   ], 14);
 
-  // Lower lip vermilion
+  // Lower Lip
   addCurve([
-    new THREE.Vector3(-0.20, -0.32, 1.00),
-    new THREE.Vector3(0.0, -0.39, 1.06),
-    new THREE.Vector3(0.20, -0.32, 1.00),
+    new THREE.Vector3(-0.19, -0.30, 1.00),
+    new THREE.Vector3(0.0, -0.37, 1.05),
+    new THREE.Vector3(0.19, -0.30, 1.00),
   ], 16);
 
-  // 7. Chin (Mentum) & Labiomental Groove
+  // 6. Chin & Jawline
   addCurve([
-    new THREE.Vector3(-0.10, -0.44, 0.99),
-    new THREE.Vector3(0.0, -0.44, 1.01),
-    new THREE.Vector3(0.10, -0.44, 0.99),
-  ], 10);
-
-  addCurve([
-    new THREE.Vector3(-0.14, -0.52, 0.98),
-    new THREE.Vector3(0.0, -0.52, 1.04), // Pogonion forward projection
-    new THREE.Vector3(0.14, -0.52, 0.98),
+    new THREE.Vector3(-0.12, -0.50, 0.99),
+    new THREE.Vector3(0.0, -0.50, 1.05),
+    new THREE.Vector3(0.12, -0.50, 0.99),
   ], 12);
 
-  // 8. Mandibular Jawline (Connecting chin back to ears)
   for (const side of [-1, 1]) {
     addCurve([
-      new THREE.Vector3(0.0, -0.56, 1.00),         // Gnathion / chin tip
-      new THREE.Vector3(side * 0.18, -0.54, 0.92), // Jawline front
-      new THREE.Vector3(side * 0.44, -0.50, 0.70), // Mandible body
-      new THREE.Vector3(side * 0.68, -0.42, 0.32), // Mandible angle (Gonion)
-      new THREE.Vector3(side * 0.76, -0.25, 0.10), // Ascending ramus to ear
+      new THREE.Vector3(0.0, -0.54, 1.01),
+      new THREE.Vector3(side * 0.20, -0.52, 0.92),
+      new THREE.Vector3(side * 0.46, -0.47, 0.68),
+      new THREE.Vector3(side * 0.68, -0.40, 0.32),
+      new THREE.Vector3(side * 0.76, -0.22, 0.08),
     ], 20);
   }
 
-  // 9. Cheekbones (Zygomatic Arches)
+  // 7. Ears (Auricles)
   for (const side of [-1, 1]) {
-    addCurve([
-      new THREE.Vector3(side * 0.42, -0.06, 0.92), // Malar anterior
-      new THREE.Vector3(side * 0.62, -0.05, 0.76), // Cheek prominence
-      new THREE.Vector3(side * 0.78, -0.03, 0.36), // Arch lateral
-    ], 14);
-  }
-
-  // 10. Left & Right Ears (Auricles / Pinnae)
-  for (const side of [-1, 1]) {
-    // Outer helix rim loop
     addClosedLoop([
-      new THREE.Vector3(side * 0.82, 0.15, -0.02), // Upper crus
-      new THREE.Vector3(side * 0.91, 0.14, -0.12), // Superior helix
-      new THREE.Vector3(side * 0.94, 0.02, -0.18), // Posterior helix curve
-      new THREE.Vector3(side * 0.90, -0.12, -0.15),// Lower helix
-      new THREE.Vector3(side * 0.84, -0.22, -0.08),// Lobule (earlobe)
-      new THREE.Vector3(side * 0.81, -0.14, 0.02), // Tragus / incisura
-      new THREE.Vector3(side * 0.81, 0.02, 0.03),  // Concha anterior
+      new THREE.Vector3(side * 0.82, 0.14, -0.02),
+      new THREE.Vector3(side * 0.90, 0.13, -0.12),
+      new THREE.Vector3(side * 0.93, 0.01, -0.18),
+      new THREE.Vector3(side * 0.89, -0.13, -0.15),
+      new THREE.Vector3(side * 0.83, -0.22, -0.08),
+      new THREE.Vector3(side * 0.80, -0.13, 0.02),
+      new THREE.Vector3(side * 0.80, 0.01, 0.03),
     ], 24);
-
-    // Inner antihelix fold
-    addCurve([
-      new THREE.Vector3(side * 0.86, 0.09, -0.08),
-      new THREE.Vector3(side * 0.88, 0.01, -0.11),
-      new THREE.Vector3(side * 0.85, -0.10, -0.07),
-    ], 10);
   }
 
   const facialContoursGeometry = new THREE.BufferGeometry();
   facialContoursGeometry.setAttribute('position', new THREE.Float32BufferAttribute(lineSegments, 3));
 
-  // 11. Translucent Conformal Facial Mask Mesh
-  // Smooth grid covering anterior face from brow down to chin and across to cheeks
-  const maskCols = 24;
-  const maskRows = 24;
-  const maskPos: number[] = [];
-  const maskIndices: number[] = [];
+  // 8. Continuous 3D Anatomical Anterior Human Face Mesh
+  // Smooth conformal facial mask covering forehead, eyes, 3D nose, lips, chin, and jawline
+  const uCols = 40;
+  const vRows = 40;
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
 
-  for (let j = 0; j <= maskRows; j++) {
-    const v = j / maskRows;
-    const y = 0.28 - v * 0.88; // from brow (0.28) down to lower chin (-0.60)
-    for (let i = 0; i <= maskCols; i++) {
-      const u = i / maskCols;
-      const angle = (u - 0.5) * Math.PI * 0.72; // horizontal sweep across face
-      let x = Math.sin(angle) * 0.78;
-      let z = Math.cos(angle) * 0.96;
+  for (let j = 0; j <= vRows; j++) {
+    const v = j / vRows;
+    // v = 0 (upper forehead / hairline py ~ 0.38) down to v = 1 (submental neck py ~ -0.68)
+    const pyBase = 0.38 - v * 1.06;
+    const rRing = Math.sqrt(Math.max(0.01, 1.0 - Math.pow(pyBase / 0.95, 2)));
 
-      // Sculpt facial features into the surface
-      const xAbs = Math.abs(x);
+    for (let i = 0; i <= uCols; i++) {
+      const u = i / uCols;
+      // Azimuth angle covering anterior 110 degrees (-55 deg to +55 deg)
+      const phi = (u - 0.5) * Math.PI * 0.62;
 
-      // Nose projection
-      if (y > -0.22 && y < 0.18 && xAbs < 0.16) {
-        const noseProfile = Math.cos((xAbs / 0.16) * Math.PI * 0.5);
-        const yNose = (y + 0.10) / 0.18;
-        const noseProtrusion = Math.max(0, 0.26 * Math.exp(-yNose * yNose));
-        z += noseProtrusion * noseProfile;
+      let rx = 0.84;
+      let rz = 0.98;
+
+      let px = Math.sin(phi) * rRing * rx;
+      let py = pyBase;
+      let pz = Math.cos(phi) * rRing * rz;
+
+      const xAbs = Math.abs(px);
+
+      // 1. Forehead and supraorbital brow ridge
+      if (py > 0.12 && py < 0.28) {
+        const browProfile = Math.cos(((py - 0.20) / 0.08) * Math.PI * 0.5);
+        pz += 0.038 * Math.max(0, browProfile) * Math.max(0, 1.0 - xAbs / 0.5);
       }
 
-      // Eye orbit depression
-      if (y > 0.0 && y < 0.18 && xAbs > 0.14 && xAbs < 0.44) {
-        const eyeFactor = Math.sin(((xAbs - 0.14) / 0.30) * Math.PI) *
-                          Math.sin(((y - 0.0) / 0.18) * Math.PI);
-        z -= 0.045 * eyeFactor;
+      // 2. Glabella & Nasion (indentation between brows and nose bridge)
+      if (py > 0.08 && py < 0.16 && xAbs < 0.12) {
+        const nasionIndent = Math.cos(((py - 0.12) / 0.04) * Math.PI * 0.5) * (1.0 - xAbs / 0.12);
+        pz -= 0.030 * Math.max(0, nasionIndent);
       }
 
-      // Mouth / Lips protrusion
-      if (y > -0.40 && y < -0.24 && xAbs < 0.22) {
-        const lipFactor = Math.cos((xAbs / 0.22) * Math.PI * 0.5) *
-                          Math.sin(((y + 0.40) / 0.16) * Math.PI);
-        z += 0.055 * Math.max(0, lipFactor);
+      // 3. Orbital eye socket recessions
+      if (py > -0.04 && py < 0.14 && xAbs > 0.12 && xAbs < 0.42) {
+        const orbitFactor = Math.sin(((xAbs - 0.12) / 0.30) * Math.PI) *
+                           Math.sin(((py + 0.04) / 0.18) * Math.PI);
+        pz -= 0.052 * Math.max(0, orbitFactor);
       }
 
-      // Chin projection
-      if (y < -0.44 && y > -0.58 && xAbs < 0.20) {
-        const chinFactor = Math.cos((xAbs / 0.20) * Math.PI * 0.5) *
-                           Math.sin(((-y - 0.44) / 0.14) * Math.PI);
-        z += 0.065 * Math.max(0, chinFactor);
+      // 4. Nose: Bridge, dorsum, tip (lobule), and alar wings
+      if (py > -0.22 && py < 0.12 && xAbs < 0.18) {
+        const noseWidth = 0.07 + 0.06 * Math.max(0, (-py - 0.02) / 0.18);
+        if (xAbs < noseWidth) {
+          const latProfile = Math.cos((xAbs / noseWidth) * Math.PI * 0.5);
+          const tipFactor = Math.exp(-Math.pow((py + 0.12) / 0.07, 2));
+          const dorsumFactor = Math.max(0, (py + 0.22) / 0.34);
+          const protrusion = 0.15 * dorsumFactor + 0.09 * tipFactor;
+          pz += protrusion * latProfile;
+        }
       }
 
-      maskPos.push(x, y, z);
+      // 5. Philtrum & Upper Lip (Cupid's bow)
+      if (py > -0.32 && py < -0.22 && xAbs < 0.24) {
+        const philtrumFactor = Math.cos((xAbs / 0.24) * Math.PI * 0.5);
+        const lipHeight = Math.sin(((py + 0.32) / 0.10) * Math.PI);
+        pz += 0.045 * philtrumFactor * Math.max(0, lipHeight);
+        if (xAbs < 0.035) {
+          pz -= 0.014 * (1.0 - xAbs / 0.035);
+        }
+      }
+
+      // 6. Oral fissure (mouth slit)
+      if (Math.abs(py + 0.33) < 0.03 && xAbs < 0.22) {
+        pz -= 0.024 * Math.cos((xAbs / 0.22) * Math.PI * 0.5);
+      }
+
+      // 7. Lower Lip
+      if (py > -0.42 && py < -0.33 && xAbs < 0.22) {
+        const lipProfile = Math.cos((xAbs / 0.22) * Math.PI * 0.5) *
+                          Math.sin(((py + 0.42) / 0.09) * Math.PI);
+        pz += 0.040 * Math.max(0, lipProfile);
+      }
+
+      // 8. Labiomental crease (groove above chin)
+      if (py > -0.47 && py < -0.41 && xAbs < 0.20) {
+        pz -= 0.022 * Math.cos((xAbs / 0.20) * Math.PI * 0.5);
+      }
+
+      // 9. Chin (Mental protuberance)
+      if (py < -0.44 && py > -0.62 && xAbs < 0.22) {
+        const chinFactor = Math.cos((xAbs / 0.22) * Math.PI * 0.5) *
+                          Math.sin(((-py - 0.44) / 0.18) * Math.PI);
+        pz += 0.070 * Math.max(0, chinFactor);
+      }
+
+      // 10. Cheekbones (Zygomatic prominence)
+      if (py > -0.18 && py < 0.08 && xAbs > 0.32 && xAbs < 0.68) {
+        const cheekFactor = Math.sin(((xAbs - 0.32) / 0.36) * Math.PI) *
+                           Math.sin(((py + 0.18) / 0.26) * Math.PI);
+        px += Math.sign(px) * 0.045 * cheekFactor;
+        pz += 0.038 * cheekFactor;
+      }
+
+      positions.push(px, py, pz);
+      uvs.push(u, v);
     }
   }
 
-  for (let j = 0; j < maskRows; j++) {
-    for (let i = 0; i < maskCols; i++) {
-      const a = j * (maskCols + 1) + i;
-      const b = (j + 1) * (maskCols + 1) + i;
-      const c = (j + 1) * (maskCols + 1) + (i + 1);
-      const d = j * (maskCols + 1) + (i + 1);
+  for (let j = 0; j < vRows; j++) {
+    for (let i = 0; i < uCols; i++) {
+      const a = j * (uCols + 1) + i;
+      const b = (j + 1) * (uCols + 1) + i;
+      const c = (j + 1) * (uCols + 1) + (i + 1);
+      const d = j * (uCols + 1) + (i + 1);
 
-      maskIndices.push(a, b, d);
-      maskIndices.push(b, c, d);
+      indices.push(a, b, d);
+      indices.push(b, c, d);
     }
   }
 
   const facialMaskGeometry = new THREE.BufferGeometry();
-  facialMaskGeometry.setAttribute('position', new THREE.Float32BufferAttribute(maskPos, 3));
-  facialMaskGeometry.setIndex(maskIndices);
+  facialMaskGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  facialMaskGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  facialMaskGeometry.setIndex(indices);
   facialMaskGeometry.computeVertexNormals();
+
+  // 9. Sleek Skull Base Orientation Compass Ring
+  const ringPts: number[] = [];
+  const ringRadius = 1.04;
+  const ringY = -0.66;
+  const segments = 48;
+
+  for (let i = 0; i < segments; i++) {
+    const a1 = (i / segments) * Math.PI * 2;
+    const a2 = ((i + 1) / segments) * Math.PI * 2;
+    ringPts.push(Math.sin(a1) * ringRadius, ringY, Math.cos(a1) * ringRadius);
+    ringPts.push(Math.sin(a2) * ringRadius, ringY, Math.cos(a2) * ringRadius);
+  }
+
+  // Anterior pointer chevron at z = +1.04
+  ringPts.push(0.0, ringY, 1.04);
+  ringPts.push(-0.08, ringY, 1.16);
+  ringPts.push(0.0, ringY, 1.04);
+  ringPts.push(0.08, ringY, 1.16);
+  ringPts.push(-0.08, ringY, 1.16);
+  ringPts.push(0.08, ringY, 1.16);
+
+  const orientationRingGeometry = new THREE.BufferGeometry();
+  orientationRingGeometry.setAttribute('position', new THREE.Float32BufferAttribute(ringPts, 3));
 
   return {
     facialContoursGeometry,
-    facialMaskGeometry
+    facialMaskGeometry,
+    orientationRingGeometry,
+    fiducials: {
+      nasion: [0.0, 0.08, 1.04],
+      inion: [0.0, -0.22, -1.02],
+      lpa: [-0.85, -0.12, -0.05],
+      rpa: [0.85, -0.12, -0.05],
+      cz: [0.0, 1.02, 0.0]
+    }
   };
 }
 
@@ -547,86 +585,50 @@ export function create1020MeridianArcs(): THREE.BufferGeometry {
   const points: number[] = [];
 
   // Sagittal Midline Arc: Fpz -> Fz -> Cz -> Pz -> Oz
-  const sagittalNodes = [
-    new THREE.Vector3(0.0, 0.231, 1.008),
-    new THREE.Vector3(0.0, 0.765, 0.604),
-    new THREE.Vector3(0.0, 0.940, 0.0),
-    new THREE.Vector3(0.0, 0.749, -0.628),
-    new THREE.Vector3(0.0, 0.162, -1.024)
-  ];
-  const sagittalCurve = new THREE.CatmullRomCurve3(sagittalNodes);
-  const sagPoints = sagittalCurve.getPoints(50);
-  for (let i = 0; i < sagPoints.length - 1; i++) {
-    points.push(sagPoints[i].x, sagPoints[i].y, sagPoints[i].z);
-    points.push(sagPoints[i + 1].x, sagPoints[i + 1].y, sagPoints[i + 1].z);
+  const sagittalArc = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.0, 0.05, 1.03),   // Fpz
+    new THREE.Vector3(0.0, 0.65, 0.78),   // Fz
+    new THREE.Vector3(0.0, 1.04, 0.0),    // Cz (vertex)
+    new THREE.Vector3(0.0, 0.65, -0.78),  // Pz
+    new THREE.Vector3(0.0, -0.15, -1.03), // Oz
+  ]);
+  const sagPts = sagittalArc.getPoints(36);
+  for (let i = 0; i < sagPts.length - 1; i++) {
+    points.push(sagPts[i].x, sagPts[i].y, sagPts[i].z);
+    points.push(sagPts[i + 1].x, sagPts[i + 1].y, sagPts[i + 1].z);
   }
 
-  // Coronal Central Arc: T7 -> C3 -> Cz -> C4 -> T8
-  const coronalNodes = [
-    new THREE.Vector3(-0.877, 0.076, 0.0),
-    new THREE.Vector3(-0.604, 0.684, 0.0),
-    new THREE.Vector3(0.0, 0.940, 0.0),
-    new THREE.Vector3(0.604, 0.684, 0.0),
-    new THREE.Vector3(0.877, 0.076, 0.0)
-  ];
-  const coronalCurve = new THREE.CatmullRomCurve3(coronalNodes);
-  const corPoints = coronalCurve.getPoints(50);
-  for (let i = 0; i < corPoints.length - 1; i++) {
-    points.push(corPoints[i].x, corPoints[i].y, corPoints[i].z);
-    points.push(corPoints[i + 1].x, corPoints[i + 1].y, corPoints[i + 1].z);
+  // Coronal Central Arch: T7 -> C3 -> Cz -> C4 -> T8
+  const coronalArc = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-1.03, -0.05, 0.0), // T7
+    new THREE.Vector3(-0.75, 0.70, 0.0),  // C3
+    new THREE.Vector3(0.0, 1.04, 0.0),    // Cz
+    new THREE.Vector3(0.75, 0.70, 0.0),   // C4
+    new THREE.Vector3(1.03, -0.05, 0.0),  // T8
+  ]);
+  const corPts = coronalArc.getPoints(36);
+  for (let i = 0; i < corPts.length - 1; i++) {
+    points.push(corPts[i].x, corPts[i].y, corPts[i].z);
+    points.push(corPts[i + 1].x, corPts[i + 1].y, corPts[i + 1].z);
   }
 
-  // Frontal Arc: F7 -> F3 -> Fz -> F4 -> F8
-  const frontalNodes = [
-    new THREE.Vector3(-0.716, 0.172, 0.573),
-    new THREE.Vector3(-0.471, 0.589, 0.589),
-    new THREE.Vector3(0.0, 0.765, 0.604),
-    new THREE.Vector3(0.471, 0.589, 0.589),
-    new THREE.Vector3(0.716, 0.172, 0.573)
-  ];
-  const frontalCurve = new THREE.CatmullRomCurve3(frontalNodes);
-  const fPoints = frontalCurve.getPoints(50);
-  for (let i = 0; i < fPoints.length - 1; i++) {
-    points.push(fPoints[i].x, fPoints[i].y, fPoints[i].z);
-    points.push(fPoints[i + 1].x, fPoints[i + 1].y, fPoints[i + 1].z);
-  }
-
-  // Parietal Arc: P7 -> P3 -> Pz -> P4 -> P8
-  const parietalNodes = [
-    new THREE.Vector3(-0.721, 0.019, -0.596),
-    new THREE.Vector3(-0.472, 0.570, -0.610),
-    new THREE.Vector3(0.0, 0.749, -0.628),
-    new THREE.Vector3(0.472, 0.570, -0.610),
-    new THREE.Vector3(0.721, 0.019, -0.596)
-  ];
-  const parietalCurve = new THREE.CatmullRomCurve3(parietalNodes);
-  const pPoints = parietalCurve.getPoints(50);
-  for (let i = 0; i < pPoints.length - 1; i++) {
-    points.push(pPoints[i].x, pPoints[i].y, pPoints[i].z);
-    points.push(pPoints[i + 1].x, pPoints[i + 1].y, pPoints[i + 1].z);
-  }
-
-  // Circumferential Headband: Fpz -> Fp1 -> F7 -> T7 -> P7 -> O1 -> Oz -> O2 -> P8 -> T8 -> F8 -> Fp2 -> Fpz
-  const equatorNodes = [
-    new THREE.Vector3(0.0, 0.231, 1.008),
-    new THREE.Vector3(-0.328, 0.256, 0.922),
-    new THREE.Vector3(-0.716, 0.172, 0.573),
-    new THREE.Vector3(-0.877, 0.076, 0.0),
-    new THREE.Vector3(-0.721, 0.019, -0.596),
-    new THREE.Vector3(-0.312, 0.156, -0.957),
-    new THREE.Vector3(0.0, 0.162, -1.024),
-    new THREE.Vector3(0.312, 0.156, -0.957),
-    new THREE.Vector3(0.721, 0.019, -0.596),
-    new THREE.Vector3(0.877, 0.076, 0.0),
-    new THREE.Vector3(0.716, 0.172, 0.573),
-    new THREE.Vector3(0.328, 0.256, 0.922),
-    new THREE.Vector3(0.0, 0.231, 1.008)
-  ];
-  const equatorCurve = new THREE.CatmullRomCurve3(equatorNodes);
-  const eqPoints = equatorCurve.getPoints(80);
-  for (let i = 0; i < eqPoints.length - 1; i++) {
-    points.push(eqPoints[i].x, eqPoints[i].y, eqPoints[i].z);
-    points.push(eqPoints[i + 1].x, eqPoints[i + 1].y, eqPoints[i + 1].z);
+  // Horizontal Circumferential Ring (Fpz - F7 - T7 - P7 - Oz - P8 - T8 - F8 - Fpz)
+  const circumArc = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.0, 0.05, 1.03),
+    new THREE.Vector3(-0.72, 0.08, 0.70),
+    new THREE.Vector3(-1.03, -0.05, 0.0),
+    new THREE.Vector3(-0.72, -0.08, -0.70),
+    new THREE.Vector3(0.0, -0.15, -1.03),
+    new THREE.Vector3(0.72, -0.08, -0.70),
+    new THREE.Vector3(1.03, -0.05, 0.0),
+    new THREE.Vector3(0.72, 0.08, 0.70),
+  ], true);
+  const circPts = circumArc.getPoints(48);
+  for (let i = 0; i < circPts.length; i++) {
+    const p1 = circPts[i];
+    const p2 = circPts[(i + 1) % circPts.length];
+    points.push(p1.x, p1.y, p1.z);
+    points.push(p2.x, p2.y, p2.z);
   }
 
   const geo = new THREE.BufferGeometry();
@@ -636,7 +638,7 @@ export function create1020MeridianArcs(): THREE.BufferGeometry {
 
 /**
  * Creates curved rectangular pad geometry conforming flush to the calvarium's spherical curvature.
- * Scales dynamically with the padAreaCm2 slider (BUG-07 & BUG-11).
+ * Scales dynamically with the padAreaCm2 slider.
  */
 export function createCurvedPadGeometry(
   width = 0.16,
@@ -659,7 +661,73 @@ export function createCurvedPadGeometry(
 }
 
 /**
- * Creates stylized futuristic neck and shoulder wireframe anatomy for extracephalic reference nodes (BUG-06).
+ * Creates flexible 3D medical cable geometry curving from the electrode snap connector
+ * cleanly along the calvarium exterior down towards the stimulator harness.
+ */
+export function createLeadWireGeometry(
+  startPos: [number, number, number],
+  normal: [number, number, number],
+  endPos: [number, number, number]
+): THREE.BufferGeometry {
+  const pStart = new THREE.Vector3(...startPos);
+  const vNorm = new THREE.Vector3(...normal).normalize();
+
+  // 1. Initial takeoff from snap connector
+  const p0 = pStart.clone().add(vNorm.clone().multiplyScalar(0.038));
+  const p1 = p0.clone().add(vNorm.clone().multiplyScalar(0.055));
+
+  // Determine backward/tangent sweep vector along skull
+  const up = new THREE.Vector3(0, 1, 0);
+  let tangent = new THREE.Vector3().crossVectors(vNorm, up).normalize();
+  if (tangent.lengthSq() < 0.01) tangent = new THREE.Vector3(1, 0, 0);
+  // Direct tangent towards posterior (z < 0)
+  if (tangent.z > 0) tangent.negate();
+
+  const pEnd = new THREE.Vector3(...endPos);
+
+  // Calvarium envelope radius (head surface is ~1.035, cable runs at 1.07 - 1.09)
+  const p2 = p1.clone().add(tangent.clone().multiplyScalar(0.12));
+  p2.normalize().multiplyScalar(1.08);
+
+  const p3 = new THREE.Vector3().lerpVectors(p2, pEnd, 0.45);
+  p3.normalize().multiplyScalar(1.07);
+
+  const p4 = new THREE.Vector3().lerpVectors(p2, pEnd, 0.85);
+  p4.normalize().multiplyScalar(1.06);
+
+  const curve = new THREE.CatmullRomCurve3([p0, p1, p2, p3, p4, pEnd]);
+  return new THREE.TubeGeometry(curve, 28, 0.007, 8, false);
+}
+
+/**
+ * Creates procedural soft circular Gaussian glow texture for particle sprites
+ * to eliminate pixelated square point artifacts.
+ */
+export function createRadialGlowTexture(): THREE.Texture {
+  if (typeof document === 'undefined') {
+    return new THREE.Texture();
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+    grad.addColorStop(0.18, 'rgba(230, 245, 255, 0.95)');
+    grad.addColorStop(0.45, 'rgba(56, 189, 248, 0.55)');
+    grad.addColorStop(0.80, 'rgba(14, 165, 233, 0.15)');
+    grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
+ * Creates stylized neck and shoulder wireframe anatomy for extracephalic reference nodes.
  */
 export function createNeckAndShoulderGeometry(): THREE.BufferGeometry {
   const lines: number[] = [];
@@ -692,7 +760,7 @@ export function createNeckAndShoulderGeometry(): THREE.BufferGeometry {
     }
   }
 
-  // 3. Sloping shoulder / clavicle arches connecting to deltoid nodes (EX_L at -1.4, -1.2, EX_R at +1.4, -1.2)
+  // 3. Sloping shoulder / clavicle arches connecting to deltoid nodes
   for (const side of [-1, 1]) {
     const shoulderCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(side * 0.44, -0.78, 0.0),

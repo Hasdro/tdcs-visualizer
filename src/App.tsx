@@ -37,11 +37,11 @@ export function App() {
 
   // Layer Visibility Toggles
   const [showScalpGrid, setShowScalpGrid] = useState(true);
-  const [showShuntHalo, setShowShuntHalo] = useState(true);
+  const [showShuntHalo, setShowShuntHalo] = useState(false);
   const [showHumanFace, setShowHumanFace] = useState(true);
   const [showEField, setShowEField] = useState(true);
   const [showStreamlines, setShowStreamlines] = useState(true);
-  const [showPointCloud, setShowPointCloud] = useState(true);
+  const [showPointCloud, setShowPointCloud] = useState(false);
   const [showBrodmannLabels, setShowBrodmannLabels] = useState(false);
 
   // Collapsible Docks (Video Feedback #9 & #10)

@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { BRAIN_NODES } from '../data/brain_nodes';
+import { createRadialGlowTexture } from '../utils/brainGeometry';
 
 interface StreamlineParticlesProps {
   anodeId: string;
@@ -22,6 +23,7 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
 }) => {
   const pointsRef = useRef<THREE.Points>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
+  const glowTexture = useMemo(() => createRadialGlowTexture(), []);
 
   const anodeNode = BRAIN_NODES[anodeId] || BRAIN_NODES['F3'];
   const cathodeNode = BRAIN_NODES[cathodeId] || BRAIN_NODES['Fp2'];
@@ -247,11 +249,12 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
       {/* Flowing electric charge particle nodes */}
       <points ref={pointsRef} geometry={particleGeometry}>
         <pointsMaterial
-          size={0.024}
+          map={glowTexture}
+          size={0.038}
           sizeAttenuation
           vertexColors
           transparent
-          opacity={0.92}
+          opacity={0.95}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
