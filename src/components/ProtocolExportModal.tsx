@@ -68,19 +68,40 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
 
         {/* Form Body */}
         <div className="p-5 space-y-3.5">
-          {/* Metadata preview card */}
-          <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-lg flex items-center justify-between text-xs font-mono">
-            <div>
-              <div className="text-slate-400 text-[10px]">CURRENT MONTAGE</div>
-              <div className="text-cyan-300 font-bold mt-0.5">
-                {data.montageState.anode} (+) / {data.montageState.cathode} (-) @ {data.montageState.ma.toFixed(1)} mA
+          {/* Live Protocol Summary Card: High-contrast Medical Passport Badge */}
+          <div className="p-3.5 bg-gradient-to-r from-slate-900 via-[#0E1729] to-slate-900 border border-cyan-500/50 rounded-xl shadow-lg text-xs font-mono relative overflow-hidden">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-glow-cyan animate-pulse" />
+                <span className="font-bold text-white text-[11px] tracking-wider uppercase">CLINICAL DOSIMETRY PASSPORT</span>
+              </div>
+              <span className="text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded font-bold">
+                {data.telemetry.safetyIndex}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5 my-2.5">
+              <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
+                <span className="text-[9px] text-slate-400 block">ACTIVE MONTAGE</span>
+                <span className="text-red-400 font-bold">{data.montageState.anode} (+)</span>
+                <span className="text-slate-500 mx-1">→</span>
+                <span className="text-cyan-400 font-bold">{data.montageState.cathode} (–)</span>
+              </div>
+              <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
+                <span className="text-[9px] text-slate-400 block">CURRENT & DURATION</span>
+                <span className="text-amber-300 font-bold">{data.montageState.ma.toFixed(1)} mA</span>
+                <span className="text-slate-400 text-[10px] ml-1">@ {data.montageState.dur}m</span>
+              </div>
+              <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
+                <span className="text-[9px] text-slate-400 block">TOTAL ENERGY Q</span>
+                <span className="text-emerald-300 font-bold">{data.telemetry.totalChargeCoulombs.toFixed(2)} C</span>
+                <span className="text-slate-500 text-[9px] block">{data.telemetry.chargeDensityCCm2} C/cm²</span>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-slate-400 text-[10px]">CORTICAL PEAK E-FIELD</div>
-              <div className="text-amber-400 font-bold mt-0.5">
-                {data.telemetry.peakEFieldVm.toFixed(3)} V/m
-              </div>
+
+            <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 text-[10px] text-slate-400">
+              <span>Peak Cortical |E|: <strong className="text-amber-400">{data.telemetry.peakEFieldVm.toFixed(3)} V/m</strong></span>
+              <span>Density J: <strong className="text-cyan-300">{data.telemetry.currentDensityMaCm2} mA/cm²</strong></span>
             </div>
           </div>
 

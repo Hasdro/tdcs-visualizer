@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, Component, ErrorInfo, ReactNode, Suspense } from 'react';
+import React, { useMemo, useRef, useState, useEffect, Component, ErrorInfo, ReactNode, Suspense } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Text, Html } from '@react-three/drei';
@@ -7,13 +7,14 @@ import {
   createHumanFaceGeometry,
   create1020MeridianArcs,
   createCurvedPadGeometry,
-  createLeadWireGeometry,
   createNeckAndShoulderGeometry
 } from '../utils/brainGeometry';
 import { BRAIN_NODES } from '../data/brain_nodes';
 import { StreamlineParticles } from './StreamlineParticles';
 import { BiophysicalTelemetry } from '../utils/biophysicsEngine';
-import { Activity, Zap, AlertTriangle, Minimize2, ChevronDown } from 'lucide-react';
+import { Activity, AlertTriangle, Minimize2, ChevronDown } from 'lucide-react';
+import { EFieldThermalSpectrum } from './visuals/EFieldThermalSpectrum';
+import { ViewportOrientationCube } from './visuals/ViewportOrientationCube';
 
 interface BrainViewport3DProps {
   anodeId: string;
@@ -133,20 +134,31 @@ const CorticalHeatmapShader = {
     void main() {
       // 1. Biological Cortical Grey Matter Tones:
       // Deep sulcal valleys: rich shadowed burgundy-umber
-      vec3 deepSulcus = vec3(0.24, 0.09, 0.09);
+      vec3 deepSulcus = vec3(0.18, 0.06, 0.06);
+      // Sulcal mid-walls: rich biological pinkish-brown
+      vec3 sulcalWall = vec3(0.56, 0.38, 0.32);
       // Mid-cortex grey matter: warm lifelike biological pinkish-tan
-      vec3 midCortex = vec3(0.76, 0.60, 0.54);
+      vec3 midCortex = vec3(0.78, 0.62, 0.56);
       // Gyral crowns: glistening soft cream-pink
-      vec3 gyrusCrown = vec3(0.88, 0.74, 0.68);
+      vec3 gyrusCrown = vec3(0.92, 0.78, 0.72);
 
-      vec3 baseColor = mix(deepSulcus, midCortex, smoothstep(0.0, 0.48, vCurvature));
-      baseColor = mix(baseColor, gyrusCrown, smoothstep(0.48, 1.0, vCurvature));
+      vec3 baseColor = mix(deepSulcus, sulcalWall, smoothstep(0.0, 0.28, vCurvature));
+      baseColor = mix(baseColor, midCortex, smoothstep(0.28, 0.62, vCurvature));
+      baseColor = mix(baseColor, gyrusCrown, smoothstep(0.62, 1.0, vCurvature));
 
-      // Delicate micro-vascular sulcal capillaries
-      float microPia = sin(vPosition.x * 48.0 + sin(vPosition.y * 36.0)) *
-                       cos(vPosition.z * 48.0 + cos(vPosition.x * 36.0));
-      if (vCurvature < 0.45 && microPia > 0.65) {
-        baseColor = mix(baseColor, vec3(0.38, 0.06, 0.06), 0.35);
+      // Sulcal deep crevice ambient occlusion / shadowing
+      float sulcalAO = clamp(pow(vCurvature, 0.75), 0.22, 1.0);
+      baseColor *= (0.28 + 0.72 * sulcalAO);
+
+      // Delicate micro-vascular sulcal capillaries & branching arterioles
+      float microPia1 = sin(vPosition.x * 62.0 + sin(vPosition.y * 42.0)) *
+                        cos(vPosition.z * 56.0 + cos(vPosition.x * 44.0));
+      float microPia2 = sin(vPosition.y * 78.0 - vPosition.z * 50.0) * cos(vPosition.x * 68.0);
+      if (vCurvature < 0.58 && microPia1 > 0.62) {
+        baseColor = mix(baseColor, vec3(0.48, 0.08, 0.08), 0.40);
+      }
+      if (vCurvature < 0.42 && microPia2 > 0.68) {
+        baseColor = mix(baseColor, vec3(0.38, 0.05, 0.05), 0.30);
       }
 
       // 2. Anatomical Living Tissue Lighting:
@@ -155,11 +167,11 @@ const CorticalHeatmapShader = {
       vec3 fillLight = normalize(vec3(-2.5, -1.2, 1.5));
       vec3 rimLight = normalize(vec3(0.0, 2.0, -3.0));
 
-      // Normal micro-perturbation for organic living tissue feel
+      // Multi-frequency micro-relief normal perturbation for tactile cellular biological texture
       vec3 perturbedNormal = normalize(vWorldNormal + vec3(
-        sin(vPosition.y * 32.0 + vPosition.z * 24.0) * 0.06,
-        cos(vPosition.x * 32.0 + vPosition.z * 24.0) * 0.06,
-        sin(vPosition.x * 32.0 + vPosition.y * 24.0) * 0.06
+        sin(vPosition.y * 44.0 + vPosition.z * 32.0) * 0.045 + sin(vPosition.y * 88.0) * 0.015,
+        cos(vPosition.x * 44.0 + vPosition.z * 32.0) * 0.045 + cos(vPosition.z * 88.0) * 0.015,
+        sin(vPosition.x * 44.0 + vPosition.y * 32.0) * 0.045 + sin(vPosition.x * 88.0) * 0.015
       ));
 
       // Diffuse wrap lighting (subsurface scattering approximation for soft organic tissue)
@@ -167,16 +179,17 @@ const CorticalHeatmapShader = {
       float diffFill = max(0.0, (dot(perturbedNormal, fillLight) + 0.20) / 1.20);
       float diffRim = max(0.0, dot(perturbedNormal, rimLight));
 
-      baseColor *= (0.28 + 0.52 * diffKey + 0.14 * diffFill + 0.06 * diffRim);
+      baseColor *= (0.26 + 0.54 * diffKey + 0.14 * diffFill + 0.06 * diffRim);
 
-      // Pia mater wet glistening specular highlight
+      // Pia mater wet glistening dual-lobe specular highlight
       vec3 halfDir = normalize(keyLight + viewDir);
-      float spec = pow(max(dot(perturbedNormal, halfDir), 0.0), 38.0);
-      vec3 piaSpecular = vec3(0.98, 0.94, 0.92) * spec * 0.45 * (0.30 + 0.70 * vCurvature);
+      float specSharp = pow(max(dot(perturbedNormal, halfDir), 0.0), 64.0);
+      float specBroad = pow(max(dot(perturbedNormal, halfDir), 0.0), 16.0);
+      vec3 piaSpecular = vec3(0.98, 0.95, 0.93) * (specSharp * 0.45 + specBroad * 0.15) * (0.25 + 0.75 * vCurvature);
       baseColor += piaSpecular;
 
       // Organic tissue Fresnel edge glow (warm biological subsurface rim)
-      float fresnel = pow(1.0 - max(dot(perturbedNormal, viewDir), 0.0), 3.0);
+      float fresnel = pow(1.0 - max(dot(perturbedNormal, viewDir), 0.0), 2.8);
       baseColor += vec3(0.92, 0.42, 0.32) * fresnel * 0.28;
 
       // 3. Smooth Physical E-Field Potential Field:
@@ -394,6 +407,7 @@ interface BrainSceneProps {
   activePlacementMode: 'anode' | 'cathode' | null;
   setActivePlacementMode: (mode: 'anode' | 'cathode' | null) => void;
   isLeftDockCollapsed?: boolean;
+  cameraPreset?: 'front' | 'left' | 'top' | 'bilateral' | null;
 }
 
 const BrainScene: React.FC<BrainSceneProps> = ({
@@ -413,10 +427,28 @@ const BrainScene: React.FC<BrainSceneProps> = ({
   showPointCloud,
   showBrodmannLabels,
   activePlacementMode,
-  setActivePlacementMode
+  setActivePlacementMode,
+  cameraPreset
 }) => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [draggingElectrode, setDraggingElectrode] = useState<'anode' | 'cathode' | null>(null);
+  const orbitRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!cameraPreset || !orbitRef.current) return;
+    const controls = orbitRef.current;
+    if (cameraPreset === 'front') {
+      controls.object.position.set(0.0, 0.2, 3.0);
+    } else if (cameraPreset === 'left') {
+      controls.object.position.set(-2.8, 0.8, 1.2);
+    } else if (cameraPreset === 'top') {
+      controls.object.position.set(0.0, 3.2, 0.01);
+    } else if (cameraPreset === 'bilateral') {
+      controls.object.position.set(0.0, 1.8, 2.6);
+    }
+    controls.target.set(0, 0.15, 0);
+    controls.update();
+  }, [cameraPreset]);
   const [magneticCandidateNode, setMagneticCandidateNode] = useState<string | null>(null);
 
   const { cortexGeometry, pointCloudGeometry, wireframeGeometry, headSilhouetteGeometry } = useMemo(
@@ -446,22 +478,6 @@ const BrainScene: React.FC<BrainSceneProps> = ({
 
   const anodeNode = BRAIN_NODES[anodeId] || BRAIN_NODES['F3'];
   const cathodeNode = BRAIN_NODES[cathodeId] || BRAIN_NODES['Fp2'];
-
-  const anodeLeadWireGeo = useMemo(() => {
-    return createLeadWireGeometry(
-      anodeNode.pos3D,
-      anodeNode.normal,
-      [0.18, -0.75, -0.65]
-    );
-  }, [anodeNode]);
-
-  const cathodeLeadWireGeo = useMemo(() => {
-    return createLeadWireGeometry(
-      cathodeNode.pos3D,
-      cathodeNode.normal,
-      [-0.18, -0.75, -0.65]
-    );
-  }, [cathodeNode]);
 
   const heatmapMatRef = useRef<THREE.ShaderMaterial>(null);
   const pointCloudMatRef = useRef<THREE.ShaderMaterial>(null);
@@ -522,6 +538,7 @@ const BrainScene: React.FC<BrainSceneProps> = ({
       <directionalLight position={[-3, -1.5, -2]} intensity={0.35} color="#38BDF8" />
 
       <OrbitControls
+        ref={orbitRef}
         enableDamping
         dampingFactor={0.06}
         minDistance={1.4}
@@ -834,15 +851,6 @@ const BrainScene: React.FC<BrainSceneProps> = ({
         </group>
       </group>
 
-      {/* Anode Flexible Medical Lead Wire Cable */}
-      <mesh geometry={anodeLeadWireGeo}>
-        <meshStandardMaterial
-          color="#EF4444"
-          roughness={0.35}
-          metalness={0.15}
-        />
-      </mesh>
-
       {/* Cathode Assembly or HD 4x1 Rings */}
       {montageType === 'hd4x1' && surroundNodes ? (
         surroundNodes.map((sId) => {
@@ -980,15 +988,6 @@ const BrainScene: React.FC<BrainSceneProps> = ({
               </Text>
             </group>
           </group>
-
-          {/* Cathode Flexible Medical Lead Wire Cable */}
-          <mesh geometry={cathodeLeadWireGeo}>
-            <meshStandardMaterial
-              color="#0284C7"
-              roughness={0.35}
-              metalness={0.15}
-            />
-          </mesh>
         </>
       )}
 
@@ -1139,8 +1138,13 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
   isLeftDockCollapsed
 }) => {
   const anodeNode = BRAIN_NODES[anodeId] || BRAIN_NODES['F3'];
-  // Minimizable HUD state (Video Feedback #9 & #10)
   const [isHudMinimized, setIsHudMinimized] = useState(false);
+  const [cameraPreset, setCameraPreset] = useState<'front' | 'left' | 'top' | 'bilateral' | null>(null);
+
+  const handleSnapCamera = (view: 'front' | 'left' | 'top' | 'bilateral') => {
+    setCameraPreset(view);
+    setTimeout(() => setCameraPreset(null), 300);
+  };
 
   return (
     <div className="relative w-full h-full bg-[#070B12] overflow-hidden select-none">
@@ -1168,15 +1172,20 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
               showBrodmannLabels={showBrodmannLabels}
               activePlacementMode={activePlacementMode}
               setActivePlacementMode={setActivePlacementMode}
+              cameraPreset={cameraPreset}
             />
           </Suspense>
         </Canvas>
       </CanvasErrorBoundary>
 
-      {/* Minimizable Floating HUD: Real-Time Biophysical Telemetry (Video Feedback #9 & #10) */}
+      {/* Top-Right 3D Viewport Orientation Gizmo */}
+      <div className="absolute top-4 right-4 z-10 pointer-events-auto">
+        <ViewportOrientationCube onSnapCamera={handleSnapCamera} />
+      </div>
+
+      {/* Minimizable Floating HUD: Real-Time Biophysical Telemetry */}
       <div className={`absolute top-4 ${isLeftDockCollapsed ? 'left-52' : 'left-4'} z-10 pointer-events-auto transition-all duration-300`}>
         {isHudMinimized ? (
-          // Minimized sleek floating pill
           <button
             onClick={() => setIsHudMinimized(false)}
             className="flex items-center gap-2 bg-[#0F1623]/95 backdrop-blur-md border border-cyan-500/50 hover:border-cyan-400 rounded-full px-3.5 py-1.5 shadow-2xl text-xs font-mono text-slate-200 transition-all cursor-pointer group shadow-glow-cyan"
@@ -1190,12 +1199,11 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition" />
           </button>
         ) : (
-          // Full expanded HUD card
-          <div className="bg-[#0F1623]/90 backdrop-blur-md border border-slate-800/80 rounded-xl p-3 shadow-xl text-xs w-64 select-none">
+          <div className="bg-[#0F1623]/90 backdrop-blur-md border border-slate-800/80 rounded-xl p-3 shadow-xl text-xs w-72 select-none space-y-2">
             <div className="flex items-center justify-between text-slate-400 pb-1.5 border-b border-slate-800">
               <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-cyan-400">
                 <Activity className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                CORTICAL E-FIELD HUD
+                CORTICAL TELEMETRY HUD
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="font-mono text-[10px] bg-slate-800/80 px-1.5 py-0.5 rounded text-slate-300">
@@ -1211,49 +1219,55 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-2 font-mono">
-              <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/50">
-                <div className="text-[10px] text-slate-400 flex items-center gap-1">
-                  <Zap className="w-3 h-3 text-amber-400" />
-                  PEAK |E| FIELD
-                </div>
-                <div className="text-sm font-bold text-amber-300 mt-0.5">
-                  {telemetry.peakEFieldVm} <span className="text-[10px] text-slate-400 font-normal">V/m</span>
+            {/* E-Field Thermal Spectrum with Physiological Milestones */}
+            <EFieldThermalSpectrum peakEFieldVm={telemetry.peakEFieldVm} />
+
+            {/* Membrane Potential Shift Micro-Gauge */}
+            <div className="bg-slate-900/70 p-2 rounded-lg border border-slate-800/60 font-mono">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-slate-400">MEMBRANE VOLTAGE SHIFT (ΔVm)</span>
+                <span className="text-emerald-300 font-bold">+{telemetry.maxMembraneShiftMv} mV</span>
+              </div>
+              <div className="relative w-full h-2 bg-slate-950 rounded-full mt-1.5 overflow-hidden border border-slate-800">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-300 shadow-glow-cyan"
+                  style={{ width: `${Math.min(100, Math.max(15, 15 + (telemetry.maxMembraneShiftMv / 1.5) * 65))}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[8px] text-slate-500 mt-1">
+                <span>-70mV Rest</span>
+                <span className="text-emerald-400 font-bold">ΔVm +{telemetry.maxMembraneShiftMv}mV</span>
+                <span className="text-rose-400 font-bold">-55mV Threshold</span>
+              </div>
+            </div>
+
+            {/* Grid Stats */}
+            <div className="grid grid-cols-2 gap-1.5 font-mono text-[10px]">
+              <div className="bg-slate-900/60 p-1.5 rounded border border-slate-800/50">
+                <div className="text-slate-400">CURRENT DENSITY J</div>
+                <div className="text-xs font-bold text-cyan-300 mt-0.5">
+                  {telemetry.currentDensityMaCm2} <span className="text-[9px] text-slate-400 font-normal">mA/cm²</span>
                 </div>
               </div>
 
-              <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/50">
-                <div className="text-[10px] text-slate-400">CURRENT DENSITY J</div>
-                <div className="text-sm font-bold text-cyan-300 mt-0.5">
-                  {telemetry.currentDensityMaCm2} <span className="text-[10px] text-slate-400 font-normal">mA/cm²</span>
-                </div>
-              </div>
-
-              <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/50">
-                <div className="text-[10px] text-slate-400">SCALP SHUNT</div>
-                <div className="text-sm font-bold text-rose-300 mt-0.5">
-                  {telemetry.shuntPercentage}% <span className="text-[10px] text-slate-400 font-normal">shunted</span>
-                </div>
-              </div>
-
-              <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/50">
-                <div className="text-[10px] text-slate-400">MEMBRANE ΔVm</div>
-                <div className="text-sm font-bold text-emerald-300 mt-0.5">
-                  +{telemetry.maxMembraneShiftMv} <span className="text-[10px] text-slate-400 font-normal">mV</span>
+              <div className="bg-slate-900/60 p-1.5 rounded border border-slate-800/50">
+                <div className="text-slate-400">SCALP SHUNT</div>
+                <div className="text-xs font-bold text-rose-300 mt-0.5">
+                  {telemetry.shuntPercentage}% <span className="text-[9px] text-slate-400 font-normal">lost</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-2 pt-1.5 border-t border-slate-800/60 flex items-center justify-between text-[10px] font-mono">
-              <span className="text-slate-400">Target Brodmann:</span>
-              <span className="text-amber-300 font-bold">{anodeNode.brodmannAreas.join(', ')}</span>
+            <div className="pt-1 border-t border-slate-800/60 flex items-center justify-between text-[10px] font-mono">
+              <span className="text-slate-400">Target Cytoarchitectonics:</span>
+              <span className="text-amber-300 font-bold">BA {anodeNode.brodmannAreas.join(', ')}</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Legend & Navigation Helper */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#0F1623]/80 backdrop-blur border border-slate-800 rounded-full text-[10px] font-mono text-slate-400 pointer-events-none flex items-center gap-3 shadow-lg">
+      {/* Legend & Navigation Helper with Pictograms */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3.5 py-1.5 bg-[#0F1623]/85 backdrop-blur-md border border-slate-800 rounded-full text-[10px] font-mono text-slate-300 pointer-events-none flex items-center gap-3.5 shadow-xl">
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-red-500 shadow-glow-anode" />
           Anode (+ Depolarize)
@@ -1263,9 +1277,17 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
           Cathode (– Hyperpolarize)
         </span>
         <span className="text-slate-600">|</span>
-        <span>Rotate: Left Click + Drag</span>
-        <span>•</span>
-        <span>Zoom: Scroll</span>
+        <span className="flex items-center gap-1 text-slate-400">
+          <span>🔄</span> Left Click + Drag (Orbit)
+        </span>
+        <span className="text-slate-600">•</span>
+        <span className="flex items-center gap-1 text-slate-400">
+          <span>✋</span> Right Click (Pan)
+        </span>
+        <span className="text-slate-600">•</span>
+        <span className="flex items-center gap-1 text-slate-400">
+          <span>🔍</span> Scroll (Zoom)
+        </span>
       </div>
     </div>
   );

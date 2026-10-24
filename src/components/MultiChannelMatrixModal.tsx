@@ -190,50 +190,117 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
             </div>
           </div>
 
-          {/* Kirchhoff's Current Law Status Banner */}
-          <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold font-mono text-xs ${
+          {/* Kirchhoff's Current Law Status Banner & Physical Balance Scale */}
+          <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold font-mono text-xs ${
+                    telemetry.isKirchhoffBalanced
+                      ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/60 shadow-glow-cyan'
+                      : 'bg-amber-950/80 text-amber-400 border border-amber-700/60'
+                  }`}
+                >
+                  <Scale className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-slate-200">
+                      KIRCHHOFF CURRENT BALANCE:
+                    </span>
+                    <span
+                      className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded ${
+                        telemetry.isKirchhoffBalanced
+                          ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/60'
+                          : 'bg-amber-900/60 text-amber-300 border border-amber-700/60'
+                      }`}
+                    >
+                      Σ I = {telemetry.kirchhoffSumMa > 0 ? `+${telemetry.kirchhoffSumMa}` : telemetry.kirchhoffSumMa} mA
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    Source: +{telemetry.totalAnodalMa} mA | Sink: -{telemetry.totalCathodalMa} mA
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleAutoBalance}
+                disabled={telemetry.isKirchhoffBalanced}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition border ${
                   telemetry.isKirchhoffBalanced
-                    ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/60'
-                    : 'bg-amber-950/80 text-amber-400 border border-amber-700/60'
+                    ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/80 cursor-default font-bold'
+                    : 'bg-amber-600/30 text-amber-300 border-amber-500/70 hover:bg-amber-600/40 cursor-pointer'
                 }`}
               >
-                <Scale className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-slate-200">
-                    KIRCHHOFF CURRENT BALANCE:
-                  </span>
-                  <span
-                    className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded ${
-                      telemetry.isKirchhoffBalanced
-                        ? 'bg-emerald-900/60 text-emerald-300'
-                        : 'bg-amber-900/60 text-amber-300'
-                    }`}
-                  >
-                    Σ I = {telemetry.kirchhoffSumMa > 0 ? `+${telemetry.kirchhoffSumMa}` : telemetry.kirchhoffSumMa} mA
-                  </span>
-                </div>
-                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                  Anodal Source: +{telemetry.totalAnodalMa} mA | Cathodal Sink: -{telemetry.totalCathodalMa} mA
-                </div>
-              </div>
+                {telemetry.isKirchhoffBalanced ? '✓ CIRCUIT BALANCED' : 'Auto-Balance (Σ I = 0)'}
+              </button>
             </div>
 
-            <button
-              onClick={handleAutoBalance}
-              disabled={telemetry.isKirchhoffBalanced}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition border ${
-                telemetry.isKirchhoffBalanced
-                  ? 'bg-slate-800/40 text-slate-500 border-slate-800 cursor-not-allowed'
-                  : 'bg-amber-600/30 text-amber-300 border-amber-500/70 hover:bg-amber-600/40'
-              }`}
-            >
-              Auto-Balance (Σ I = 0)
-            </button>
+            {/* Kirchhoff Visual Balance Scale & Mini Scalp Pin Array Map */}
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+              {/* Balance Scale SVG */}
+              <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center justify-center">
+                <span className="text-[9px] font-mono text-slate-400 mb-1">CURRENT CONSERVATION SCALE</span>
+                <svg viewBox="0 0 160 55" className="w-40 h-14">
+                  {/* Fulcrum */}
+                  <polygon points="80,28 72,50 88,50" fill="#1E293B" stroke="#475569" strokeWidth="1" />
+                  <circle cx="80" cy="28" r="3" fill={telemetry.isKirchhoffBalanced ? '#10B981' : '#F59E0B'} />
+                  {/* Lever */}
+                  <g
+                    transform={`rotate(${telemetry.isKirchhoffBalanced ? 0 : Math.max(-12, Math.min(12, telemetry.kirchhoffSumMa * 10))}, 80, 28)`}
+                    className="transition-transform duration-300"
+                  >
+                    <line x1="20" y1="28" x2="140" y2="28" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" />
+                    {/* Left pan: Anodes Source */}
+                    <circle cx="28" cy="28" r="6" fill="#EF4444" />
+                    <text x="28" y="44" fill="#F87171" fontSize="6" textAnchor="middle" fontFamily="monospace">+{telemetry.totalAnodalMa}mA</text>
+                    {/* Right pan: Cathodes Sink */}
+                    <circle cx="132" cy="28" r="6" fill="#06B6D4" />
+                    <text x="132" y="44" fill="#38BDF8" fontSize="6" textAnchor="middle" fontFamily="monospace">-{telemetry.totalCathodalMa}mA</text>
+                  </g>
+                </svg>
+              </div>
+
+              {/* Mini Scalp Pin Array Map */}
+              <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[9px] font-mono text-slate-400 block mb-0.5">ACTIVE ARRAY MAP</span>
+                  <div className="text-[10px] font-mono text-slate-300">
+                    <span className="text-red-400 font-bold">{channels.filter(c => c.currentMa > 0).length} Anodes</span>
+                    {' • '}
+                    <span className="text-cyan-400 font-bold">{channels.filter(c => c.currentMa < 0).length} Sinks</span>
+                  </div>
+                  <div className="text-[9px] font-mono text-slate-500 mt-1">
+                    Electrodes: {channels.map(c => c.nodeId).join(', ')}
+                  </div>
+                </div>
+                {/* Mini Head Icon */}
+                <svg viewBox="0 0 50 50" className="w-11 h-11 shrink-0">
+                  <circle cx="25" cy="25" r="21" fill="#0A101D" stroke="#334155" strokeWidth="1.2" />
+                  <path d="M 23 4 L 25 1 L 27 4 Z" fill="#64748B" />
+                  {channels.map((c, i) => {
+                    const isAn = c.currentMa > 0;
+                    // Distribute around circumference/center for visual indicator
+                    const ang = (i / channels.length) * Math.PI * 2;
+                    const r = isAn ? 6 : 14;
+                    const cx = 25 + r * Math.cos(ang);
+                    const cy = 25 + r * Math.sin(ang);
+                    return (
+                      <circle
+                        key={c.nodeId}
+                        cx={cx}
+                        cy={cy}
+                        r="3"
+                        fill={isAn ? '#EF4444' : '#06B6D4'}
+                        stroke="#FFFFFF"
+                        strokeWidth="0.8"
+                      />
+                    );
+                  })}
+                </svg>
+              </div>
+            </div>
           </div>
 
           {/* Active Electrodes List */}

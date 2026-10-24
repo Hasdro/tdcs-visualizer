@@ -26,8 +26,8 @@ export interface HumanFaceGeometryData {
  * biological anatomical lobes, serpentine gyral folds, and deep sulcal fissures.
  */
 export function createBiHemisphericBrainGeometry(): BrainGeometryData {
-  const uSegments = 80;
-  const vSegments = 80;
+  const uSegments = 104;
+  const vSegments = 104;
 
   const positions: number[] = [];
   const normals: number[] = [];
@@ -112,38 +112,52 @@ export function createBiHemisphericBrainGeometry(): BrainGeometryData {
     const pWarpY = py + warpY;
     const pWarpZ = pz + warpZ;
 
-    // 4-octave multi-frequency harmonic gyral convolutions
+    // 5-octave multi-frequency harmonic gyral convolutions with micro-convolutions
     const g1 = Math.sin(pWarpX * 12.5 + pWarpY * 10.0 + pWarpZ * 6.5);
     const g2 = Math.cos(pWarpY * 11.0 - pWarpZ * 13.5 + pWarpX * 7.2);
     const g3 = Math.sin(pWarpZ * 16.0 + pWarpX * 11.5 - pWarpY * 8.0);
-    const g4 = Math.cos(pWarpX * 20.0 + pWarpY * 18.0 + pWarpZ * 17.0) * 0.5;
+    const g4 = Math.cos(pWarpX * 22.0 + pWarpY * 19.0 + pWarpZ * 17.5) * 0.5;
+    const g5 = Math.sin(pWarpX * 32.0 - pWarpY * 26.0 + pWarpZ * 29.0) * 0.22;
 
-    const rawFold = 0.44 * g1 + 0.38 * g2 + 0.26 * g3 + 0.14 * g4;
+    const rawFold = 0.40 * g1 + 0.34 * g2 + 0.24 * g3 + 0.13 * g4 + 0.08 * g5;
     // Power-law shaping: steep narrow sulcal valleys and broad rounded gyral crowns
-    const gyralProfile = Math.sign(rawFold) * Math.pow(Math.abs(rawFold), 0.76);
+    const gyralProfile = Math.sign(rawFold) * Math.pow(Math.abs(rawFold), 0.74);
 
-    // 7. Major Anatomical Sulci
+    // 7. Major Anatomical Sulci & Lobe-Specific Morphology
     // Central sulcus (Rolandic fissure) dividing precentral motor and postcentral sensory cortex
     let centralSulcus = 0;
     const rolandicPlane = pz - 0.28 * py - 0.02;
-    if (Math.abs(rolandicPlane) < 0.07 && py > 0.12) {
-      centralSulcus = 0.034 * Math.cos((rolandicPlane / 0.07) * Math.PI * 0.5);
+    if (Math.abs(rolandicPlane) < 0.075 && py > 0.10) {
+      centralSulcus = 0.038 * Math.cos((rolandicPlane / 0.075) * Math.PI * 0.5);
     }
 
     // Sylvian (lateral) fissure separating temporal lobe from frontal/parietal
     let sylvianFissure = 0;
-    if (y > -0.22 && y < 0.10 && z > -0.24 && z < 0.34 && Math.abs(x) > 0.42) {
-      sylvianFissure = 0.042 * Math.cos(((y + 0.06) / 0.16) * Math.PI * 0.5) *
-                              Math.cos(((z - 0.05) / 0.29) * Math.PI * 0.5);
+    if (y > -0.24 && y < 0.12 && z > -0.26 && z < 0.36 && Math.abs(x) > 0.40) {
+      sylvianFissure = 0.046 * Math.cos(((y + 0.06) / 0.18) * Math.PI * 0.5) *
+                              Math.cos(((z - 0.05) / 0.31) * Math.PI * 0.5);
     }
 
-    // Cerebellar transverse horizontal fissure
-    let cerebellarFissure = 0;
-    if (pz < -0.32 && py < -0.16 && py > -0.40) {
-      cerebellarFissure = 0.038 * Math.cos(((py + 0.28) / 0.12) * Math.PI * 0.5);
+    // Cerebellar folia: horizontal dense micro-striations at posterior base
+    let cerebellarFolia = 0;
+    if (pz < -0.28 && py < -0.14) {
+      const foliaWave = Math.sin(py * 55.0 + Math.cos(px * 18.0) * 0.4);
+      cerebellarFolia = 0.022 * foliaWave - 0.028 * Math.exp(-Math.pow((py + 0.28) / 0.14, 2));
     }
 
-    const displacement = (0.048 * gyralProfile) - centralSulcus - sylvianFissure - cerebellarFissure;
+    // Parieto-occipital and calcarine fissure
+    let occipitalFissure = 0;
+    if (pz < -0.42 && py > -0.15 && Math.abs(px) < 0.38) {
+      occipitalFissure = 0.032 * Math.cos(((pz + 0.42) / 0.25) * Math.PI * 0.5);
+    }
+
+    // Superior / inferior frontal sulcal longitudinal grooves
+    let frontalGroove = 0;
+    if (pz > 0.22 && py > 0.08) {
+      frontalGroove = 0.022 * Math.sin(px * 18.0 + py * 6.0) * Math.min(1.0, (pz - 0.22) / 0.30);
+    }
+
+    const displacement = (0.050 * gyralProfile) - centralSulcus - sylvianFissure + cerebellarFolia - occipitalFissure - frontalGroove;
 
     const baseNorm = new THREE.Vector3(px, py * 1.05, pz * 0.95).normalize();
     px += baseNorm.x * displacement;

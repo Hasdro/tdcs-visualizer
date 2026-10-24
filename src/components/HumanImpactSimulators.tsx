@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BiophysicalTelemetry } from '../utils/biophysicsEngine';
 import { BRAIN_NODES } from '../data/brain_nodes';
+import { CognitiveImpactRadar } from './visuals/CognitiveImpactRadar';
+import { ReactionTimeRaceTrack } from './visuals/ReactionTimeRaceTrack';
+import { HomunculusAvatar } from './visuals/HomunculusAvatar';
 
 interface HumanImpactSimulatorsProps {
   anodeId: string;
@@ -289,6 +292,15 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
           </div>
           <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">Active Mode</span>
         </div>
+
+        {/* Visual 1: Hexagonal Cognitive Performance Radar Chart */}
+        <CognitiveImpactRadar telemetry={telemetry} />
+
+        {/* Visual 2: Somatotopic Homunculus Embodiment Avatar */}
+        <HomunculusAvatar anodeId={anodeId} cathodeId={cathodeId} />
+
+        {/* Visual 3: Reaction Time Speedometer & Visual Race Track */}
+        <ReactionTimeRaceTrack motorScore={metrics.motorSpeed || metrics.focus} />
 
         {/* Section 1: Live Interactive Mini-Simulation Suite */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 shadow-md">

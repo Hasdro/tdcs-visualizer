@@ -10,6 +10,9 @@ import {
   TrendingDown,
   Info
 } from 'lucide-react';
+import { SynapticPlasticityDiagram } from './visuals/SynapticPlasticityDiagram';
+import { FiringProbabilityCurve } from './visuals/FiringProbabilityCurve';
+import { NeurochemicalSeesaw } from './visuals/NeurochemicalSeesaw';
 
 interface CellularMechanismWidgetProps {
   anodeId: string;
@@ -273,6 +276,25 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
             </div>
           </div>
         </div>
+
+        {/* Visual 1: Gaussian Bell Curve Action Potential Firing Probability */}
+        <FiringProbabilityCurve
+          isAnode={isAnode}
+          currentMa={currentMa}
+          maxMembraneShiftMv={Math.abs(dVm)}
+        />
+
+        {/* Visual 2: Molecular Synaptic Cleft NMDA/AMPA & Ca2+ Ion Cascade */}
+        <SynapticPlasticityDiagram
+          isAnode={isAnode}
+          currentMa={currentMa}
+        />
+
+        {/* Visual 3: GABA vs Glutamate Physical Neurochemical Balance Scale */}
+        <NeurochemicalSeesaw
+          isAnode={isAnode}
+          currentMa={currentMa}
+        />
 
         {/* Section 2: Four Core Molecular / Synaptic Indicators */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-3 shadow-md space-y-2.5">

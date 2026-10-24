@@ -1,0 +1,93 @@
+import React from 'react';
+import { BiophysicalTelemetry } from '../../utils/biophysicsEngine';
+
+interface ChargeDoseReservoirProps {
+  telemetry: BiophysicalTelemetry;
+  currentMa: number;
+  durationMin: number;
+}
+
+export const ChargeDoseReservoir: React.FC<ChargeDoseReservoirProps> = ({
+  telemetry,
+  currentMa,
+  durationMin
+}) => {
+  const totalQ = telemetry.totalChargeCoulombs;
+  // Maximum scale is 4.5 Coulombs
+  const maxScaleQ = 4.5;
+  const pctFill = Math.min(100, Math.max(8, (totalQ / maxScaleQ) * 100));
+
+  return (
+    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl font-mono text-xs select-none">
+      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
+        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-cyan-400" />
+          CHARGE DOSE RESERVOIR (Q)
+        </span>
+        <span className="text-[10px] bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 px-1.5 py-0.5 rounded font-bold">
+          {totalQ.toFixed(2)} C
+        </span>
+      </div>
+
+      <div className="mt-2.5 flex items-center gap-3">
+        {/* Transparent Cylindrical Cell */}
+        <div className="relative w-12 h-28 bg-slate-950/80 rounded-xl border border-cyan-500/40 p-1 flex flex-col justify-end overflow-hidden shadow-inner">
+          {/* Glass reflections */}
+          <div className="absolute top-0 left-1 w-1.5 h-full bg-white/10 rounded-full pointer-events-none" />
+
+          {/* Fluid Level */}
+          <div
+            className="w-full rounded-b-lg bg-gradient-to-t from-cyan-600 via-sky-400 to-cyan-300 transition-all duration-300 relative shadow-glow-cyan"
+            style={{ height: `${pctFill}%` }}
+          >
+            {/* Animated Meniscus Wave */}
+            <div className="absolute -top-1 left-0 w-full h-2 bg-cyan-200 rounded-full opacity-80 animate-pulse" />
+          </div>
+
+          {/* Milestone Tick Lines on Glass */}
+          {/* 1.2 C Tick */}
+          <div className="absolute left-0 w-full flex items-center justify-between pointer-events-none" style={{ bottom: `${(1.2 / maxScaleQ) * 100}%` }}>
+            <span className="w-2 h-[1px] bg-slate-400" />
+            <span className="w-2 h-[1px] bg-slate-400" />
+          </div>
+          {/* 2.4 C Tick */}
+          <div className="absolute left-0 w-full flex items-center justify-between pointer-events-none" style={{ bottom: `${(2.4 / maxScaleQ) * 100}%` }}>
+            <span className="w-2.5 h-[1.5px] bg-emerald-400" />
+            <span className="w-2.5 h-[1.5px] bg-emerald-400" />
+          </div>
+          {/* 3.6 C Tick */}
+          <div className="absolute left-0 w-full flex items-center justify-between pointer-events-none" style={{ bottom: `${(3.6 / maxScaleQ) * 100}%` }}>
+            <span className="w-2 h-[1px] bg-amber-400" />
+            <span className="w-2 h-[1px] bg-amber-400" />
+          </div>
+        </div>
+
+        {/* Milestone Explanations & Density */}
+        <div className="flex-1 space-y-1.5 text-[10px]">
+          <div className="text-[9px] text-slate-400">
+            Formula: {currentMa.toFixed(1)}mA × {durationMin}m ({durationMin * 60}s)
+          </div>
+          <div className="flex items-center justify-between text-slate-300">
+            <span>Charge Density (Q/A):</span>
+            <span className="font-bold text-slate-100">{telemetry.chargeDensityCCm2} C/cm²</span>
+          </div>
+
+          <div className="space-y-1 pt-1 border-t border-slate-800/60">
+            <div className={`flex items-center justify-between px-1.5 py-0.5 rounded ${totalQ >= 1.2 && totalQ < 2.4 ? 'bg-cyan-950/60 text-cyan-300 font-bold' : 'text-slate-400'}`}>
+              <span>• 1.2 C: Primer (10m)</span>
+              {totalQ >= 1.2 && <span>✓</span>}
+            </div>
+            <div className={`flex items-center justify-between px-1.5 py-0.5 rounded ${totalQ >= 2.4 && totalQ < 3.6 ? 'bg-emerald-950/60 text-emerald-300 font-bold' : 'text-slate-400'}`}>
+              <span>• 2.4 C: Clinical Std (20m)</span>
+              {totalQ >= 2.4 && <span>✓</span>}
+            </div>
+            <div className={`flex items-center justify-between px-1.5 py-0.5 rounded ${totalQ >= 3.6 ? 'bg-amber-950/60 text-amber-300 font-bold' : 'text-slate-400'}`}>
+              <span>• 3.6 C: Research Max (30m)</span>
+              {totalQ >= 3.6 && <span>⚠️</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

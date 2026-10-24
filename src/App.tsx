@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useUrlMontageState } from './hooks/useUrlMontageState';
-import { BRAIN_NODES } from './data/brain_nodes';
 import { CLINICAL_PRESETS, ClinicalPreset } from './data/clinical_presets';
 import { calculateTelemetry, MultiChannelChannel } from './utils/biophysicsEngine';
 import { BrainViewport3D } from './components/BrainViewport3D';
@@ -10,16 +9,24 @@ import { CellularMechanismWidget } from './components/CellularMechanismWidget';
 import { AudioSonificationModal } from './components/AudioSonificationModal';
 import { ProtocolExportModal } from './components/ProtocolExportModal';
 import { MultiChannelMatrixModal } from './components/MultiChannelMatrixModal';
+import { VisualPresetRibbon } from './components/visuals/VisualPresetRibbon';
+import { ActiveCircuitLiveWire } from './components/visuals/ActiveCircuitLiveWire';
+import { IsometricLayerStack } from './components/visuals/IsometricLayerStack';
+import { ScalpTopomap1020 } from './components/visuals/ScalpTopomap1020';
+import { LobeFunctionalSilhouette } from './components/visuals/LobeFunctionalSilhouette';
+import { MontageFocalityGraphic } from './components/visuals/MontageFocalityGraphic';
+import { BiksonSafetyGauge } from './components/visuals/BiksonSafetyGauge';
+import { CurrentPenetrationWaterfall } from './components/visuals/CurrentPenetrationWaterfall';
+import { ChargeDoseReservoir } from './components/visuals/ChargeDoseReservoir';
+import { SensationMatrixGlyphs } from './components/visuals/SensationMatrixGlyphs';
 import {
   Brain,
   Zap,
   ArrowLeftRight,
   Share2,
   Check,
-  ShieldCheck,
   Waves,
   Activity,
-  Sliders,
   Volume2,
   FileText,
   Grid,
@@ -164,9 +171,6 @@ export function App() {
     setTimeout(() => setCopiedLink(false), 2200);
   };
 
-  const anodeNode = BRAIN_NODES[montageState.anode] || BRAIN_NODES['F3'];
-  const cathodeNode = BRAIN_NODES[montageState.cathode] || BRAIN_NODES['Fp2'];
-
   return (
     <div className="flex flex-col w-screen h-screen bg-[#070B12] text-slate-100 overflow-hidden font-sans">
       {/* TOP BAR: Header, 8 Clinical Presets, URL Share, Layer Pills */}
@@ -188,99 +192,44 @@ export function App() {
           </div>
         </div>
 
-        {/* 8 One-Click Clinical Presets (AngioView style buttons) */}
-        <div className="hidden xl:flex items-center gap-1.5 overflow-x-auto py-1 max-w-3xl">
-          {CLINICAL_PRESETS.map((preset) => {
-            const isSelected =
-              montageState.anode === preset.anode &&
-              montageState.cathode === preset.cathode &&
-              montageState.mode === preset.montageType;
-
-            return (
-              <button
-                key={preset.id}
-                onClick={() => handleSelectPreset(preset)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-mono whitespace-nowrap transition-all border ${
-                  isSelected
-                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/70 font-bold shadow-glow-cyan'
-                    : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700'
-                }`}
-                title={`${preset.name} (${preset.evidenceLevel})`}
-              >
-                {preset.shortLabel}
-              </button>
-            );
-          })}
+        {/* Visual Clinical Preset Ribbons (Miniature Anatomical Badges) */}
+        <div className="hidden xl:flex items-center gap-1.5 overflow-x-auto py-1 max-w-xl">
+          <VisualPresetRibbon
+            activeAnode={montageState.anode}
+            activeCathode={montageState.cathode}
+            activeMode={montageState.mode}
+            onSelectPreset={handleSelectPreset}
+          />
         </div>
 
-        {/* Right Header Utilities: Layer Pills & Share Button */}
+        {/* Center Live Active Circuit Wire Pulse */}
+        <ActiveCircuitLiveWire
+          anodeId={montageState.anode}
+          cathodeId={montageState.cathode}
+          currentMa={montageState.ma}
+          durationMin={montageState.dur}
+          mode={montageState.mode}
+        />
+
+        {/* Right Header Utilities: Isometric Layer Depth Stack & Actions */}
         <div className="flex items-center gap-2">
-          {/* Layer Pills */}
-          <div className="hidden lg:flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-lg border border-slate-800 text-[10px] font-mono">
-            <button
-              onClick={() => setShowHumanFace(!showHumanFace)}
-              className={`px-2 py-1 rounded transition flex items-center gap-1 ${
-                showHumanFace ? 'bg-slate-800 text-sky-300 font-bold' : 'text-slate-500'
-              }`}
-              title="Toggle 3D Human Face Overlay (Anterior/Front Landmark - Video Feedback #1)"
-            >
-              <span>👤</span> Face Overlay
-            </button>
-            <button
-              onClick={() => setShowScalpGrid(!showScalpGrid)}
-              className={`px-2 py-1 rounded transition ${
-                showScalpGrid ? 'bg-slate-800 text-cyan-300 font-bold' : 'text-slate-500'
-              }`}
-              title="Toggle Scalp Shell & 10-20 Meridian Straps"
-            >
-              Scalp 10-20
-            </button>
-            <button
-              onClick={() => setShowShuntHalo(!showShuntHalo)}
-              className={`px-2 py-1 rounded transition ${
-                showShuntHalo ? 'bg-slate-800 text-rose-300 font-bold' : 'text-slate-500'
-              }`}
-              title="Toggle Scalp/CSF Skull Shunt Halo (BUG-04)"
-            >
-              Skull Shunt Halo
-            </button>
-            <button
-              onClick={() => setShowEField(!showEField)}
-              className={`px-2 py-1 rounded transition ${
-                showEField ? 'bg-slate-800 text-amber-300 font-bold' : 'text-slate-500'
-              }`}
-              title="Toggle Cortical E-Field Heatmap"
-            >
-              E-Field
-            </button>
-            <button
-              onClick={() => setShowStreamlines(!showStreamlines)}
-              className={`px-2 py-1 rounded transition ${
-                showStreamlines ? 'bg-slate-800 text-cyan-300 font-bold' : 'text-slate-500'
-              }`}
-              title="Toggle 3D Current Streamlines"
-            >
-              Streamlines
-            </button>
-            <button
-              onClick={() => setShowPointCloud(!showPointCloud)}
-              className={`px-2 py-1 rounded transition ${
-                showPointCloud ? 'bg-slate-800 text-purple-300 font-bold' : 'text-slate-500'
-              }`}
-              title="Toggle Neural Point-Cloud"
-            >
-              Point-Cloud
-            </button>
-            <button
-              onClick={() => setShowBrodmannLabels(!showBrodmannLabels)}
-              className={`px-2 py-1 rounded transition ${
-                showBrodmannLabels ? 'bg-slate-800 text-emerald-300 font-bold' : 'text-slate-500'
-              }`}
-              title="Toggle All Brodmann Area Labels"
-            >
-              Labels
-            </button>
-          </div>
+          {/* Isometric Layer Visualizer Stack (CAD/Photoshop Style) */}
+          <IsometricLayerStack
+            showHumanFace={showHumanFace}
+            setShowHumanFace={setShowHumanFace}
+            showScalpGrid={showScalpGrid}
+            setShowScalpGrid={setShowScalpGrid}
+            showShuntHalo={showShuntHalo}
+            setShowShuntHalo={setShowShuntHalo}
+            showEField={showEField}
+            setShowEField={setShowEField}
+            showStreamlines={showStreamlines}
+            setShowStreamlines={setShowStreamlines}
+            showPointCloud={showPointCloud}
+            setShowPointCloud={setShowPointCloud}
+            showBrodmannLabels={showBrodmannLabels}
+            setShowBrodmannLabels={setShowBrodmannLabels}
+          />
 
           {/* Audio Sonification Button */}
           <button
@@ -356,16 +305,16 @@ export function App() {
           </button>
         )}
 
-        {/* LEFT DOCK (280px): Montage Selector, Dosimetry, Safety Telemetry (Collapsible) */}
+        {/* LEFT DOCK (300px): Montage Selector, Dosimetry, Safety Telemetry (Collapsible) */}
         <aside
           className={`${
-            isLeftDockCollapsed ? 'w-0 border-r-0 overflow-hidden opacity-0 pointer-events-none' : 'w-[280px] border-r overflow-y-auto opacity-100'
+            isLeftDockCollapsed ? 'w-0 border-r-0 overflow-hidden opacity-0 pointer-events-none' : 'w-[300px] border-r overflow-y-auto opacity-100'
           } bg-[#0F1623] border-slate-800 flex flex-col shrink-0 custom-scrollbar z-10 select-none transition-all duration-300 ease-in-out relative`}
         >
           {/* Header Row with Collapse Button */}
           <div className="p-3 border-b border-slate-800/80 bg-[#0E1524] flex items-center justify-between shrink-0">
             <span className="text-[11px] font-mono font-bold text-slate-200 flex items-center gap-1.5">
-              <span>⚙️</span> CONFIG & DOSIMETRY
+              <span>⚙️</span> TELEMETRY & MONTAGE
             </span>
             <button
               onClick={() => setIsLeftDockCollapsed(true)}
@@ -376,7 +325,7 @@ export function App() {
             </button>
           </div>
 
-          {/* Preset Selector Dropdown (mobile/tablet fallback, mounted only when viewport < 1280px BUG-11) */}
+          {/* Preset Selector Dropdown (mobile/tablet fallback) */}
           {isMobile && (
             <div className="p-3 border-b border-slate-800/80 shrink-0">
               <label htmlFor="mobile-preset-select" className="text-[11px] font-mono font-semibold text-slate-400 block mb-1">
@@ -401,119 +350,31 @@ export function App() {
             </div>
           )}
 
-          {/* Montage Configuration */}
+          {/* 1. Interactive 2D Scalp Topomap / Electrode Compass */}
           <div className="p-3 border-b border-slate-800/80 space-y-3 shrink-0">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-bold text-slate-200 flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-cyan-400" />
-                ELECTRODE MONTAGE
-              </span>
-              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-1.5 py-0.5 rounded">
-                10-20 SYSTEM
-              </span>
-            </div>
+            <ScalpTopomap1020
+              anodeId={montageState.anode}
+              cathodeId={montageState.cathode}
+              montageType={montageState.mode}
+              surroundNodes={surroundNodes}
+              onSelectNode={handleSelectNode}
+              onFlipPolarity={handleFlipPolarity}
+            />
 
-            {/* Anode Selection Card with Emoji */}
-            <div className="bg-slate-900/80 border border-red-900/40 rounded-lg p-2.5 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-red-400 font-bold flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-glow-anode" />
-                  🔴 ANODE (+ DEP.)
-                </span>
-                <button
-                  onClick={() => setActivePlacementMode(activePlacementMode === 'anode' ? null : 'anode')}
-                  className={`text-[10px] px-1.5 py-0.5 rounded border transition ${
-                    activePlacementMode === 'anode'
-                      ? 'bg-red-500 text-white border-red-400 font-bold'
-                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
-                  }`}
-                >
-                  {activePlacementMode === 'anode' ? 'Placing...' : '3D Click'}
-                </button>
-              </div>
+            {/* Anatomical Lobe & Cytoarchitectonic Silhouette */}
+            <LobeFunctionalSilhouette
+              anodeId={montageState.anode}
+              cathodeId={montageState.cathode}
+            />
 
-              <select
-                value={montageState.anode}
-                onChange={(e) => updateMontageState({ anode: e.target.value })}
-                className="w-full bg-[#070B12] border border-slate-700 text-slate-100 text-xs rounded p-1.5 font-mono"
-              >
-                {Object.values(BRAIN_NODES).map((node) => (
-                  <option key={node.id} value={node.id}>
-                    {node.id} — {node.shortName}
-                  </option>
-                ))}
-              </select>
-
-              <div className="text-[10px] text-slate-400 font-mono">
-                Target: <span className="text-slate-200">{anodeNode.brodmannAreas.join(', ')}</span> ({anodeNode.lobe})
-              </div>
-            </div>
-
-            {/* Cathode Selection Card with Emoji */}
-            <div className="bg-slate-900/80 border border-cyan-900/40 rounded-lg p-2.5 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-cyan-400 font-bold flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-glow-cathode" />
-                  🔵 CATHODE (– HYP.)
-                </span>
-                <button
-                  onClick={() => setActivePlacementMode(activePlacementMode === 'cathode' ? null : 'cathode')}
-                  className={`text-[10px] px-1.5 py-0.5 rounded border transition ${
-                    activePlacementMode === 'cathode'
-                      ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold'
-                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
-                  }`}
-                >
-                  {activePlacementMode === 'cathode' ? 'Placing...' : '3D Click'}
-                </button>
-              </div>
-
-              <select
-                value={montageState.cathode}
-                onChange={(e) => updateMontageState({ cathode: e.target.value })}
-                className="w-full bg-[#070B12] border border-slate-700 text-slate-100 text-xs rounded p-1.5 font-mono"
-              >
-                {Object.values(BRAIN_NODES).map((node) => (
-                  <option key={node.id} value={node.id}>
-                    {node.id} — {node.shortName}
-                  </option>
-                ))}
-              </select>
-
-              <div className="text-[10px] text-slate-400 font-mono">
-                Return: <span className="text-slate-200">{cathodeNode.brodmannAreas.join(', ')}</span> ({cathodeNode.lobe})
-              </div>
-            </div>
-
-            {/* Montage Mode Toggle: Sponge vs HD-tDCS 4x1 */}
-            <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-slate-300 font-medium">Montage Focality</span>
-              <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded border border-slate-800 text-[10px] font-mono">
-                <button
-                  onClick={() => updateMontageState({ mode: 'sponge', pad: 25 })}
-                  className={`px-2 py-0.5 rounded transition ${
-                    montageState.mode === 'sponge'
-                      ? 'bg-slate-800 text-cyan-300 font-bold'
-                      : 'text-slate-500'
-                  }`}
-                >
-                  Sponge Pad
-                </button>
-                <button
-                  onClick={() => updateMontageState({ mode: 'hd4x1', pad: 3.14 })}
-                  className={`px-2 py-0.5 rounded transition ${
-                    montageState.mode === 'hd4x1'
-                      ? 'bg-cyan-500/20 text-cyan-400 font-bold border border-cyan-500/40'
-                      : 'text-slate-500'
-                  }`}
-                >
-                  HD 4×1 Ring
-                </button>
-              </div>
-            </div>
+            {/* Montage Focality Comparison Graphic (Sponge vs HD Ring) */}
+            <MontageFocalityGraphic
+              mode={montageState.mode}
+              onSelectMode={(mode) => updateMontageState({ mode, pad: mode === 'hd4x1' ? 3.14 : 25 })}
+            />
           </div>
 
-          {/* Dosimetry Sliders with Emojis */}
+          {/* 2. Dosimetry Sliders */}
           <div className="p-3 border-b border-slate-800/80 space-y-3.5 shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-mono font-bold text-slate-200 flex items-center gap-1.5">
@@ -603,76 +464,36 @@ export function App() {
                   className="w-full accent-purple-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
                 />
               )}
-              <div className="flex justify-between text-[9px] font-mono text-slate-500">
-                <button
-                  type="button"
-                  onClick={() => montageState.mode === 'sponge' && updateMontageState({ pad: 16 })}
-                  className="hover:text-purple-300 transition cursor-pointer"
-                >
-                  16 (4x4)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => montageState.mode === 'sponge' && updateMontageState({ pad: 25 })}
-                  className="hover:text-purple-300 transition cursor-pointer"
-                >
-                  25 (5x5)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => montageState.mode === 'sponge' && updateMontageState({ pad: 35 })}
-                  className="hover:text-purple-300 transition cursor-pointer"
-                >
-                  35 (5x7)
-                </button>
-              </div>
             </div>
           </div>
 
-          {/* Live Biophysical Safety Telemetry Card */}
-          <div className="p-3 space-y-2.5 flex-1 shrink-0">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="font-bold text-slate-200 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>🛡️</span> SAFETY TELEMETRY
-              </span>
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                  telemetry.safetyIndex === 'OPTIMAL'
-                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-                    : telemetry.safetyIndex === 'MODERATE'
-                    ? 'bg-amber-950/80 text-amber-300 border-amber-800'
-                    : 'bg-rose-950/80 text-rose-300 border-rose-800'
-                }`}
-              >
-                {telemetry.safetyIndex}
-              </span>
-            </div>
+          {/* 3. Live Biophysical Visual Telemetry Suite */}
+          <div className="p-3 space-y-3 flex-1 shrink-0">
+            {/* Bikson Aviation Safety Arc Gauge */}
+            <BiksonSafetyGauge telemetry={telemetry} />
 
-            <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-xs font-mono">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Current Density J:</span>
-                <span className="text-cyan-300 font-bold">
-                  {telemetry.currentDensityMaCm2} mA/cm² ({telemetry.currentDensityAM2} A/m²)
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Total Charge Q:</span>
-                <span className="text-slate-200">{telemetry.totalChargeCoulombs} C</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Charge Density:</span>
-                <span className="text-slate-200">{telemetry.chargeDensityCCm2} C/cm²</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Scalp/CSF Shunt:</span>
-                <span className="text-rose-300 font-bold">{telemetry.shuntPercentage}%</span>
-              </div>
-            </div>
+            {/* Tissue Shunt & Current Penetration Waterfall */}
+            <CurrentPenetrationWaterfall
+              telemetry={telemetry}
+              montageType={montageState.mode}
+              currentMa={montageState.ma}
+            />
 
-            <p className="text-[10px] text-slate-400 leading-normal italic bg-slate-950/40 p-2 rounded border border-slate-800/60">
-              "{telemetry.safetyMessage}"
-            </p>
+            {/* Total Charge Dose Reservoir (Battery Cylinder) */}
+            <ChargeDoseReservoir
+              telemetry={telemetry}
+              currentMa={montageState.ma}
+              durationMin={montageState.dur}
+            />
+
+            {/* Human Sensation Matrix Glyphs */}
+            <SensationMatrixGlyphs
+              telemetry={telemetry}
+              anodeId={montageState.anode}
+              cathodeId={montageState.cathode}
+              currentMa={montageState.ma}
+              durationMin={montageState.dur}
+            />
           </div>
         </aside>
 

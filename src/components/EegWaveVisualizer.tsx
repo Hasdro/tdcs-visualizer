@@ -3,6 +3,8 @@ import { EEG_BANDS } from '../data/eeg_bands';
 import { BRAIN_NODES } from '../data/brain_nodes';
 import { BiophysicalTelemetry } from '../utils/biophysicsEngine';
 import { ChevronDown, ChevronUp, Waves, ArrowUpRight, ArrowDownRight, Minus, Sparkles } from 'lucide-react';
+import { EegSpectralBarChart } from './visuals/EegSpectralBarChart';
+import { NeuroArousalCompass } from './visuals/NeuroArousalCompass';
 
 interface EegWaveVisualizerProps {
   anodeId: string;
@@ -246,9 +248,15 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
       </div>
 
       {/* Quantitative Shift Cards & Up/Down Reference Guide */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
-        <div className="text-[11px] font-mono font-semibold text-slate-400 flex items-center justify-between">
-          <span>SPECTRAL POWER SHIFTS</span>
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+        {/* Real-Time 6-Band FFT Power Distribution Visualizer */}
+        <EegSpectralBarChart bandShifts={bandShifts} />
+
+        {/* 2D Neuro-Arousal & Executive Drive Compass */}
+        <NeuroArousalCompass bandShifts={bandShifts} anodeId={anodeId} />
+
+        <div className="text-[11px] font-mono font-semibold text-slate-400 flex items-center justify-between pt-1">
+          <span>INDIVIDUAL FREQUENCY BANDS</span>
           <span className="text-[10px] text-cyan-400 font-normal">
             Ref: Koessler et al., Bikson 2016
           </span>
