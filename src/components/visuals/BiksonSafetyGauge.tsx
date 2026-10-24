@@ -62,15 +62,15 @@ export const BiksonSafetyGauge: React.FC<BiksonSafetyGaugeProps> = ({ telemetry 
   const needleTipY = cy - needleLength * Math.cos(angleRad);
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl relative overflow-hidden group">
+    <div className="panel-card relative overflow-hidden">
       {/* Top Header */}
-      <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-800/60 text-[11px] font-mono">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 px-3 py-2.5">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          BIKSON SAFETY GAUGE
+          Safety gauge
         </span>
         <span
-          className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition ${
+          className={`shrink-0 rounded border px-1.5 py-0.5 text-[11px] font-semibold transition ${
             telemetry.safetyIndex === 'OPTIMAL'
               ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
               : telemetry.safetyIndex === 'MODERATE'
@@ -83,7 +83,7 @@ export const BiksonSafetyGauge: React.FC<BiksonSafetyGaugeProps> = ({ telemetry 
       </div>
 
       {/* SVG Arc Gauge */}
-      <div className="relative flex justify-center items-center py-1">
+      <div className="relative flex items-center justify-center py-1">
         <svg viewBox="0 0 220 120" className="w-56 h-auto drop-shadow-md">
           {/* Subtle Outer Track */}
           <path d={describeArc(0, 180, rOuter + 2, rInner - 2)} fill="#111827" />
@@ -95,11 +95,11 @@ export const BiksonSafetyGauge: React.FC<BiksonSafetyGaugeProps> = ({ telemetry 
           <path d={redArc} fill="#EF4444" opacity="0.85" className="transition hover:opacity-100" />
 
           {/* Tick Marks & Scale Numbers */}
-          <text x="24" y="104" fill="#94A3B8" fontSize="8" fontFamily="monospace" textAnchor="middle">0</text>
-          <text x="56" y="44" fill="#10B981" fontSize="8" fontFamily="monospace" textAnchor="middle">0.08</text>
-          <text x="110" y="24" fill="#F59E0B" fontSize="8" fontFamily="monospace" textAnchor="middle">0.15</text>
-          <text x="166" y="44" fill="#F97316" fontSize="8" fontFamily="monospace" textAnchor="middle">0.25</text>
-          <text x="198" y="104" fill="#EF4444" fontSize="8" fontFamily="monospace" textAnchor="middle">0.3+</text>
+          <text x="24" y="104" fill="#94A3B8" fontSize="9.2" fontFamily="monospace" textAnchor="middle">0</text>
+          <text x="56" y="44" fill="#10B981" fontSize="9.2" fontFamily="monospace" textAnchor="middle">0.08</text>
+          <text x="110" y="24" fill="#F59E0B" fontSize="9.2" fontFamily="monospace" textAnchor="middle">0.15</text>
+          <text x="166" y="44" fill="#F97316" fontSize="9.2" fontFamily="monospace" textAnchor="middle">0.25</text>
+          <text x="198" y="104" fill="#EF4444" fontSize="9.2" fontFamily="monospace" textAnchor="middle">0.3+</text>
 
           {/* Needle Indicator */}
           <line
@@ -118,25 +118,25 @@ export const BiksonSafetyGauge: React.FC<BiksonSafetyGaugeProps> = ({ telemetry 
         </svg>
 
         {/* Digital Readout In Center Hub */}
-        <div className="absolute bottom-1 text-center font-mono">
+        <div className="absolute bottom-1 text-center">
           <div className="text-sm font-bold text-slate-100">
-            {J.toFixed(4)} <span className="text-[10px] text-slate-400 font-normal">mA/cm²</span>
+            {J.toFixed(4)} <span className="text-[11px] text-slate-400 font-normal">mA/cm²</span>
           </div>
-          <div className="text-[10px] text-emerald-400 font-semibold mt-0.5">
-            {Number(safetyMultiple) > 1 ? `${safetyMultiple}× Below Threshold` : '⚠️ Boundary Limit'}
+          <div className="text-[11px] text-emerald-400 font-semibold mt-0.5">
+            {Number(safetyMultiple) > 1 ? `${safetyMultiple}× below threshold` : '⚠️ Boundary limit'}
           </div>
         </div>
       </div>
 
       {/* Legend & Safety Consensus Details */}
-      <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-800/60 text-[10px] font-mono">
+      <div className="grid grid-cols-2 gap-1.5 border-t border-slate-800/60 px-3 pb-3 pt-2 text-[11px]">
         <div className="flex items-center gap-1.5 text-slate-400">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          <span>Consensus Safe</span>
+          <span>Consensus safe</span>
         </div>
         <div className="flex items-center gap-1.5 text-slate-400">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-          <span>Erythema Limit</span>
+          <span>Erythema limit</span>
         </div>
       </div>
     </div>

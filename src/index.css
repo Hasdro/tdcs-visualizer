@@ -31,3 +31,101 @@ html, body, #root {
   background-color: #070B12;
   color: #F8FAFC;
 }
+
+body {
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Every numeric reading uses tabular figures so live telemetry never jitters. */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+  /* Shared card shell + sentence-case clinical headers. */
+  .panel-card {
+    @apply rounded-xl border border-slate-800/90 bg-[#0C121E]/95 shadow-lg;
+  }
+
+  .panel-header {
+    @apply flex items-start justify-between gap-2 border-b border-slate-800/70 px-3 py-2.5;
+  }
+
+  .panel-title {
+    @apply flex items-center gap-2 text-[12.5px] font-semibold leading-tight tracking-tight text-slate-100;
+  }
+
+  .panel-kicker {
+    @apply mt-0.5 text-[11.5px] font-normal leading-snug text-slate-400;
+  }
+
+  .metric-value {
+    @apply font-mono font-semibold tabular-nums text-slate-100;
+  }
+
+  .metric-unit {
+    @apply font-mono text-[11px] font-normal text-slate-400;
+  }
+
+  .field-label {
+    @apply text-[12px] font-medium text-slate-300;
+  }
+
+  .micro-label {
+    @apply text-[11px] font-medium text-slate-400;
+  }
+}
+
+/* High-contrast dosimetry sliders. */
+input[type='range'].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: #1e293b;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type='range'].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: 3px solid currentColor;
+  box-shadow: 0 0 0 3px rgb(15 23 42 / 0.8);
+}
+
+input[type='range'].slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: 3px solid currentColor;
+  box-shadow: 0 0 0 3px rgb(15 23 42 / 0.8);
+}
+
+/* Native number fields: remove tiny spin buttons in favour of explicit steppers. */
+input[type='number'].no-spin::-webkit-outer-spin-button,
+input[type='number'].no-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'].no-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

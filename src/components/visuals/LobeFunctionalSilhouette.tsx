@@ -30,13 +30,13 @@ export const LobeFunctionalSilhouette: React.FC<LobeFunctionalSilhouetteProps> =
   const returnLobe = cathodeNode.lobe;
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl font-mono text-xs select-none">
-      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+    <div className="panel-card select-none p-3 text-xs">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-amber-400" />
-          ANATOMICAL LOBE & TARGETS
+          Anatomical target
         </span>
-        <span className="text-[10px] text-amber-300 font-semibold">{targetLobe} Cortex</span>
+        <span className="text-[11px] text-amber-300 font-semibold">{targetLobe} cortex</span>
       </div>
 
       {/* Stylized Dual-Hemisphere Lobe Map */}
@@ -79,32 +79,32 @@ export const LobeFunctionalSilhouette: React.FC<LobeFunctionalSilhouetteProps> =
         </svg>
 
         {/* Lobe Text Summary */}
-        <div className="flex-1 text-[10px] space-y-1">
+        <div className="flex-1 text-[11px] space-y-1">
           <div className="text-slate-300">
-            <span className="text-red-400 font-bold">Anode (+):</span> {anodeNode.shortName}
+            <span className="font-medium text-rose-300">Anode (+)</span> · {anodeNode.shortName}
           </div>
           <div className="text-slate-400">
-            <span className="text-cyan-400 font-bold">Cathode (–):</span> {cathodeNode.shortName}
+            <span className="font-medium text-cyan-300">Cathode (–)</span> · {cathodeNode.shortName}
           </div>
-          <div className="text-[9px] text-slate-500 pt-0.5 border-t border-slate-800">
-            Dipole Vector: {targetLobe} → {returnLobe}
+          <div className="text-[10.5px] text-slate-500 pt-0.5 border-t border-slate-800">
+            Dipole vector: {targetLobe} → {returnLobe}
           </div>
         </div>
       </div>
 
       {/* Brodmann Area Interactive Chips */}
       <div className="space-y-1 pt-1">
-        <span className="text-[10px] text-slate-400 block">Target Brodmann Cytoarchitectonics:</span>
+        <span className="text-[11px] text-slate-400 block">Target Brodmann areas:</span>
         <div className="flex flex-wrap gap-1.5">
           {anodeNode.brodmannAreas.map((ba) => (
             <div
               key={ba}
-              className="group relative cursor-help bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-[10px] font-bold transition flex items-center gap-1"
+              className="group relative cursor-help bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-[11px] font-bold transition flex items-center gap-1"
             >
-              <span>BA {ba}</span>
+              <span className="font-mono">BA {ba}</span>
               {/* Tooltip */}
-              <div className="absolute left-0 bottom-full mb-1.5 w-48 hidden group-hover:block bg-slate-900 text-slate-200 border border-amber-500/50 p-2 rounded-lg shadow-2xl text-[9px] leading-tight z-30 font-normal pointer-events-none">
-                <span className="font-bold text-amber-300 block mb-0.5">Brodmann Area {ba}</span>
+              <div className="absolute left-0 bottom-full mb-1.5 w-48 hidden group-hover:block bg-slate-900 text-slate-200 border border-amber-500/50 p-2 rounded-lg shadow-2xl text-[10.5px] leading-tight z-30 font-normal pointer-events-none">
+                <span className="mb-0.5 block font-semibold text-amber-300">Brodmann area {ba}</span>
                 {BRODMANN_DESCRIPTIONS[Number(ba)] || 'Cortical processing sub-region'}
               </div>
             </div>

@@ -4,7 +4,8 @@ import {
   BrainWaveBandId,
   BAND_FREQUENCIES
 } from '../utils/audioSonification';
-import { Volume2, VolumeX, Play, Square, Radio, X, Info } from 'lucide-react';
+import { Volume2, VolumeX, Play, Square, Radio, X } from 'lucide-react';
+import { BinauralPhaseInterferenceDiagram } from './visuals/BinauralPhaseInterferenceDiagram';
 
 interface AudioSonificationModalProps {
   isOpen: boolean;
@@ -147,13 +148,13 @@ export const AudioSonificationModal: React.FC<AudioSonificationModalProps> = ({
               <Radio className="w-4 h-4 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-sm font-mono font-bold tracking-tight text-white flex items-center gap-2">
-                EEG BRAIN WAVE SONIFICATION
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-900/60 text-cyan-300 font-normal">
-                  WEB AUDIO ASSR
+              <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white">
+                EEG sonification
+                <span className="rounded bg-cyan-900/60 px-1.5 py-0.5 text-[11px] font-normal text-cyan-300">
+                  Web Audio · ASSR
                 </span>
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[12px] text-slate-400">
                 Auditory steady-state resonance & stereophonic binaural pulse synthesis
               </p>
             </div>
@@ -168,10 +169,10 @@ export const AudioSonificationModal: React.FC<AudioSonificationModalProps> = ({
 
         {/* Oscilloscope Viewport */}
         <div className="p-4 bg-[#070B12] border-b border-slate-800">
-          <div className="flex items-center justify-between mb-1.5 font-mono text-[10px] text-slate-400">
-            <span>STEREO OSCILLOSCOPE MONITOR</span>
+          <div className="mb-1.5 flex items-center justify-between text-[11px] text-slate-400">
+            <span className="font-medium">Stereo oscilloscope</span>
             <span className={isPlaying ? 'text-cyan-400 font-bold' : 'text-slate-500'}>
-              {isPlaying ? `EMITTING ${currentBandInfo.targetHz} Hz PULSE` : 'STANDBY'}
+              {isPlaying ? <>Emitting <span className="font-mono">{currentBandInfo.targetHz} Hz</span> pulse</> : 'Standby'}
             </span>
           </div>
           <canvas
@@ -187,7 +188,7 @@ export const AudioSonificationModal: React.FC<AudioSonificationModalProps> = ({
           {/* Band Selector Buttons */}
           <div>
             <label className="text-xs font-mono font-bold text-slate-300 block mb-2">
-              TARGET EEG FREQUENCY BAND
+              Target EEG frequency band
             </label>
             <div className="grid grid-cols-3 gap-2">
               {(Object.keys(BAND_FREQUENCIES) as BrainWaveBandId[]).map((bKey) => {
@@ -204,12 +205,12 @@ export const AudioSonificationModal: React.FC<AudioSonificationModalProps> = ({
                     }`}
                   >
                     <div className="text-xs font-bold">{info.name}</div>
-                    <div className="text-[10px] text-slate-500">{info.targetHz} Hz Beat</div>
+                    <div className="text-[11px] text-slate-500">{info.targetHz} Hz Beat</div>
                   </button>
                 );
               })}
             </div>
-            <p className="mt-2 text-[11px] text-slate-400 font-mono italic">
+            <p className="mt-2 text-[12px] text-slate-400 font-mono italic">
               {currentBandInfo.description}
             </p>
           </div>
@@ -258,7 +259,7 @@ export const AudioSonificationModal: React.FC<AudioSonificationModalProps> = ({
           <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/70 border border-slate-800 text-xs font-mono">
             <div>
               <div className="font-bold text-slate-200">Isochronic Pulse Modulation</div>
-              <div className="text-[10px] text-slate-400">
+              <div className="text-[11px] text-slate-400">
                 Amplitude-modulate tone for speaker listening without headphones
               </div>
             </div>
@@ -274,19 +275,17 @@ export const AudioSonificationModal: React.FC<AudioSonificationModalProps> = ({
             </button>
           </div>
 
-          {/* Scientific Info Note */}
-          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80 text-[11px] text-slate-400">
-            <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-            <div>
-              <strong>Headphones Recommended:</strong> Binaural beats function via acoustic phase cancellation
-              in the brainstem superior olive (Left: {carrier} Hz, Right: {(carrier + currentBandInfo.targetHz).toFixed(1)} Hz).
-            </div>
-          </div>
+          {/* Visual binaural neurophysics diagram (replaces the explanatory info paragraph) */}
+          <BinauralPhaseInterferenceDiagram
+            carrierHz={carrier}
+            beatHz={currentBandInfo.targetHz}
+            isPlaying={isPlaying}
+          />
         </div>
 
         {/* Footer Play / Close Actions */}
         <div className="px-5 py-3 bg-[#0A101D] border-t border-slate-800 flex items-center justify-between">
-          <div className="text-[11px] font-mono text-slate-500">
+          <div className="text-[12px] font-mono text-slate-500">
             Stereo 44.1 kHz 32-bit float
           </div>
           <div className="flex items-center gap-2">
@@ -301,12 +300,12 @@ export const AudioSonificationModal: React.FC<AudioSonificationModalProps> = ({
               {isPlaying ? (
                 <>
                   <Square className="w-3.5 h-3.5 fill-current" />
-                  <span>STOP AUDIO</span>
+                  <span>Stop audio</span>
                 </>
               ) : (
                 <>
                   <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>START SONIFICATION</span>
+                  <span>Start sonification</span>
                 </>
               )}
             </button>

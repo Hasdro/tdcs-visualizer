@@ -23,14 +23,14 @@ export const CurrentPenetrationWaterfall: React.FC<CurrentPenetrationWaterfallPr
   const lostScalpCurrent = ((currentMa * scalpShunt) / 100).toFixed(2);
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl select-none font-mono text-xs">
-      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+    <div className="panel-card select-none p-3 text-xs">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-rose-400" />
-          TISSUE SHUNT WATERFALL
+          Current shunt breakdown
         </span>
-        <span className="text-[10px] text-slate-400">
-          {isHD ? 'HD 4×1 Focused' : 'Broad Dispersion'}
+        <span className="text-[11px] text-slate-400">
+          {isHD ? 'HD 4×1 focused' : 'Broad dispersion'}
         </span>
       </div>
 
@@ -39,10 +39,10 @@ export const CurrentPenetrationWaterfall: React.FC<CurrentPenetrationWaterfallPr
         {/* Stage 1: Applied Current Input */}
         <div className="flex items-center justify-between bg-slate-900/70 px-2 py-1.5 rounded border border-slate-800">
           <div className="flex items-center gap-2">
-            <span className="text-amber-400 font-bold">⚡ Applied Input</span>
-            <span className="text-[10px] text-slate-400">(100%)</span>
+            <span className="font-medium text-amber-300">Applied input</span>
+            <span className="font-mono text-[11px] text-slate-400">(100%)</span>
           </div>
-          <span className="font-bold text-amber-300">{currentMa.toFixed(1)} mA</span>
+          <span className="font-mono font-semibold text-amber-300">{currentMa.toFixed(1)} <span className="font-normal text-slate-400">mA</span></span>
         </div>
 
         {/* Dynamic Branching SVG */}
@@ -78,7 +78,7 @@ export const CurrentPenetrationWaterfall: React.FC<CurrentPenetrationWaterfallPr
 
             {/* Skull bone high impedance barrier (Dotted resistive line) */}
             <line x1="85" y1="36" x2="85" y2="95" stroke="#64748B" strokeWidth="2" strokeDasharray="2 2" />
-            <text x="88" y="44" fill="#94A3B8" fontSize="7" fontFamily="monospace">Skull Bone (ρ≈80 Ω·m)</text>
+            <text x="88" y="44" fill="#94A3B8" fontSize="8" fontFamily="monospace">Skull Bone (ρ≈80 Ω·m)</text>
 
             {/* Branch 2: CSF fluid diversion */}
             <path
@@ -100,37 +100,35 @@ export const CurrentPenetrationWaterfall: React.FC<CurrentPenetrationWaterfallPr
         </div>
 
         {/* Telemetry Breakdown Rows */}
-        <div className="space-y-1.5 text-[10px]">
+        <div className="space-y-1.5 text-[11px]">
           {/* Scalp loss */}
           <div className="flex items-center justify-between bg-rose-950/30 border border-rose-900/40 px-2 py-1 rounded">
-            <span className="text-rose-300 flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 text-rose-300">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
               Scalp Loss (Lateral Shunt)
             </span>
-            <span className="font-bold text-rose-300">
-              {scalpShunt.toFixed(1)}% ({lostScalpCurrent} mA)
+            <span className="font-mono font-semibold text-rose-300">
+              {scalpShunt.toFixed(1)}% <span className="font-normal text-rose-300/70">({lostScalpCurrent} mA)</span>
             </span>
           </div>
 
           {/* CSF loss */}
           <div className="flex items-center justify-between bg-sky-950/30 border border-sky-900/40 px-2 py-1 rounded">
-            <span className="text-sky-300 flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 text-sky-300">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-              CSF Fluid Dissipation
+              CSF dissipation
             </span>
-            <span className="font-bold text-sky-300">
-              {csfShunt.toFixed(1)}%
-            </span>
+            <span className="font-mono font-semibold text-sky-300">{csfShunt.toFixed(1)}%</span>
           </div>
 
           {/* Cortical delivery */}
           <div className="flex items-center justify-between bg-emerald-950/40 border border-emerald-800/60 px-2 py-1 rounded shadow-sm">
-            <span className="text-emerald-300 font-bold flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 font-medium text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-glow-cyan" />
-              Cortical Target Delivery
+              Cortical delivery
             </span>
-            <span className="font-bold text-emerald-300">
-              {corticalDelivery.toFixed(1)}% (~{effCorticalCurrent} mA)
+            <span className="font-mono font-semibold text-emerald-300">
+              {corticalDelivery.toFixed(1)}% <span className="font-normal text-emerald-300/70">(~{effCorticalCurrent} mA)</span>
             </span>
           </div>
         </div>

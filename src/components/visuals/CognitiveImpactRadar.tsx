@@ -49,13 +49,13 @@ export const CognitiveImpactRadar: React.FC<CognitiveImpactRadarProps> = ({ tele
   const baselinePolygonPath = baselinePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl select-none font-mono text-xs">
-      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+    <div className="panel-card select-none p-3 text-xs">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-emerald-400" />
-          COGNITIVE PERFORMANCE RADAR
+          Cognitive impact
         </span>
-        <span className="text-[10px] text-emerald-300 font-semibold">HEXAGONAL PROJECTION</span>
+        <span className="text-[11px] text-emerald-300 font-semibold">Hexagonal projection</span>
       </div>
 
       <div className="relative flex justify-center items-center py-1">
@@ -128,7 +128,7 @@ export const CognitiveImpactRadar: React.FC<CognitiveImpactRadarProps> = ({ tele
                   x={labelCoord.x}
                   y={labelCoord.y + (i === 0 ? -2 : i === 3 ? 6 : 2)}
                   fill={m.value > 15 ? '#34D399' : '#94A3B8'}
-                  fontSize="7.5"
+                  fontSize="8.6"
                   fontWeight={m.value > 15 ? 'bold' : 'normal'}
                   textAnchor={i === 0 || i === 3 ? 'middle' : i < 3 ? 'start' : 'end'}
                 >
@@ -141,7 +141,7 @@ export const CognitiveImpactRadar: React.FC<CognitiveImpactRadarProps> = ({ tele
       </div>
 
       {/* Legend Footprint Guide */}
-      <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[10px]">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[11px]">
         <div className="flex items-center gap-1.5 text-slate-400">
           <span className="w-2 h-0.5 bg-slate-500 border-dashed" />
           <span>Normative Baseline</span>

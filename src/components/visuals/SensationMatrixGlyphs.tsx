@@ -36,23 +36,23 @@ export const SensationMatrixGlyphs: React.FC<SensationMatrixGlyphsProps> = ({
   const erythemaLevel = erythemaSeverity < 1.2 ? 'mild' : erythemaSeverity < 2.5 ? 'moderate' : 'pronounced';
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl font-mono text-xs select-none">
-      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+    <div className="panel-card select-none p-3 text-xs">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-amber-400" />
-          PERCEPTUAL SENSATION MATRIX
+          Sensation matrix
         </span>
-        <span className="text-[10px] text-slate-400">HUMAN PHENOMENA</span>
+        <span className="text-[11px] text-slate-400">Human phenomena</span>
       </div>
 
       <div className="grid grid-cols-2 gap-2 mt-2">
         {/* Glyph 1: Scalp Tingling */}
         <div className="bg-slate-900/80 border border-slate-800/80 rounded-lg p-2 flex items-center justify-between">
           <div>
-            <div className="text-[10px] text-slate-400 flex items-center gap-1">
+            <div className="text-[11px] text-slate-400 flex items-center gap-1">
               <span>⚡</span> Tingling
             </div>
-            <div className="text-[11px] font-bold text-slate-200 mt-0.5">
+            <div className="text-[12px] font-bold text-slate-200 mt-0.5">
               {tinglingBars <= 2 ? 'Subtle' : tinglingBars <= 4 ? 'Moderate' : 'Noticeable'}
             </div>
           </div>
@@ -83,10 +83,10 @@ export const SensationMatrixGlyphs: React.FC<SensationMatrixGlyphsProps> = ({
             : 'bg-slate-900/80 border-slate-800/80 text-slate-400'
         }`}>
           <div>
-            <div className="text-[10px] flex items-center gap-1">
+            <div className="text-[11px] flex items-center gap-1">
               <span>🥄</span> Metallic Taste
             </div>
-            <div className={`text-[11px] font-bold mt-0.5 ${hasMetallicTaste ? 'text-amber-300' : 'text-slate-400'}`}>
+            <div className={`text-[12px] font-bold mt-0.5 ${hasMetallicTaste ? 'text-amber-300' : 'text-slate-400'}`}>
               {hasMetallicTaste ? 'Possible (Chorda)' : 'None Detected'}
             </div>
           </div>
@@ -100,10 +100,10 @@ export const SensationMatrixGlyphs: React.FC<SensationMatrixGlyphsProps> = ({
             : 'bg-slate-900/80 border-slate-800/80 text-slate-400'
         }`}>
           <div>
-            <div className="text-[10px] flex items-center gap-1">
+            <div className="text-[11px] flex items-center gap-1">
               <span>👁️</span> Phosphene Flash
             </div>
-            <div className={`text-[11px] font-bold mt-0.5 ${hasPhospheneRisk ? 'text-cyan-300' : 'text-slate-400'}`}>
+            <div className={`text-[12px] font-bold mt-0.5 ${hasPhospheneRisk ? 'text-cyan-300' : 'text-slate-400'}`}>
               {hasPhospheneRisk ? 'Retinal Flare' : 'Clear Vision'}
             </div>
           </div>
@@ -113,10 +113,10 @@ export const SensationMatrixGlyphs: React.FC<SensationMatrixGlyphsProps> = ({
         {/* Glyph 4: Skin Erythema Preview Swatch */}
         <div className="bg-slate-900/80 border border-slate-800/80 rounded-lg p-2 flex items-center justify-between">
           <div>
-            <div className="text-[10px] text-slate-400 flex items-center gap-1">
+            <div className="text-[11px] text-slate-400 flex items-center gap-1">
               <span>🔴</span> Skin Flushing
             </div>
-            <div className="text-[11px] font-bold text-slate-200 mt-0.5 capitalize">
+            <div className="text-[12px] font-bold text-slate-200 mt-0.5 capitalize">
               {erythemaLevel} Flush
             </div>
           </div>

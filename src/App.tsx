@@ -1,90 +1,99 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useUrlMontageState } from './hooks/useUrlMontageState';
 import { CLINICAL_PRESETS, ClinicalPreset } from './data/clinical_presets';
 import { calculateTelemetry, MultiChannelChannel } from './utils/biophysicsEngine';
 import { BrainViewport3D } from './components/BrainViewport3D';
-import { EegWaveVisualizer } from './components/EegWaveVisualizer';
-import { HumanImpactSimulators } from './components/HumanImpactSimulators';
-import { CellularMechanismWidget } from './components/CellularMechanismWidget';
 import { AudioSonificationModal } from './components/AudioSonificationModal';
 import { ProtocolExportModal } from './components/ProtocolExportModal';
 import { MultiChannelMatrixModal } from './components/MultiChannelMatrixModal';
-import { VisualPresetRibbon } from './components/visuals/VisualPresetRibbon';
-import { ActiveCircuitLiveWire } from './components/visuals/ActiveCircuitLiveWire';
-import { IsometricLayerStack } from './components/visuals/IsometricLayerStack';
-import { ScalpTopomap1020 } from './components/visuals/ScalpTopomap1020';
-import { LobeFunctionalSilhouette } from './components/visuals/LobeFunctionalSilhouette';
-import { MontageFocalityGraphic } from './components/visuals/MontageFocalityGraphic';
-import { BiksonSafetyGauge } from './components/visuals/BiksonSafetyGauge';
-import { CurrentPenetrationWaterfall } from './components/visuals/CurrentPenetrationWaterfall';
-import { ChargeDoseReservoir } from './components/visuals/ChargeDoseReservoir';
-import { SensationMatrixGlyphs } from './components/visuals/SensationMatrixGlyphs';
+import { SafetyBeacon } from './components/SafetyBeacon';
+import { SetupDock } from './components/SetupDock';
+import { InspectorDock } from './components/InspectorDock';
+import { EvidenceBadge } from './components/ui/EvidenceBadge';
 import {
+  IsometricLayerStack,
+  type LayerOpacity,
+  type LayerVisibility
+} from './components/visuals/IsometricLayerStack';
+import { PresetGlyphRibbon } from './components/visuals/PresetGlyphRibbon';
+import {
+  BookOpen,
   Brain,
-  Zap,
-  ArrowLeftRight,
-  Share2,
   Check,
-  Waves,
-  Activity,
-  Volume2,
   FileText,
   Grid,
-  PanelLeftClose,
   PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen
+  PanelRightOpen,
+  Share2,
+  Volume2,
+  Bug
 } from 'lucide-react';
+import { DisclaimerModal } from './components/DisclaimerModal';
+import { BugReportModal } from './components/BugReportModal';
+
+// One unified stage: the E-field map and current flow are on by default so
+// the stimulation is visible at first glance; everything else is one click away.
+const DEFAULT_VISIBILITY: LayerVisibility = {
+  face: false,
+  scalp: false,
+  shunt: false,
+  efield: true,
+  streamlines: true,
+  pointCloud: false,
+  brodmann: false
+};
+
+const DEFAULT_OPACITY: LayerOpacity = {
+  face: 0.85,
+  scalp: 0.7,
+  shunt: 0.55,
+  tissue: 0.6,
+  efield: 1,
+  streamlines: 1,
+  pointCloud: 1
+};
 
 export function App() {
   const [montageState, updateMontageState] = useUrlMontageState();
 
-  // Active Right Dock Tab: 'eeg' | 'impact' | 'cellular'
-  const [rightTab, setRightTab] = useState<'eeg' | 'impact' | 'cellular'>('eeg');
+  // Layer visibility and opacity
+  const [layers, setLayers] = useState<LayerVisibility>(DEFAULT_VISIBILITY);
+  const [layerOpacity, setLayerOpacity] = useState<LayerOpacity>(DEFAULT_OPACITY);
+  const toggleLayer = (key: keyof LayerVisibility) => setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  const setOpacity = (key: keyof LayerOpacity, value: number) =>
+    setLayerOpacity((prev) => ({ ...prev, [key]: value }));
 
-  // Layer Visibility Toggles
-  const [showScalpGrid, setShowScalpGrid] = useState(true);
-  const [showShuntHalo, setShowShuntHalo] = useState(false);
-  const [showHumanFace, setShowHumanFace] = useState(true);
-  const [showEField, setShowEField] = useState(true);
-  const [showStreamlines, setShowStreamlines] = useState(true);
-  const [showPointCloud, setShowPointCloud] = useState(false);
-  const [showBrodmannLabels, setShowBrodmannLabels] = useState(false);
-
-  // Collapsible Docks (Video Feedback #9 & #10)
+  // Collapsible docks
   const [isLeftDockCollapsed, setIsLeftDockCollapsed] = useState(false);
   const [isRightDockCollapsed, setIsRightDockCollapsed] = useState(false);
 
-  // Track viewport width for responsive mobile elements (BUG-11)
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1280);
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1280);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Active 3D placement tool: null | 'anode' | 'cathode'
+  // Active 3D placement tool
   const [activePlacementMode, setActivePlacementMode] = useState<'anode' | 'cathode' | null>(null);
 
-  // Share link copied toast state
+  // Share-link feedback
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Advanced Feature Modals State
+  // Modals
   const [isAudioOpen, setIsAudioOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isMatrixOpen, setIsMatrixOpen] = useState(false);
+  // Educational-use notice: shown on every page load, not remembered.
+  const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(true);
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [activeChannels, setActiveChannels] = useState<MultiChannelChannel[] | undefined>(undefined);
 
-  // HD-tDCS surround cathodes configuration
   const currentPreset = useMemo(() => {
     return CLINICAL_PRESETS.find(
-      (p) => p.anode === montageState.anode && p.cathode === montageState.cathode
+      (preset) =>
+        preset.anode === montageState.anode &&
+        preset.cathode === montageState.cathode &&
+        preset.montageType === montageState.mode
     );
-  }, [montageState.anode, montageState.cathode]);
+  }, [montageState.anode, montageState.cathode, montageState.mode]);
 
   const surroundNodes = useMemo(() => {
     if (activeChannels && activeChannels.length > 0) {
-      return activeChannels.filter((c) => c.currentMa < 0).map((c) => c.nodeId);
+      return activeChannels.filter((channel) => channel.currentMa < 0).map((channel) => channel.nodeId);
     }
     if (montageState.mode === 'hd4x1') {
       if (currentPreset?.surroundNodes) return currentPreset.surroundNodes;
@@ -93,7 +102,6 @@ export function App() {
     return undefined;
   }, [montageState.mode, currentPreset, activeChannels]);
 
-  // Real-Time Biophysical Telemetry Engine Calculation
   const telemetry = useMemo(() => {
     return calculateTelemetry({
       anodeId: montageState.anode,
@@ -102,11 +110,10 @@ export function App() {
       durationMin: montageState.dur,
       padAreaCm2: montageState.pad,
       montageType: montageState.mode,
-      surroundNodeIds: surroundNodes,
+      surroundNodeIds: surroundNodes
     });
   }, [montageState, surroundNodes]);
 
-  // Handle Preset Selection
   const handleSelectPreset = (preset: ClinicalPreset) => {
     setActiveChannels(undefined);
     updateMontageState({
@@ -115,390 +122,212 @@ export function App() {
       ma: preset.currentMa,
       dur: preset.durationMin,
       pad: preset.padAreaCm2,
-      mode: preset.montageType,
+      mode: preset.montageType
     });
   };
 
-  // Handle Multi-Channel HD Array Application
   const handleApplyMultiChannel = (channels: MultiChannelChannel[]) => {
     setActiveChannels(channels);
-    const sortedAnodes = [...channels].filter((c) => c.currentMa > 0).sort((a, b) => b.currentMa - a.currentMa);
-    const sortedCathodes = [...channels].filter((c) => c.currentMa < 0).sort((a, b) => a.currentMa - b.currentMa);
+    const sortedAnodes = [...channels].filter((channel) => channel.currentMa > 0).sort((a, b) => b.currentMa - a.currentMa);
+    const sortedCathodes = [...channels].filter((channel) => channel.currentMa < 0).sort((a, b) => a.currentMa - b.currentMa);
 
     if (sortedAnodes[0]) {
-      const primaryAnode = sortedAnodes[0].nodeId;
-      const primaryCathode = sortedCathodes[0]?.nodeId || 'Fp2';
       updateMontageState({
-        anode: primaryAnode,
-        cathode: primaryCathode,
+        anode: sortedAnodes[0].nodeId,
+        cathode: sortedCathodes[0]?.nodeId || 'Fp2',
         ma: sortedAnodes[0].currentMa,
         mode: 'hd4x1',
-        pad: 3.14,
+        pad: 3.14
       });
     }
   };
 
-  // Flip Polarity (Swap Anode and Cathode)
+  const handleSelectMontageMode = (mode: 'sponge' | 'hd4x1') => {
+    updateMontageState({ mode, pad: mode === 'hd4x1' ? 3.14 : 25 });
+  };
+
   const handleFlipPolarity = () => {
     updateMontageState({
       anode: montageState.cathode,
-      cathode: montageState.anode,
+      cathode: montageState.anode
     });
   };
 
-  // Handle 3D node selection
   const handleSelectNode = (nodeId: string, polarity: 'anode' | 'cathode') => {
     if (polarity === 'anode') {
-      if (nodeId === montageState.cathode) {
-        // Swap if clicked cathode
-        handleFlipPolarity();
-      } else {
-        updateMontageState({ anode: nodeId });
-      }
+      if (nodeId === montageState.cathode) handleFlipPolarity();
+      else updateMontageState({ anode: nodeId });
+    } else if (nodeId === montageState.anode) {
+      handleFlipPolarity();
     } else {
-      if (nodeId === montageState.anode) {
-        handleFlipPolarity();
-      } else {
-        updateMontageState({ cathode: nodeId });
-      }
+      updateMontageState({ cathode: nodeId });
     }
   };
 
-  // Copy shareable URL
   const handleCopyShareUrl = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2200);
   };
 
+  const protocolTitle = currentPreset?.name ?? `Custom montage · ${montageState.anode} → ${montageState.cathode}`;
+
+  const citation = currentPreset
+    ? `${currentPreset.referenceStudy.authors} ${currentPreset.referenceStudy.year} · ${currentPreset.referenceStudy.journal} · PMID ${currentPreset.referenceStudy.pmid}`
+    : 'No evidence preset attached to this custom montage.';
+
   return (
-    <div className="flex flex-col w-screen h-screen bg-[#070B12] text-slate-100 overflow-hidden font-sans">
-      {/* TOP BAR: Header, 8 Clinical Presets, URL Share, Layer Pills */}
-      <header className="h-14 bg-[#0A101D] border-b border-slate-800 flex items-center justify-between px-4 z-20 shrink-0">
-        {/* Brand & Mode Title (Clean, vertically centered, non-overlapping - Video Feedback #6) */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600 via-sky-500 to-amber-500 p-[1px] shadow-glow-cyan shrink-0">
-            <div className="w-full h-full bg-[#0A101D] rounded-lg flex items-center justify-center">
-              <Brain className="w-5 h-5 text-cyan-400" />
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#070B12] font-sans text-slate-100">
+      {/* ------------------------------------------------------------------ */}
+      {/* Top bar: brand · indication glyph ribbon · global safety beacon     */}
+      {/* ------------------------------------------------------------------ */}
+      <header className="z-20 flex shrink-0 flex-col border-b border-slate-800 bg-[#0A101D]">
+        <div className="flex h-[54px] items-center gap-3 px-4">
+          <div className="flex shrink-0 items-center gap-2.5">
+            <div className="h-8 w-8 shrink-0 rounded-lg bg-gradient-to-tr from-cyan-600 via-sky-500 to-amber-500 p-[1px] shadow-glow-cyan">
+              <div className="flex h-full w-full items-center justify-center rounded-lg bg-[#0A101D]">
+                <Brain className="h-4 w-4 text-cyan-400" />
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="whitespace-nowrap text-[13px] font-semibold tracking-tight text-white">
+                NeuroFlow <span className="text-cyan-400">tDCS</span>
+              </h1>
+              <p className="text-[10.5px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                Clinical stimulation lab
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-mono text-sm font-bold tracking-tight text-white whitespace-nowrap">
-              NEUROFLOW <span className="text-cyan-400 font-extrabold">tDCS</span>
-            </h1>
-            <span className="text-[10px] font-mono font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-700/80 px-2 py-0.5 rounded shadow-sm">
-              CLINICAL 3D
-            </span>
+
+          <div className="flex min-w-0 flex-1 justify-center">
+            <PresetGlyphRibbon activePresetId={currentPreset?.id} onSelectPreset={handleSelectPreset} />
+          </div>
+
+          <div className="flex shrink-0 items-center justify-end">
+            <SafetyBeacon telemetry={telemetry} />
           </div>
         </div>
 
-        {/* Visual Clinical Preset Ribbons (Miniature Anatomical Badges) */}
-        <div className="hidden xl:flex items-center gap-1.5 overflow-x-auto py-1 max-w-xl">
-          <VisualPresetRibbon
-            activeAnode={montageState.anode}
-            activeCathode={montageState.cathode}
-            activeMode={montageState.mode}
-            onSelectPreset={handleSelectPreset}
-          />
-        </div>
+        {/* Secondary context/action bar */}
+        <div className="flex h-10 items-center justify-between gap-3 border-t border-slate-800/60 bg-[#080E19] px-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="hidden text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate-500 sm:inline">
+              Session
+            </span>
+            <span className="truncate text-[12.5px] font-medium text-slate-200" title={protocolTitle}>
+              {protocolTitle}
+            </span>
+            {currentPreset && (
+              <span className="hidden shrink-0 sm:flex">
+                <EvidenceBadge level={currentPreset.evidenceLevel} />
+              </span>
+            )}
+            <div className="hidden shrink-0 items-center gap-1.5 border-l border-slate-800 pl-2.5 font-mono text-[11px] lg:flex">
+              <span className="text-rose-300">{montageState.anode} +</span>
+              <span className="text-slate-600">→</span>
+              <span className="text-cyan-300">
+                {montageState.mode === 'hd4x1' ? 'HD 4×1' : `${montageState.cathode} −`}
+              </span>
+              <span className="text-slate-600">·</span>
+              <span className="text-amber-300">{montageState.ma.toFixed(1)}</span>
+              <span className="text-slate-400">mA</span>
+              <span className="text-slate-600">·</span>
+              <span className="text-cyan-300">{montageState.dur}</span>
+              <span className="text-slate-400">min</span>
+              <span className="text-slate-600">·</span>
+              <span className="text-violet-300">{montageState.pad}</span>
+              <span className="text-slate-400">cm²</span>
+            </div>
+          </div>
 
-        {/* Center Live Active Circuit Wire Pulse */}
-        <ActiveCircuitLiveWire
-          anodeId={montageState.anode}
-          cathodeId={montageState.cathode}
-          currentMa={montageState.ma}
-          durationMin={montageState.dur}
-          mode={montageState.mode}
-        />
-
-        {/* Right Header Utilities: Isometric Layer Depth Stack & Actions */}
-        <div className="flex items-center gap-2">
-          {/* Isometric Layer Visualizer Stack (CAD/Photoshop Style) */}
-          <IsometricLayerStack
-            showHumanFace={showHumanFace}
-            setShowHumanFace={setShowHumanFace}
-            showScalpGrid={showScalpGrid}
-            setShowScalpGrid={setShowScalpGrid}
-            showShuntHalo={showShuntHalo}
-            setShowShuntHalo={setShowShuntHalo}
-            showEField={showEField}
-            setShowEField={setShowEField}
-            showStreamlines={showStreamlines}
-            setShowStreamlines={setShowStreamlines}
-            showPointCloud={showPointCloud}
-            setShowPointCloud={setShowPointCloud}
-            showBrodmannLabels={showBrodmannLabels}
-            setShowBrodmannLabels={setShowBrodmannLabels}
-          />
-
-          {/* Audio Sonification Button */}
-          <button
-            onClick={() => setIsAudioOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/50 rounded-lg text-xs font-mono transition"
-            title="Open Web Audio EEG Brain Wave Sonification (ASSR)"
-          >
-            <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden xl:inline">Audio ASSR</span>
-          </button>
-
-          {/* Multi-Channel Array Matrix Button */}
-          <button
-            onClick={() => setIsMatrixOpen(true)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition border ${
-              activeChannels && activeChannels.length > 0
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/70 font-bold'
-                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-300 border-slate-700 hover:border-amber-500/50'
-            }`}
-            title="Configure Custom Multi-Channel Array Matrix (HD-tDCS)"
-          >
-            <Grid className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden xl:inline">HD Matrix</span>
-          </button>
-
-          {/* Export Protocol Report Button */}
-          <button
-            onClick={() => setIsExportOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-lg text-xs font-mono transition"
-            title="Export Clinical Protocol Record (Print/PDF)"
-          >
-            <FileText className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden xl:inline">Export Protocol</span>
-          </button>
-
-          {/* Polarity Flip Button */}
-          <button
-            onClick={handleFlipPolarity}
-            className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-xs font-mono transition"
-            title="Invert Montage Polarity (Swap Anode and Cathode)"
-          >
-            <ArrowLeftRight className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Flip Polarity</span>
-          </button>
-
-          {/* Share URL Button */}
-          <button
-            onClick={handleCopyShareUrl}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono transition shadow ${
-              copiedLink
-                ? 'bg-emerald-600 text-white'
-                : 'bg-cyan-600 hover:bg-cyan-500 text-white'
-            }`}
-            title="Copy shareable link with current montage configuration"
-          >
-            {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span>{copiedLink ? 'Copied!' : 'Share'}</span>
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <HeaderAction
+              icon={<Volume2 className="h-3.5 w-3.5 text-cyan-400" />}
+              label="Audio ASSR"
+              title="Open Web Audio EEG sonification"
+              onClick={() => setIsAudioOpen(true)}
+              hideLabelBelow="xl"
+            />
+            <HeaderAction
+              icon={<Grid className="h-3.5 w-3.5 text-amber-400" />}
+              label="HD Matrix"
+              title="Configure a custom multi-channel HD array"
+              onClick={() => setIsMatrixOpen(true)}
+              hideLabelBelow="xl"
+              active={Boolean(activeChannels && activeChannels.length > 0)}
+            />
+            <HeaderAction
+              icon={<Bug className="h-3.5 w-3.5 text-rose-400" />}
+              label="Report bug"
+              title="Report a bug (files a GitHub issue)"
+              onClick={() => setIsBugReportOpen(true)}
+              hideLabelBelow="xl"
+            />
+            <HeaderAction
+              icon={<FileText className="h-3.5 w-3.5 text-emerald-400" />}
+              label="Export"
+              title="Export the clinical protocol record (print / PDF)"
+              onClick={() => setIsExportOpen(true)}
+              hideLabelBelow="md"
+            />
+            <button
+              type="button"
+              onClick={handleCopyShareUrl}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium shadow transition ${
+                copiedLink
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-cyan-600 text-white hover:bg-cyan-500'
+              }`}
+              title="Copy a shareable link to this exact montage"
+            >
+              {copiedLink ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
+              <span>{copiedLink ? 'Copied' : 'Share'}</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* MAIN VIEWPORT LAYOUT: Left Dock (280px) | Center Stage 3D | Right Dock (380px) */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Dock Floating Expand Button (Video Feedback #9 & #10) */}
+      {/* ------------------------------------------------------------------ */}
+      {/* Main three-column lab bench                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {isLeftDockCollapsed && (
           <button
+            type="button"
             onClick={() => setIsLeftDockCollapsed(false)}
-            className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-[#0F1623]/95 backdrop-blur-md border border-slate-700 hover:border-cyan-500 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg shadow-2xl text-xs font-mono transition-all group cursor-pointer"
-            title="Expand Controls & Dosimetry Panel"
+            className="absolute left-0 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2 rounded-r-lg border border-l-0 border-slate-700 bg-[#0F1623]/95 px-1.5 py-3 text-[11.5px] font-medium text-slate-300 shadow-2xl backdrop-blur-md transition hover:border-cyan-500/60 hover:text-white"
+            title="Expand setup panel"
+            aria-label="Expand setup panel"
           >
-            <PanelLeftOpen className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition" />
-            <span>⚙️ Montage & Controls</span>
+            <PanelLeftOpen className="h-4 w-4 text-cyan-400" />
+            <span className="[writing-mode:vertical-rl]">Setup</span>
           </button>
         )}
 
-        {/* LEFT DOCK (300px): Montage Selector, Dosimetry, Safety Telemetry (Collapsible) */}
+        {/* Left dock — three clean collapsible sections */}
         <aside
           className={`${
-            isLeftDockCollapsed ? 'w-0 border-r-0 overflow-hidden opacity-0 pointer-events-none' : 'w-[300px] border-r overflow-y-auto opacity-100'
-          } bg-[#0F1623] border-slate-800 flex flex-col shrink-0 custom-scrollbar z-10 select-none transition-all duration-300 ease-in-out relative`}
+            isLeftDockCollapsed
+              ? 'pointer-events-none w-0 overflow-hidden border-r-0 opacity-0'
+              : 'w-[320px] border-r border-slate-800 opacity-100'
+          } relative z-10 flex shrink-0 flex-col select-none bg-[#0C121E] transition-all duration-300 ease-in-out`}
         >
-          {/* Header Row with Collapse Button */}
-          <div className="p-3 border-b border-slate-800/80 bg-[#0E1524] flex items-center justify-between shrink-0">
-            <span className="text-[11px] font-mono font-bold text-slate-200 flex items-center gap-1.5">
-              <span>⚙️</span> TELEMETRY & MONTAGE
-            </span>
-            <button
-              onClick={() => setIsLeftDockCollapsed(true)}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-              title="Collapse Panel to see full 3D brain"
-            >
-              <PanelLeftClose className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Preset Selector Dropdown (mobile/tablet fallback) */}
-          {isMobile && (
-            <div className="p-3 border-b border-slate-800/80 shrink-0">
-              <label htmlFor="mobile-preset-select" className="text-[11px] font-mono font-semibold text-slate-400 block mb-1">
-                CLINICAL MONTAGE PRESET
-              </label>
-              <select
-                id="mobile-preset-select"
-                value={currentPreset?.id || ''}
-                onChange={(e) => {
-                  const p = CLINICAL_PRESETS.find((cp) => cp.id === e.target.value);
-                  if (p) handleSelectPreset(p);
-                }}
-                className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg p-2 font-mono"
-              >
-                <option value="">Custom Montage</option>
-                {CLINICAL_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* 1. Interactive 2D Scalp Topomap / Electrode Compass */}
-          <div className="p-3 border-b border-slate-800/80 space-y-3 shrink-0">
-            <ScalpTopomap1020
-              anodeId={montageState.anode}
-              cathodeId={montageState.cathode}
-              montageType={montageState.mode}
-              surroundNodes={surroundNodes}
-              onSelectNode={handleSelectNode}
-              onFlipPolarity={handleFlipPolarity}
-            />
-
-            {/* Anatomical Lobe & Cytoarchitectonic Silhouette */}
-            <LobeFunctionalSilhouette
-              anodeId={montageState.anode}
-              cathodeId={montageState.cathode}
-            />
-
-            {/* Montage Focality Comparison Graphic (Sponge vs HD Ring) */}
-            <MontageFocalityGraphic
-              mode={montageState.mode}
-              onSelectMode={(mode) => updateMontageState({ mode, pad: mode === 'hd4x1' ? 3.14 : 25 })}
-            />
-          </div>
-
-          {/* 2. Dosimetry Sliders */}
-          <div className="p-3 border-b border-slate-800/80 space-y-3.5 shrink-0">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-bold text-slate-200 flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                DOSIMETRY CONTROLS
-              </span>
-              <span className="text-[10px] font-mono text-slate-400">BIKSON 2016</span>
-            </div>
-
-            {/* Current Intensity Slider */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-300 flex items-center gap-1">
-                  <span>⚡</span> Current (I)
-                </span>
-                <span className="text-amber-300 font-bold bg-amber-950/60 border border-amber-800/50 px-1.5 py-0.5 rounded">
-                  {montageState.ma.toFixed(1)} mA
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0.5"
-                max="2.5"
-                step="0.1"
-                value={montageState.ma}
-                onChange={(e) => updateMontageState({ ma: parseFloat(e.target.value) })}
-                className="w-full accent-amber-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-              />
-              <div className="flex justify-between text-[9px] font-mono text-slate-500">
-                <span>0.5 mA</span>
-                <span>1.0 mA</span>
-                <span>2.0 mA</span>
-                <span>2.5 mA</span>
-              </div>
-            </div>
-
-            {/* Duration Slider */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-300 flex items-center gap-1">
-                  <span>⏱️</span> Duration (t)
-                </span>
-                <span className="text-cyan-300 font-bold bg-cyan-950/60 border border-cyan-800/50 px-1.5 py-0.5 rounded">
-                  {montageState.dur} min
-                </span>
-              </div>
-              <input
-                type="range"
-                min="5"
-                max="30"
-                step="1"
-                value={montageState.dur}
-                onChange={(e) => updateMontageState({ dur: parseInt(e.target.value, 10) })}
-                className="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-              />
-              <div className="flex justify-between text-[9px] font-mono text-slate-500">
-                <span>5 min</span>
-                <span>15 min</span>
-                <span>20 min</span>
-                <span>30 min</span>
-              </div>
-            </div>
-
-            {/* Pad Area Slider */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-300 flex items-center gap-1">
-                  <span>🔲</span> Pad Area (A)
-                </span>
-                <span className="text-purple-300 font-bold bg-purple-950/60 border border-purple-800/50 px-1.5 py-0.5 rounded">
-                  {montageState.pad} cm²
-                </span>
-              </div>
-              {montageState.mode === 'hd4x1' ? (
-                <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-900/90 rounded border border-purple-900/40 text-xs font-mono text-purple-300">
-                  <span>3.14 cm² (Focal HD 4×1 Ring)</span>
-                  <span className="text-[10px] text-slate-400">Fixed</span>
-                </div>
-              ) : (
-                <input
-                  type="range"
-                  min="10"
-                  max="35"
-                  step="1"
-                  value={montageState.pad}
-                  onChange={(e) => updateMontageState({ pad: parseInt(e.target.value, 10) })}
-                  className="w-full accent-purple-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-                />
-              )}
-            </div>
-          </div>
-
-          {/* 3. Live Biophysical Visual Telemetry Suite */}
-          <div className="p-3 space-y-3 flex-1 shrink-0">
-            {/* Bikson Aviation Safety Arc Gauge */}
-            <BiksonSafetyGauge telemetry={telemetry} />
-
-            {/* Tissue Shunt & Current Penetration Waterfall */}
-            <CurrentPenetrationWaterfall
-              telemetry={telemetry}
-              montageType={montageState.mode}
-              currentMa={montageState.ma}
-            />
-
-            {/* Total Charge Dose Reservoir (Battery Cylinder) */}
-            <ChargeDoseReservoir
-              telemetry={telemetry}
-              currentMa={montageState.ma}
-              durationMin={montageState.dur}
-            />
-
-            {/* Human Sensation Matrix Glyphs */}
-            <SensationMatrixGlyphs
-              telemetry={telemetry}
-              anodeId={montageState.anode}
-              cathodeId={montageState.cathode}
-              currentMa={montageState.ma}
-              durationMin={montageState.dur}
-            />
-          </div>
+          <SetupDock
+            montageState={montageState}
+            updateMontageState={updateMontageState}
+            currentPreset={currentPreset}
+            telemetry={telemetry}
+            surroundNodes={surroundNodes}
+            onSelectPreset={handleSelectPreset}
+            onSelectNode={handleSelectNode}
+            onFlipPolarity={handleFlipPolarity}
+            onOpenMatrix={() => setIsMatrixOpen(true)}
+            onCollapse={() => setIsLeftDockCollapsed(true)}
+          />
         </aside>
 
-        {/* CENTER STAGE: 3D WebGL Viewport */}
-        <main className="flex-1 relative h-full">
+        {/* Center 3D stage */}
+        <main className="relative min-w-0 flex-1 overflow-hidden">
           <BrainViewport3D
             anodeId={montageState.anode}
             cathodeId={montageState.cathode}
@@ -509,118 +338,114 @@ export function App() {
             surroundNodes={surroundNodes}
             telemetry={telemetry}
             onSelectNode={handleSelectNode}
-            showScalpGrid={showScalpGrid}
-            showShuntHalo={showShuntHalo}
-            showHumanFace={showHumanFace}
-            showEField={showEField}
-            showStreamlines={showStreamlines}
-            showPointCloud={showPointCloud}
-            showBrodmannLabels={showBrodmannLabels}
+            showScalpGrid={layers.scalp}
+            showShuntHalo={layers.shunt}
+            showHumanFace={layers.face}
+            showEField={layers.efield}
+            showStreamlines={layers.streamlines}
+            showPointCloud={layers.pointCloud}
+            showBrodmannLabels={layers.brodmann}
             activePlacementMode={activePlacementMode}
             setActivePlacementMode={setActivePlacementMode}
             isLeftDockCollapsed={isLeftDockCollapsed}
+            layerOpacity={layerOpacity}
+            onTissueOpacityChange={(value) => setOpacity('tissue', value)}
           />
+
+          <div className="pointer-events-auto absolute bottom-4 left-4 z-20">
+            <IsometricLayerStack
+              visibility={layers}
+              onToggle={toggleLayer}
+              opacity={layerOpacity}
+              onOpacityChange={setOpacity}
+            />
+          </div>
         </main>
 
-        {/* Right Dock Floating Expand Button (Video Feedback #9 & #10) */}
         {isRightDockCollapsed && (
           <button
+            type="button"
             onClick={() => setIsRightDockCollapsed(false)}
-            className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-[#0F1623]/95 backdrop-blur-md border border-slate-700 hover:border-cyan-500 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg shadow-2xl text-xs font-mono transition-all group cursor-pointer"
-            title="Expand Inspector & Impact Panel"
+            className="absolute right-0 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2 rounded-l-lg border border-r-0 border-slate-700 bg-[#0F1623]/95 px-1.5 py-3 text-[11.5px] font-medium text-slate-300 shadow-2xl backdrop-blur-md transition hover:border-cyan-500/60 hover:text-white"
+            title="Expand inspector panel"
+            aria-label="Expand inspector panel"
           >
-            <span>📊 Inspector & Impact</span>
-            <PanelRightOpen className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition" />
+            <PanelRightOpen className="h-4 w-4 text-cyan-400" />
+            <span className="[writing-mode:vertical-rl]">Inspector</span>
           </button>
         )}
 
-        {/* RIGHT DOCK (380px): 3 Tabbed Inspector Panels (Collapsible) */}
+        {/* Right dock — dynamic inspector */}
         <aside
           className={`${
-            isRightDockCollapsed ? 'w-0 border-l-0 overflow-hidden opacity-0 pointer-events-none' : 'w-[380px] border-l opacity-100'
-          } bg-[#0F1623] border-slate-800 flex flex-col shrink-0 overflow-hidden z-10 select-none transition-all duration-300 ease-in-out relative`}
+            isRightDockCollapsed
+              ? 'pointer-events-none w-0 overflow-hidden border-l-0 opacity-0'
+              : 'w-[380px] border-l border-slate-800 opacity-100'
+          } relative z-10 flex shrink-0 flex-col select-none bg-[#0C121E] transition-all duration-300 ease-in-out`}
         >
-          {/* Tab Selector Header */}
-          <div className="flex items-center border-b border-slate-800 bg-[#0E1524] shrink-0">
-            <button
-              onClick={() => setRightTab('eeg')}
-              className={`flex-1 py-2.5 px-2 text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition border-b-2 ${
-                rightTab === 'eeg'
-                  ? 'text-cyan-400 border-cyan-400 bg-slate-900/60'
-                  : 'text-slate-400 border-transparent hover:text-slate-200'
-              }`}
-            >
-              <Waves className="w-3.5 h-3.5" />
-              <span>EEG Waves</span>
-            </button>
-
-            <button
-              onClick={() => setRightTab('impact')}
-              className={`flex-1 py-2.5 px-2 text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition border-b-2 ${
-                rightTab === 'impact'
-                  ? 'text-emerald-400 border-emerald-400 bg-slate-900/60'
-                  : 'text-slate-400 border-transparent hover:text-slate-200'
-              }`}
-            >
-              <Activity className="w-3.5 h-3.5" />
-              <span>Human Impact</span>
-            </button>
-
-            <button
-              onClick={() => setRightTab('cellular')}
-              className={`flex-1 py-2.5 px-2 text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition border-b-2 ${
-                rightTab === 'cellular'
-                  ? 'text-amber-400 border-amber-400 bg-slate-900/60'
-                  : 'text-slate-400 border-transparent hover:text-slate-200'
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Cellular Vm</span>
-            </button>
-
-            {/* Collapse Right Dock Button */}
-            <button
-              onClick={() => setIsRightDockCollapsed(true)}
-              className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 transition border-l border-slate-800/80 cursor-pointer"
-              title="Collapse Inspector Panel to see full 3D brain"
-            >
-              <PanelRightClose className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Active Tab Panel Body */}
-          <div className="flex-1 overflow-hidden p-2">
-            {rightTab === 'eeg' && (
-              <EegWaveVisualizer
-                anodeId={montageState.anode}
-                cathodeId={montageState.cathode}
-                currentMa={montageState.ma}
-                telemetry={telemetry}
-              />
-            )}
-
-            {rightTab === 'impact' && (
-              <HumanImpactSimulators
-                anodeId={montageState.anode}
-                cathodeId={montageState.cathode}
-                currentMa={montageState.ma}
-                telemetry={telemetry}
-              />
-            )}
-
-            {rightTab === 'cellular' && (
-              <CellularMechanismWidget
-                anodeId={montageState.anode}
-                cathodeId={montageState.cathode}
-                currentMa={montageState.ma}
-                telemetry={telemetry}
-              />
-            )}
-          </div>
+          <InspectorDock
+            telemetry={telemetry}
+            montageState={montageState}
+            currentPreset={currentPreset}
+            surroundNodes={surroundNodes}
+            onSelectMontageMode={handleSelectMontageMode}
+            onCollapse={() => setIsRightDockCollapsed(true)}
+          />
         </aside>
       </div>
 
-      {/* Advanced Feature Modals */}
+      {/* ------------------------------------------------------------------ */}
+      {/* Footer: evidence, shunt summary, and live status                    */}
+      {/* ------------------------------------------------------------------ */}
+      <footer className="z-20 flex h-8 shrink-0 items-center justify-between gap-4 border-t border-slate-800 bg-[#0A101D] px-4 text-[11px] text-slate-500">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <BookOpen className="h-3 w-3 shrink-0 text-slate-500" />
+          {currentPreset ? (
+            <a
+              href={`https://pubmed.ncbi.nlm.nih.gov/${currentPreset.referenceStudy.pmid}/`}
+              target="_blank"
+              rel="noreferrer"
+              className="truncate transition hover:text-cyan-300"
+              title={citation}
+            >
+              Evidence: {currentPreset.referenceStudy.authors} {currentPreset.referenceStudy.year} ·{' '}
+              {currentPreset.referenceStudy.journal} · <span className="font-mono">PMID {currentPreset.referenceStudy.pmid}</span>
+            </a>
+          ) : (
+            <span className="truncate" title={citation}>
+              Custom montage · Miranda 2006 FEA shunt model · Bikson 2016 safety consensus
+            </span>
+          )}
+        </div>
+
+        <div className="hidden shrink-0 items-center gap-4 md:flex">
+          <span>
+            Scalp shunt <span className="font-mono text-slate-300">{telemetry.shuntPercentage.toFixed(1)}%</span>
+          </span>
+          <span>
+            Cortical delivery{' '}
+            <span className="font-mono text-emerald-300">{(100 - telemetry.shuntPercentage).toFixed(1)}%</span>
+          </span>
+          <span>
+            Peak E-field <span className="font-mono text-amber-300">{telemetry.peakEFieldVm.toFixed(3)} V/m</span>
+          </span>
+          <a
+            href="https://3d.nih.gov/entries/3DPX-021161"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden transition hover:text-cyan-300 min-[1500px]:inline"
+            title="Cortical surface: Detailed Human Brain Model, NIH 3D entry 3DPX-021161, CC BY 4.0"
+          >
+            Mesh: NIH 3D · CC BY
+          </a>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            Simulation live
+          </span>
+        </div>
+      </footer>
+
+      {/* Modals */}
       <AudioSonificationModal
         isOpen={isAudioOpen}
         onClose={() => setIsAudioOpen(false)}
@@ -632,7 +457,7 @@ export function App() {
         onClose={() => setIsExportOpen(false)}
         data={{
           montageState,
-          telemetry,
+          telemetry
         }}
       />
 
@@ -642,8 +467,34 @@ export function App() {
         initialChannels={activeChannels}
         onApplyChannels={handleApplyMultiChannel}
       />
+
+      <BugReportModal isOpen={isBugReportOpen} onClose={() => setIsBugReportOpen(false)} />
+      <DisclaimerModal isOpen={isDisclaimerOpen} onAccept={() => setIsDisclaimerOpen(false)} />
     </div>
   );
 }
+
+const HeaderAction: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  title: string;
+  onClick: () => void;
+  hideLabelBelow?: 'md' | 'xl';
+  active?: boolean;
+}> = ({ icon, label, title, onClick, hideLabelBelow = 'xl', active = false }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    title={title}
+    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition ${
+      active
+        ? 'border-amber-500/50 bg-amber-500/10 text-amber-200'
+        : 'border-slate-700/80 bg-slate-900/80 text-slate-300 hover:border-cyan-500/50 hover:text-cyan-200'
+    }`}
+  >
+    {icon}
+    <span className={hideLabelBelow === 'md' ? 'hidden md:inline' : 'hidden xl:inline'}>{label}</span>
+  </button>
+);
 
 export default App;

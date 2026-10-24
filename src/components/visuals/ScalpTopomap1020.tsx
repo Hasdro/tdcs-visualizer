@@ -52,41 +52,41 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
   const isHD = montageType === 'hd4x1';
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl select-none font-mono text-xs relative">
-      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+    <div className="panel-card select-none p-3 text-xs relative">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
-          10-20 SCALP COMPASS
+          Scalp compass · 10–20
         </span>
         <button
           onClick={onFlipPolarity}
-          className="text-[10px] text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded cursor-pointer"
-          title="Flip Anode and Cathode polarity"
+          className="text-[11px] text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded cursor-pointer"
+          title="Swap anode and cathode polarity"
         >
-          <span>⇄</span> Flip
+          <span aria-hidden="true">⇄</span> Swap
         </button>
       </div>
 
       {/* Top-down Azimuthal Calvarium Map */}
       <div className="relative flex justify-center items-center py-1">
-        <svg viewBox="0 0 200 200" className="w-48 h-48 drop-shadow">
+        <svg viewBox="0 0 200 200" className="h-44 w-44 drop-shadow">
           {/* Calvarium Outline */}
           <circle cx="100" cy="100" r="76" fill="#070B12" stroke="#1E293B" strokeWidth="2" />
 
           {/* Anterior Nose Notch (Nasion ▲) */}
           <path d="M 94 24 L 100 12 L 106 24 Z" fill="#1E293B" stroke="#334155" strokeWidth="1.2" />
-          <text x="100" y="9" fill="#64748B" fontSize="6.5" textAnchor="middle">NASION ▲</text>
+          <text x="100" y="9" fill="#64748B" fontSize="7.5" textAnchor="middle">Nasion ▲</text>
 
           {/* Left Ear (LPA) */}
           <path d="M 24 92 C 16 92, 16 108, 24 108" fill="none" stroke="#334155" strokeWidth="1.5" />
-          <text x="15" y="103" fill="#64748B" fontSize="6.5" textAnchor="end">L</text>
+          <text x="15" y="103" fill="#64748B" fontSize="7.5" textAnchor="end">L</text>
 
           {/* Right Ear (RPA) */}
           <path d="M 176 92 C 184 92, 184 108, 176 108" fill="none" stroke="#334155" strokeWidth="1.5" />
-          <text x="185" y="103" fill="#64748B" fontSize="6.5" textAnchor="start">R</text>
+          <text x="185" y="103" fill="#64748B" fontSize="7.5" textAnchor="start">R</text>
 
           {/* Posterior Inion Notch (Inion ▼) */}
-          <text x="100" y="192" fill="#64748B" fontSize="6.5" textAnchor="middle">▼ INION</text>
+          <text x="100" y="192" fill="#64748B" fontSize="7.5" textAnchor="middle">▼ Inion</text>
 
           {/* Meridian concentric alignment circles */}
           <circle cx="100" cy="100" r="54" fill="none" stroke="#0F172A" strokeWidth="1" strokeDasharray="3 3" />
@@ -126,16 +126,26 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
             return (
               <g
                 key={id}
-                className="cursor-pointer transition-transform hover:scale-125"
+                className="group cursor-pointer"
                 onClick={() => setActiveMenuNode(activeMenuNode === id ? null : id)}
               >
-                {/* Active Ripple Halo */}
-                {isAnode && (
-                  <circle cx={pos.x} cy={pos.y} r="12" fill="none" stroke="#EF4444" strokeWidth="1.5" className="animate-ping opacity-60" />
-                )}
-                {isCathode && !isSurround && (
-                  <circle cx={pos.x} cy={pos.y} r="12" fill="none" stroke="#06B6D4" strokeWidth="1.5" className="animate-ping opacity-60" />
-                )}
+                {/* Static equipotential rings: a still "field ripple" texture
+                    around each active electrode instead of a flashing pulse. */}
+                {(isAnode || (isCathode && !isSurround)) &&
+                  [10.5, 13.5, 16.5].map((r, ring) => (
+                    <circle
+                      key={r}
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={r}
+                      fill="none"
+                      stroke={isAnode ? '#F87171' : '#22D3EE'}
+                      strokeWidth={1.1 - ring * 0.25}
+                      strokeDasharray={ring === 0 ? undefined : '1.5 1.8'}
+                      opacity={0.7 - ring * 0.22}
+                      pointerEvents="none"
+                    />
+                  ))}
 
                 {/* Base Node Circle */}
                 <circle
@@ -159,6 +169,7 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
                       : '#475569'
                   }
                   strokeWidth="1.2"
+                  className="transition-colors group-hover:stroke-cyan-300"
                 />
 
                 {/* Node Label Text */}
@@ -166,7 +177,7 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
                   x={pos.x}
                   y={pos.y + 2.5}
                   fill={isAnode || isCathode ? '#FFFFFF' : '#94A3B8'}
-                  fontSize="6"
+                  fontSize="6.9"
                   fontWeight={isAnode || isCathode ? 'bold' : 'normal'}
                   textAnchor="middle"
                   pointerEvents="none"
@@ -181,9 +192,9 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
         {/* Tactile Radial Node Selection Flyout */}
         {activeMenuNode && (
           <div className="absolute inset-x-2 bottom-1 bg-slate-950/95 border border-cyan-500/60 rounded-lg p-2 shadow-2xl backdrop-blur-md flex items-center justify-between z-20 animate-in fade-in zoom-in-95">
-            <div className="text-[11px]">
+            <div className="text-[12px]">
               <span className="font-bold text-white">{activeMenuNode}</span>
-              <span className="text-[9px] text-slate-400 block">
+              <span className="text-[10.5px] text-slate-400 block">
                 {BRAIN_NODES[activeMenuNode]?.shortName || 'Scalp Landmark'}
               </span>
             </div>
@@ -193,7 +204,7 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
                   onSelectNode(activeMenuNode, 'anode');
                   setActiveMenuNode(null);
                 }}
-                className="px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white font-bold text-[10px] transition cursor-pointer shadow-sm"
+                className="px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] transition cursor-pointer shadow-sm"
               >
                 + Anode
               </button>
@@ -202,7 +213,7 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
                   onSelectNode(activeMenuNode, 'cathode');
                   setActiveMenuNode(null);
                 }}
-                className="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] transition cursor-pointer shadow-sm"
+                className="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[11px] transition cursor-pointer shadow-sm"
               >
                 – Cathode
               </button>
@@ -218,17 +229,17 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
       </div>
 
       {/* Active Dipole Circuit Pill */}
-      <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[10px]">
+      <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[11px]">
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-red-500" />
-          <span className="font-bold text-red-400">{anodeId}</span>
+          <span className="font-mono font-semibold text-rose-300">{anodeId}</span>
           <span className="text-slate-500">→</span>
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
-          <span className="font-bold text-cyan-400">
-            {isHD ? 'HD 4×1 Ring' : cathodeId}
+          <span className="font-mono font-semibold text-cyan-300">
+            {isHD ? 'HD 4×1 ring' : cathodeId}
           </span>
         </div>
-        <span className="text-slate-400 text-[9px]">Click node to assign</span>
+        <span className="text-slate-400 text-[10.5px]">Click a node to assign</span>
       </div>
     </div>
   );

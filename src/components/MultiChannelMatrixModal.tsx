@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MultiChannelChannel, MultiChannelTelemetry, calculateMultiChannelTelemetry } from '../utils/biophysicsEngine';
 import { BRAIN_NODES } from '../data/brain_nodes';
 import { Grid, Plus, Trash2, Scale, Zap, CheckCircle, AlertTriangle, X, Sparkles } from 'lucide-react';
+import { ScalpLeadFieldContourMap } from './visuals/ScalpLeadFieldContourMap';
 
 interface MultiChannelMatrixModalProps {
   isOpen: boolean;
@@ -145,13 +146,13 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
               <Grid className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-mono font-bold tracking-tight text-white flex items-center gap-2">
-                MULTI-CHANNEL ARRAY MATRIX (HD-tDCS)
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-900/60 text-cyan-300 font-normal">
-                  KIRCHHOFF SOLVER
+              <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white">
+                Multi-channel array
+                <span className="rounded bg-cyan-900/60 px-1.5 py-0.5 text-[11px] font-normal text-cyan-300">
+                  HD-tDCS · Kirchhoff solver
                 </span>
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[12px] text-slate-400">
                 Arbitrary cortical lead-field superposition across up to 8 independent channels
               </p>
             </div>
@@ -168,9 +169,9 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
         <div className="p-5 overflow-y-auto space-y-4 custom-scrollbar flex-1">
           {/* Quick Presets Carousel */}
           <div>
-            <div className="text-[11px] font-mono text-slate-400 mb-2 flex items-center gap-1">
+            <div className="mb-2 flex items-center gap-1 text-[12px] font-medium text-slate-400">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>ARRAY ARCHITECTURE PRESETS</span>
+              <span>Array presets</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {DEFAULT_ARRAY_PRESETS.map((preset, idx) => (
@@ -182,7 +183,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
                   <div className="text-xs font-mono font-bold text-cyan-300 group-hover:text-cyan-200">
                     {preset.name}
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-1 line-clamp-2">
+                  <div className="text-[11px] text-slate-400 mt-1 line-clamp-2">
                     {preset.description}
                   </div>
                 </button>
@@ -206,7 +207,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono font-bold text-slate-200">
-                      KIRCHHOFF CURRENT BALANCE:
+                      Kirchhoff current balance
                     </span>
                     <span
                       className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded ${
@@ -218,7 +219,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
                       Σ I = {telemetry.kirchhoffSumMa > 0 ? `+${telemetry.kirchhoffSumMa}` : telemetry.kirchhoffSumMa} mA
                     </span>
                   </div>
-                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">
                     Source: +{telemetry.totalAnodalMa} mA | Sink: -{telemetry.totalCathodalMa} mA
                   </div>
                 </div>
@@ -233,15 +234,15 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
                     : 'bg-amber-600/30 text-amber-300 border-amber-500/70 hover:bg-amber-600/40 cursor-pointer'
                 }`}
               >
-                {telemetry.isKirchhoffBalanced ? '✓ CIRCUIT BALANCED' : 'Auto-Balance (Σ I = 0)'}
+                {telemetry.isKirchhoffBalanced ? '✓ Circuit balanced' : 'Auto-balance (Σ I = 0)'}
               </button>
             </div>
 
-            {/* Kirchhoff Visual Balance Scale & Mini Scalp Pin Array Map */}
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+            {/* Kirchhoff Visual Balance Scale & Lead-Field Isopotential Contour Map */}
+            <div className="grid grid-cols-3 gap-3 pt-2 border-t border-slate-800/80">
               {/* Balance Scale SVG */}
               <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center justify-center">
-                <span className="text-[9px] font-mono text-slate-400 mb-1">CURRENT CONSERVATION SCALE</span>
+                <span className="text-[10.5px] font-mono text-slate-400 mb-1">Current conservation scale</span>
                 <svg viewBox="0 0 160 55" className="w-40 h-14">
                   {/* Fulcrum */}
                   <polygon points="80,28 72,50 88,50" fill="#1E293B" stroke="#475569" strokeWidth="1" />
@@ -254,51 +255,17 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
                     <line x1="20" y1="28" x2="140" y2="28" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" />
                     {/* Left pan: Anodes Source */}
                     <circle cx="28" cy="28" r="6" fill="#EF4444" />
-                    <text x="28" y="44" fill="#F87171" fontSize="6" textAnchor="middle" fontFamily="monospace">+{telemetry.totalAnodalMa}mA</text>
+                    <text x="28" y="44" fill="#F87171" fontSize="6.9" textAnchor="middle" fontFamily="monospace">+{telemetry.totalAnodalMa}mA</text>
                     {/* Right pan: Cathodes Sink */}
                     <circle cx="132" cy="28" r="6" fill="#06B6D4" />
-                    <text x="132" y="44" fill="#38BDF8" fontSize="6" textAnchor="middle" fontFamily="monospace">-{telemetry.totalCathodalMa}mA</text>
+                    <text x="132" y="44" fill="#38BDF8" fontSize="6.9" textAnchor="middle" fontFamily="monospace">-{telemetry.totalCathodalMa}mA</text>
                   </g>
                 </svg>
               </div>
 
-              {/* Mini Scalp Pin Array Map */}
-              <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800/60 flex items-center justify-between">
-                <div>
-                  <span className="text-[9px] font-mono text-slate-400 block mb-0.5">ACTIVE ARRAY MAP</span>
-                  <div className="text-[10px] font-mono text-slate-300">
-                    <span className="text-red-400 font-bold">{channels.filter(c => c.currentMa > 0).length} Anodes</span>
-                    {' • '}
-                    <span className="text-cyan-400 font-bold">{channels.filter(c => c.currentMa < 0).length} Sinks</span>
-                  </div>
-                  <div className="text-[9px] font-mono text-slate-500 mt-1">
-                    Electrodes: {channels.map(c => c.nodeId).join(', ')}
-                  </div>
-                </div>
-                {/* Mini Head Icon */}
-                <svg viewBox="0 0 50 50" className="w-11 h-11 shrink-0">
-                  <circle cx="25" cy="25" r="21" fill="#0A101D" stroke="#334155" strokeWidth="1.2" />
-                  <path d="M 23 4 L 25 1 L 27 4 Z" fill="#64748B" />
-                  {channels.map((c, i) => {
-                    const isAn = c.currentMa > 0;
-                    // Distribute around circumference/center for visual indicator
-                    const ang = (i / channels.length) * Math.PI * 2;
-                    const r = isAn ? 6 : 14;
-                    const cx = 25 + r * Math.cos(ang);
-                    const cy = 25 + r * Math.sin(ang);
-                    return (
-                      <circle
-                        key={c.nodeId}
-                        cx={cx}
-                        cy={cy}
-                        r="3"
-                        fill={isAn ? '#EF4444' : '#06B6D4'}
-                        stroke="#FFFFFF"
-                        strokeWidth="0.8"
-                      />
-                    );
-                  })}
-                </svg>
+              {/* Lead-Field Isopotential Contour Map */}
+              <div className="col-span-2">
+                <ScalpLeadFieldContourMap channels={channels} />
               </div>
             </div>
           </div>
@@ -306,14 +273,14 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
           {/* Active Electrodes List */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-mono text-slate-300">
-              <span>ARRAY CHANNELS ({channels.length}/8)</span>
+              <span>Array channels ({channels.length}/8)</span>
               <button
                 onClick={handleAddChannel}
                 disabled={channels.length >= 8}
-                className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 disabled:text-slate-600 transition"
+                className="flex items-center gap-1 text-[12px] text-cyan-400 hover:text-cyan-300 disabled:text-slate-600 transition"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Electrode</span>
+                <span>Add electrode</span>
               </button>
             </div>
 
@@ -331,7 +298,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
 
                   {/* Polarity Tag */}
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded w-16 text-center ${
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded w-16 text-center ${
                       isAnode
                         ? 'bg-red-950 text-red-300 border border-red-800/60'
                         : isCathode
@@ -339,7 +306,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
                         : 'bg-slate-800 text-slate-400'
                     }`}
                   >
-                    {isAnode ? 'ANODE' : isCathode ? 'CATHODE' : 'NEUTRAL'}
+                    {isAnode ? 'Anode' : isCathode ? 'Cathode' : 'Neutral'}
                   </span>
 
                   {/* Node Selector */}
@@ -390,15 +357,15 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
           {/* Telemetry Summary */}
           <div className="grid grid-cols-3 gap-2 p-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs font-mono">
             <div>
-              <span className="text-slate-500 text-[10px] block">PEAK CORTICAL E-FIELD</span>
+              <span className="text-slate-500 text-[11px] block">Peak cortical E-field</span>
               <span className="text-amber-300 font-bold">{telemetry.peakEFieldVm.toFixed(3)} V/m</span>
             </div>
             <div>
-              <span className="text-slate-500 text-[10px] block">SOMATIC POLARIZATION</span>
+              <span className="text-slate-500 text-[11px] block">Somatic polarization</span>
               <span className="text-red-300 font-bold">+{telemetry.maxMembraneShiftMv.toFixed(2)} mV</span>
             </div>
             <div>
-              <span className="text-slate-500 text-[10px] block">SAFETY PROFILE</span>
+              <span className="text-slate-500 text-[11px] block">Safety profile</span>
               <span className="text-emerald-400 font-bold">{telemetry.safetyIndex}</span>
             </div>
           </div>
@@ -406,16 +373,16 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
 
         {/* Footer Actions */}
         <div className="px-5 py-3.5 bg-[#0A101D] border-t border-slate-800 flex items-center justify-between shrink-0">
-          <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
+          <div className="text-[12px] font-mono text-slate-400 flex items-center gap-1.5">
             {telemetry.isKirchhoffBalanced ? (
               <>
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400">Kirchhoff Safe (No Net Scalp Charge)</span>
+                <span className="text-emerald-400">Kirchhoff safe · no net scalp charge</span>
               </>
             ) : (
               <>
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-amber-400">Unbalanced Currents</span>
+                <span className="text-amber-400">Unbalanced currents</span>
               </>
             )}
           </div>
@@ -432,7 +399,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-mono font-bold transition shadow-glow-cyan"
             >
               <Zap className="w-3.5 h-3.5" />
-              <span>APPLY ARRAY CONFIGURATION</span>
+              <span>Apply array</span>
             </button>
           </div>
         </div>

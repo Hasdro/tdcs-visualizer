@@ -18,13 +18,13 @@ export const ChargeDoseReservoir: React.FC<ChargeDoseReservoirProps> = ({
   const pctFill = Math.min(100, Math.max(8, (totalQ / maxScaleQ) * 100));
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl font-mono text-xs select-none">
-      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+    <div className="panel-card select-none p-3 text-xs">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
-          CHARGE DOSE RESERVOIR (Q)
+          Charge dose
         </span>
-        <span className="text-[10px] bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 px-1.5 py-0.5 rounded font-bold">
+        <span className="rounded border border-cyan-800/60 bg-cyan-950/80 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-cyan-300">
           {totalQ.toFixed(2)} C
         </span>
       </div>
@@ -63,26 +63,26 @@ export const ChargeDoseReservoir: React.FC<ChargeDoseReservoirProps> = ({
         </div>
 
         {/* Milestone Explanations & Density */}
-        <div className="flex-1 space-y-1.5 text-[10px]">
-          <div className="text-[9px] text-slate-400">
-            Formula: {currentMa.toFixed(1)}mA × {durationMin}m ({durationMin * 60}s)
+        <div className="flex-1 space-y-1.5 text-[11px]">
+          <div className="text-[10.5px] text-slate-400">
+            Formula: <span className="font-mono">{currentMa.toFixed(1)} mA × {durationMin} min ({durationMin * 60} s)</span>
           </div>
           <div className="flex items-center justify-between text-slate-300">
-            <span>Charge Density (Q/A):</span>
-            <span className="font-bold text-slate-100">{telemetry.chargeDensityCCm2} C/cm²</span>
+            <span>Charge density (Q/A)</span>
+            <span className="font-mono font-semibold text-slate-100">{telemetry.chargeDensityCCm2} <span className="font-normal text-slate-400">C/cm²</span></span>
           </div>
 
           <div className="space-y-1 pt-1 border-t border-slate-800/60">
             <div className={`flex items-center justify-between px-1.5 py-0.5 rounded ${totalQ >= 1.2 && totalQ < 2.4 ? 'bg-cyan-950/60 text-cyan-300 font-bold' : 'text-slate-400'}`}>
-              <span>• 1.2 C: Primer (10m)</span>
+              <span>• <span className="font-mono">1.2 C</span>: primer (<span className="font-mono">10m</span>)</span>
               {totalQ >= 1.2 && <span>✓</span>}
             </div>
             <div className={`flex items-center justify-between px-1.5 py-0.5 rounded ${totalQ >= 2.4 && totalQ < 3.6 ? 'bg-emerald-950/60 text-emerald-300 font-bold' : 'text-slate-400'}`}>
-              <span>• 2.4 C: Clinical Std (20m)</span>
+              <span>• <span className="font-mono">2.4 C</span>: clinical standard (<span className="font-mono">20m</span>)</span>
               {totalQ >= 2.4 && <span>✓</span>}
             </div>
             <div className={`flex items-center justify-between px-1.5 py-0.5 rounded ${totalQ >= 3.6 ? 'bg-amber-950/60 text-amber-300 font-bold' : 'text-slate-400'}`}>
-              <span>• 3.6 C: Research Max (30m)</span>
+              <span>• <span className="font-mono">3.6 C</span>: research maximum (<span className="font-mono">30m</span>)</span>
               {totalQ >= 3.6 && <span>⚠️</span>}
             </div>
           </div>

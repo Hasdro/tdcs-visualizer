@@ -12,16 +12,16 @@ export const MontageFocalityGraphic: React.FC<MontageFocalityGraphicProps> = ({
   const isHD = mode === 'hd4x1';
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl font-mono text-xs select-none">
-      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+    <div className="panel-card select-none p-3 text-xs">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
-          MONTAGE FOCALITY ARCHITECTURE
+          Montage geometry
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-2 mt-2">
-        {/* Sponge Pad Option Card */}
+        {/* Sponge pad Option Card */}
         <button
           onClick={() => onSelectMode('sponge')}
           className={`p-2 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
@@ -31,10 +31,10 @@ export const MontageFocalityGraphic: React.FC<MontageFocalityGraphicProps> = ({
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className={`text-[11px] font-bold ${!isHD ? 'text-cyan-300' : 'text-slate-400'}`}>
-              Sponge Pad
+            <span className={`text-[12px] font-bold ${!isHD ? 'text-cyan-300' : 'text-slate-400'}`}>
+              Sponge pad
             </span>
-            <span className="text-[9px] text-slate-500">25–35 cm²</span>
+            <span className="font-mono text-[10.5px] text-slate-500">25–35 cm²</span>
           </div>
 
           {/* SVG Diagram: Broad Diffuse Wash */}
@@ -55,8 +55,8 @@ export const MontageFocalityGraphic: React.FC<MontageFocalityGraphicProps> = ({
             </svg>
           </div>
 
-          <p className="text-[9px] text-slate-400 leading-tight">
-            Broad hemispheric flow. Deep penetration with diffuse current dispersion.
+          <p className="text-[10.5px] text-slate-400 leading-tight">
+            Broad hemispheric flow with deep penetration and diffuse current dispersion.
           </p>
         </button>
 
@@ -70,10 +70,10 @@ export const MontageFocalityGraphic: React.FC<MontageFocalityGraphicProps> = ({
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className={`text-[11px] font-bold ${isHD ? 'text-cyan-300' : 'text-slate-400'}`}>
-              HD 4×1 Ring
+            <span className={`text-[12px] font-bold ${isHD ? 'text-cyan-300' : 'text-slate-400'}`}>
+              HD 4×1 ring
             </span>
-            <span className="text-[9px] text-cyan-400 font-semibold">3.14 cm² Focal</span>
+            <span className="font-mono text-[10.5px] font-semibold text-cyan-400">3.14 cm² focal</span>
           </div>
 
           {/* SVG Diagram: Focal Bullseye Ring */}
@@ -96,8 +96,8 @@ export const MontageFocalityGraphic: React.FC<MontageFocalityGraphicProps> = ({
             </svg>
           </div>
 
-          <p className="text-[9px] text-slate-400 leading-tight">
-            Razor-sharp targeting. Electric field confined strictly to target gyrus.
+          <p className="text-[10.5px] text-slate-400 leading-tight">
+            Focal targeting with the field confined near the target gyrus.
           </p>
         </button>
       </div>

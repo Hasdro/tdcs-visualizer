@@ -46,13 +46,13 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-mono font-bold tracking-tight text-white flex items-center gap-2">
-                CLINICAL PROTOCOL RECORD EXPORT
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/60 text-emerald-300 font-normal">
-                  PRINT & PDF READY
+              <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white">
+                Clinical protocol export
+                <span className="rounded bg-emerald-900/60 px-1.5 py-0.5 text-[11px] font-normal text-emerald-300">
+                  Print &amp; PDF ready
                 </span>
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[12px] text-slate-400">
                 Institutional trial record-keeping conforming to Bikson et al. 2016
               </p>
             </div>
@@ -69,46 +69,46 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
         {/* Form Body */}
         <div className="p-5 space-y-3.5">
           {/* Live Protocol Summary Card: High-contrast Medical Passport Badge */}
-          <div className="p-3.5 bg-gradient-to-r from-slate-900 via-[#0E1729] to-slate-900 border border-cyan-500/50 rounded-xl shadow-lg text-xs font-mono relative overflow-hidden">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div className="relative overflow-hidden rounded-xl border border-cyan-500/50 bg-gradient-to-r from-slate-900 via-[#0E1729] to-slate-900 p-3.5 text-xs shadow-lg">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-glow-cyan animate-pulse" />
-                <span className="font-bold text-white text-[11px] tracking-wider uppercase">CLINICAL DOSIMETRY PASSPORT</span>
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-400 shadow-glow-cyan" />
+                <span className="text-[12px] font-semibold tracking-tight text-white">Clinical dosimetry passport</span>
               </div>
-              <span className="text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded font-bold">
+              <span className="rounded border border-emerald-800/80 bg-emerald-950/80 px-2 py-0.5 font-mono text-[11px] font-semibold text-emerald-300">
                 {data.telemetry.safetyIndex}
               </span>
             </div>
 
             <div className="grid grid-cols-3 gap-2.5 my-2.5">
               <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
-                <span className="text-[9px] text-slate-400 block">ACTIVE MONTAGE</span>
+                <span className="text-[10.5px] text-slate-400 block">Active montage</span>
                 <span className="text-red-400 font-bold">{data.montageState.anode} (+)</span>
                 <span className="text-slate-500 mx-1">→</span>
                 <span className="text-cyan-400 font-bold">{data.montageState.cathode} (–)</span>
               </div>
               <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
-                <span className="text-[9px] text-slate-400 block">CURRENT & DURATION</span>
-                <span className="text-amber-300 font-bold">{data.montageState.ma.toFixed(1)} mA</span>
-                <span className="text-slate-400 text-[10px] ml-1">@ {data.montageState.dur}m</span>
+                <span className="text-[10.5px] text-slate-400 block">Current & duration</span>
+                <span className="font-mono font-semibold text-amber-300">{data.montageState.ma.toFixed(1)} mA</span>
+                <span className="text-slate-400 text-[11px] ml-1">@ {data.montageState.dur}m</span>
               </div>
               <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
-                <span className="text-[9px] text-slate-400 block">TOTAL ENERGY Q</span>
-                <span className="text-emerald-300 font-bold">{data.telemetry.totalChargeCoulombs.toFixed(2)} C</span>
-                <span className="text-slate-500 text-[9px] block">{data.telemetry.chargeDensityCCm2} C/cm²</span>
+                <span className="text-[10.5px] text-slate-400 block">Total energy Q</span>
+                <span className="font-mono font-semibold text-emerald-300">{data.telemetry.totalChargeCoulombs.toFixed(2)} C</span>
+                <span className="text-slate-500 text-[10.5px] block">{data.telemetry.chargeDensityCCm2} C/cm²</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 text-[10px] text-slate-400">
-              <span>Peak Cortical |E|: <strong className="text-amber-400">{data.telemetry.peakEFieldVm.toFixed(3)} V/m</strong></span>
+            <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 text-[11px] text-slate-400">
+              <span>Peak cortical E-field: <strong className="font-mono text-amber-400">{data.telemetry.peakEFieldVm.toFixed(3)} V/m</strong></span>
               <span>Density J: <strong className="text-cyan-300">{data.telemetry.currentDensityMaCm2} mA/cm²</strong></span>
             </div>
           </div>
 
           {/* Subject ID (Video Feedback #10: Doctor name removed) */}
           <div>
-            <label className="text-[11px] font-mono text-slate-300 block mb-1">
-              SUBJECT / TRIAL IDENTIFIER
+            <label className="text-[12px] font-mono text-slate-300 block mb-1">
+              Subject / trial identifier
             </label>
             <input
               type="text"
@@ -121,8 +121,8 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
 
           {/* Clinical Notes */}
           <div>
-            <label className="text-[11px] font-mono text-slate-300 block mb-1">
-              CLINICAL OBSERVATIONS & COMPLIANCE NOTES
+            <label className="text-[12px] font-mono text-slate-300 block mb-1">
+              Clinical observations & compliance notes
             </label>
             <textarea
               rows={3}
@@ -133,7 +133,7 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
           </div>
 
           {/* Checklist */}
-          <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40 text-[11px] text-emerald-300 flex items-center gap-2">
+          <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40 text-[12px] text-emerald-300 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>
               Includes full dosimetry, charge calculations, Bikson consensus criteria, and PubMed citations.
@@ -156,7 +156,7 @@ export const ProtocolExportModal: React.FC<ProtocolExportModalProps> = ({
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-mono font-bold transition shadow-glow-cyan"
           >
             <Printer className="w-4 h-4" />
-            <span>GENERATE PDF / PRINT</span>
+            <span>Generate PDF / print</span>
           </button>
         </div>
       </div>

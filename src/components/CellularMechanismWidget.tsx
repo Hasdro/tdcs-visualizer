@@ -1,31 +1,34 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BiophysicalTelemetry } from '../utils/biophysicsEngine';
+import { membraneShiftAtNode } from '../utils/biophysicsEngine';
 import { BRAIN_NODES } from '../data/brain_nodes';
-import {
-  Activity,
-  Layers,
-  ExternalLink,
-  Zap,
-  TrendingUp,
-  TrendingDown,
-  Info
-} from 'lucide-react';
+import { Activity, Zap } from 'lucide-react';
 import { SynapticPlasticityDiagram } from './visuals/SynapticPlasticityDiagram';
 import { FiringProbabilityCurve } from './visuals/FiringProbabilityCurve';
 import { NeurochemicalSeesaw } from './visuals/NeurochemicalSeesaw';
+import { IntracellularSignalingCascade } from './visuals/IntracellularSignalingCascade';
+import { NeuroplasticityDecayCurve } from './visuals/NeuroplasticityDecayCurve';
 
 interface CellularMechanismWidgetProps {
   anodeId: string;
   cathodeId: string;
   currentMa: number;
-  telemetry: BiophysicalTelemetry;
+  durationMin: number;
+  padAreaCm2: number;
+  montageType: 'sponge' | 'hd4x1';
+  surroundNodes?: string[];
+  /** Extra panels appended to the scroll area. */
+  footer?: React.ReactNode;
 }
 
 export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = ({
   anodeId,
   cathodeId,
   currentMa,
-  telemetry
+  durationMin,
+  padAreaCm2,
+  montageType,
+  surroundNodes,
+  footer
 }) => {
   const [selectedElectrodeView, setSelectedElectrodeView] = useState<'anode' | 'cathode'>('anode');
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,10 +44,20 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
   const baseVrest = -70.0;
   const thresholdVm = -55.0;
 
-  // dVm shift: positive under anode (+0.2 to +1.6 mV), negative under cathode (-0.2 to -1.6 mV)
-  const dVm = isAnode
-    ? Math.min(1.8, telemetry.maxMembraneShiftMv)
-    : -Math.min(1.8, telemetry.maxMembraneShiftMv);
+  // Local radial field beneath the inspected electrode sets ΔVm and the
+  // relative spontaneous firing rate (exp(ΔVm / σ) escape model).
+  const shift = membraneShiftAtNode(activeNode.id, {
+    anodeId,
+    cathodeId,
+    currentMa,
+    durationMin,
+    padAreaCm2,
+    montageType,
+    surroundNodeIds: surroundNodes
+  });
+  const dVm = shift ? Math.max(-1.8, Math.min(1.8, shift.dVm)) : 0;
+  const firingRatio = shift?.firingRatio ?? 1;
+  const firingChangePct = Math.round((firingRatio - 1) * 100);
 
   const currentVrest = parseFloat((baseVrest + dVm).toFixed(2));
   const distanceToThreshold = Math.abs(thresholdVm - currentVrest).toFixed(2);
@@ -160,10 +173,10 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
             // Fires action potential!
             actionPotentialPhase = 1;
             // Shorter interval between spontaneous spikes when depolarized
-            nextSpikeTime = isAnode ? 25 + Math.floor(Math.random() * 30) : 90 + Math.floor(Math.random() * 60);
+            nextSpikeTime = Math.round((32 / firingRatio) * (0.7 + Math.random() * 0.6));
           } else {
             newSample = peakV;
-            nextSpikeTime = isAnode ? 30 : 65;
+            nextSpikeTime = Math.round((32 / firingRatio) * (0.7 + Math.random() * 0.6));
           }
         }
       }
@@ -193,40 +206,46 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
 
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [currentVrest, dVm, isAnode, baseVrest, thresholdVm]);
+  }, [currentVrest, dVm, isAnode, baseVrest, thresholdVm, firingRatio]);
 
   return (
-    <div className="flex flex-col h-full bg-[#0F1623] border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0C121E] shadow-2xl">
       {/* Header Bar */}
-      <div className="p-3 bg-[#131B2C] border-b border-slate-800 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-amber-400" />
-          <h3 className="font-mono text-xs font-bold text-slate-100 tracking-wider uppercase">
-            Cellular Membrane & Synaptic Scope
-          </h3>
+      <div className="border-b border-slate-800 bg-[#0E1524] px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Activity className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+            <div className="min-w-0">
+              <h3 className="truncate text-[12.5px] font-semibold tracking-tight text-slate-100">Cellular membrane</h3>
+              <p className="text-[11px] text-slate-500">Synaptic polarization &amp; plasticity</p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-amber-300">
+            {currentMa.toFixed(1)} <span className="font-normal text-slate-400">mA</span>
+          </span>
         </div>
 
         {/* Polarity Scope Toggle */}
-        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-0.5 rounded-lg text-[10px] font-mono">
+        <div className="mt-2 flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/60 p-0.5 text-[11px]">
           <button
             onClick={() => setSelectedElectrodeView('anode')}
-            className={`px-2 py-0.5 rounded transition ${
+            className={`flex-1 rounded px-2 py-1 font-medium transition ${
               isAnode
-                ? 'bg-red-500/20 text-red-400 border border-red-500/40 font-bold'
+                ? 'bg-rose-500/15 text-rose-200'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Under Anode ({anodeNode.id} +)
+            Anode · <span className="font-mono">{anodeNode.id}</span>
           </button>
           <button
             onClick={() => setSelectedElectrodeView('cathode')}
-            className={`px-2 py-0.5 rounded transition ${
+            className={`flex-1 rounded px-2 py-1 font-medium transition ${
               !isAnode
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 font-bold'
+                ? 'bg-cyan-500/15 text-cyan-200'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Under Cathode ({cathodeNode.id} –)
+            Cathode · <span className="font-mono">{cathodeNode.id}</span>
           </button>
         </div>
       </div>
@@ -234,19 +253,19 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
       <div className="flex-1 overflow-y-auto p-3 space-y-3.5 custom-scrollbar">
         {/* Real-Time Oscilloscope Canvas */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 shadow-md">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[11px] font-mono">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[12px] font-mono">
             <span className="text-slate-300 font-semibold flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              Somatic Membrane Potential (mV) — {currentMa.toFixed(1)} mA Applied
+              Somatic membrane potential <span className="font-mono text-slate-500">· {currentMa.toFixed(1)} mA</span>
             </span>
-            <span className="text-cyan-400 text-[10px]">
-              Sub-Threshold Modulator (Nitsche 2000)
+            <span className="text-cyan-400 text-[11px]">
+              Sub-threshold · Nitsche 2000
             </span>
           </div>
 
           <div className="relative w-full h-44 bg-[#070B12] rounded-lg border border-slate-800/80 overflow-hidden mt-2">
             <canvas ref={canvasRef} className="w-full h-full block" />
-            <div className="absolute top-2 right-2 bg-slate-900/90 border border-slate-800 px-2 py-1 rounded text-[10px] font-mono text-slate-300 shadow">
+            <div className="absolute top-2 right-2 bg-slate-900/90 border border-slate-800 px-2 py-1 rounded text-[11px] font-mono text-slate-300 shadow">
               ΔVm: <span className={isAnode ? 'text-amber-400 font-bold' : 'text-cyan-400 font-bold'}>
                 {dVm > 0 ? `+${dVm.toFixed(2)}` : dVm.toFixed(2)} mV
               </span>
@@ -255,23 +274,23 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
 
           <div className="mt-2 grid grid-cols-3 gap-2 font-mono text-xs">
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/50">
-              <div className="text-[10px] text-slate-400">RESTING POTENTIAL</div>
+              <div className="text-[11px] text-slate-400">Resting potential</div>
               <div className="text-sm font-bold text-slate-200 mt-0.5">
-                {currentVrest} <span className="text-[10px] font-normal text-slate-400">mV</span>
+                {currentVrest} <span className="text-[11px] font-normal text-slate-400">mV</span>
               </div>
             </div>
 
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/50">
-              <div className="text-[10px] text-slate-400">DIST. TO THRESHOLD</div>
+              <div className="text-[11px] text-slate-400">Distance to threshold</div>
               <div className="text-sm font-bold text-amber-300 mt-0.5">
-                {distanceToThreshold} <span className="text-[10px] font-normal text-slate-400">mV</span>
+                {distanceToThreshold} <span className="text-[11px] font-normal text-slate-400">mV</span>
               </div>
             </div>
 
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/50">
-              <div className="text-[10px] text-slate-400">FIRING PROBABILITY</div>
+              <div className="text-[11px] text-slate-400">Firing probability</div>
               <div className="text-sm font-bold text-emerald-300 mt-0.5">
-                {isAnode ? '↑ +34% (Facilitated)' : '↓ -28% (Depressed)'}
+                {firingChangePct >= 0 ? `↑ +${firingChangePct}%` : `↓ ${firingChangePct}%`}
               </div>
             </div>
           </div>
@@ -282,6 +301,7 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
           isAnode={isAnode}
           currentMa={currentMa}
           maxMembraneShiftMv={Math.abs(dVm)}
+          firingRatio={firingRatio}
         />
 
         {/* Visual 2: Molecular Synaptic Cleft NMDA/AMPA & Ca2+ Ion Cascade */}
@@ -296,124 +316,17 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
           currentMa={currentMa}
         />
 
-        {/* Section 2: Four Core Molecular / Synaptic Indicators */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-3 shadow-md space-y-2.5">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
-            <span className="font-mono text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-cyan-400" />
-              SYNAPTIC PLASTICITY & RECEPTOR DYNAMICS
-            </span>
-            <span className="text-[10px] font-mono text-slate-400">
-              {isAnode ? 'LTP-Like State' : 'LTD-Like State'}
-            </span>
-          </div>
+        {/* Visual 4: Molecular Intracellular Signaling Cascade (replaces 4 dense text cards) */}
+        <IntracellularSignalingCascade isAnode={isAnode} currentMa={currentMa} />
 
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {/* NMDA Receptor */}
-            <div className="bg-slate-950/60 p-2.5 rounded border border-slate-800/60">
-              <div className="flex items-center justify-between text-slate-300 font-semibold mb-1">
-                <span>NMDA Receptor Opening</span>
-                {isAnode ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
-                )}
-              </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed">
-                {isAnode
-                  ? 'Partial Mg2+ pore unblock via somatic depolarization enhances glutamate sensitivity.'
-                  : 'Sustained hyperpolarization strengthens Mg2+ block, attenuating Ca2+ conductance.'}
-              </p>
-            </div>
+        {/* Visual 5: Post-Session Neuroplasticity Decay Timeline */}
+        <NeuroplasticityDecayCurve
+          durationMin={durationMin}
+          currentMa={currentMa}
+          isAnode={isAnode}
+        />
 
-            {/* Intracellular Ca2+ */}
-            <div className="bg-slate-950/60 p-2.5 rounded border border-slate-800/60">
-              <div className="flex items-center justify-between text-slate-300 font-semibold mb-1">
-                <span>Intracellular Ca²⁺ Influx</span>
-                {isAnode ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
-                )}
-              </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed">
-                {isAnode
-                  ? 'Elevated Ca²⁺ activates CaMKII cascades, driving AMPA receptor insertion into dendritic spines.'
-                  : 'Low basal Ca²⁺ recruits calcineurin phosphatases, inducing AMPA endocytosis (LTD).'}
-              </p>
-            </div>
-
-            {/* BDNF Expression */}
-            <div className="bg-slate-950/60 p-2.5 rounded border border-slate-800/60">
-              <div className="flex items-center justify-between text-slate-300 font-semibold mb-1">
-                <span>BDNF Neuroplasticity</span>
-                {isAnode ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
-                )}
-              </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed">
-                {isAnode
-                  ? 'TrkB receptor phosphorylation promotes structural synaptogenesis and dendritic arborization.'
-                  : 'Downregulated local neurotrophic factor secretion during extended inhibitory states.'}
-              </p>
-            </div>
-
-            {/* GABA / Glutamate Balance */}
-            <div className="bg-slate-950/60 p-2.5 rounded border border-slate-800/60">
-              <div className="flex items-center justify-between text-slate-300 font-semibold mb-1">
-                <span>GABA / Glu Balance</span>
-                {isAnode ? (
-                  <span className="text-[10px] font-mono text-amber-400 font-bold">Glutamate ↑</span>
-                ) : (
-                  <span className="text-[10px] font-mono text-cyan-400 font-bold">GABA ↑</span>
-                )}
-              </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed">
-                {isAnode
-                  ? 'Magnetic Resonance Spectroscopy (MRS) demonstrates localized reduction in GABA and rise in Glutamate.'
-                  : 'Relative GABAergic tone increases; suppresses focal hyper-excitability.'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 3: Verified PubMed Citations */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-3 shadow-md space-y-2">
-          <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-            <span className="font-mono text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5 text-cyan-400" />
-              PEER-REVIEWED EVIDENCE & CITATIONS
-            </span>
-            <span className="text-[10px] font-mono text-slate-400">{activeNode.id} Profile</span>
-          </div>
-
-          <div className="space-y-2">
-            {activeNode.keyCitations.map((cit, idx) => (
-              <div key={idx} className="bg-slate-950/60 p-2 rounded border border-slate-800/60 text-xs">
-                <div className="flex items-center justify-between font-mono text-[11px] text-cyan-300">
-                  <span className="font-bold">{cit.authors} ({cit.year})</span>
-                  <a
-                    href={`https://pubmed.ncbi.nlm.nih.gov/${cit.pmid}/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 underline"
-                  >
-                    <span>PMID: {cit.pmid}</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                </div>
-                <div className="text-[10px] text-slate-400 font-mono italic mt-0.5">
-                  {cit.journal}
-                </div>
-                <p className="text-[11px] text-slate-300 mt-1 leading-normal">
-                  {cit.finding}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        {footer}
       </div>
     </div>
   );

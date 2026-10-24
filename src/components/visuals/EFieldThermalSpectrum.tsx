@@ -11,12 +11,12 @@ export const EFieldThermalSpectrum: React.FC<EFieldThermalSpectrumProps> = ({ pe
   const markerPct = (clamped / maxScale) * 100;
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-2.5 shadow-xl select-none font-mono text-xs w-full">
-      <div className="flex items-center justify-between pb-1 mb-1 text-[10px]">
-        <span className="text-slate-400 font-semibold flex items-center gap-1">
-          <span>🌡️</span> CORTICAL E-FIELD MILESTONE SPECTRUM
+    <div className="w-full rounded-lg border border-slate-800/80 bg-[#0A111C] p-2.5 text-xs shadow-lg">
+      <div className="flex items-center justify-between pb-1 mb-1 text-[11px]">
+        <span className="flex items-center gap-1 font-medium text-slate-400">
+          Cortical E-field spectrum
         </span>
-        <span className="text-amber-300 font-bold">{peakEFieldVm.toFixed(3)} V/m</span>
+        <span className="font-mono font-semibold text-amber-300">{peakEFieldVm.toFixed(3)} <span className="font-normal text-slate-500">V/m</span></span>
       </div>
 
       {/* Horizontal Spectrum Gradient Bar */}
@@ -40,11 +40,11 @@ export const EFieldThermalSpectrum: React.FC<EFieldThermalSpectrumProps> = ({ pe
       </div>
 
       {/* Physiological Milestones Legend */}
-      <div className="flex justify-between text-[8.5px] text-slate-400 mt-1">
-        <span>0.0 Sulcal Silence</span>
-        <span className="text-cyan-300">0.2 V/m Synaptic</span>
-        <span className="text-amber-300">0.5 V/m Action Bias</span>
-        <span className="text-rose-400">0.8+ V/m Peak</span>
+      <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+        <span><span className="font-mono">0.0</span> sulcal silence</span>
+        <span className="text-cyan-300"><span className="font-mono">0.2</span> V/m synaptic</span>
+        <span className="text-amber-300"><span className="font-mono">0.5</span> V/m action bias</span>
+        <span className="text-rose-400"><span className="font-mono">0.8+</span> V/m peak</span>
       </div>
     </div>
   );

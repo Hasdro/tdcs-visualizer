@@ -569,3 +569,23 @@ export function calculateMultiChannelTelemetry(
   };
 }
 
+
+// Somatic polarization per unit radial field (~1.25 mV per V/m; Radman 2009, Bikson 2004).
+export const MEMBRANE_COUPLING_MV_PER_VM = 1.25;
+// Membrane-noise escape constant: spontaneous rate scales as exp(ΔVm / σ).
+export const FIRING_NOISE_SIGMA_MV = 2;
+
+/**
+ * Local radial field, somatic ΔVm, and relative spontaneous firing rate for
+ * the cortex beneath one 10-20 site. Returns null for off-head sites.
+ */
+export function membraneShiftAtNode(
+  nodeId: string,
+  params: BiophysicalParams
+): { eNormal: number; dVm: number; firingRatio: number } | null {
+  const node = BRAIN_NODES[nodeId];
+  if (!node || nodeId.startsWith('EX_')) return null;
+  const { eNormal } = computeEFieldAtPoint(node.posCortical, node.normal, params);
+  const dVm = eNormal * MEMBRANE_COUPLING_MV_PER_VM;
+  return { eNormal, dVm, firingRatio: Math.exp(dVm / FIRING_NOISE_SIGMA_MV) };
+}

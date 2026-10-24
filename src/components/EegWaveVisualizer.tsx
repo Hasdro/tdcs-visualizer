@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { EEG_BANDS } from '../data/eeg_bands';
 import { BRAIN_NODES } from '../data/brain_nodes';
 import { BiophysicalTelemetry } from '../utils/biophysicsEngine';
-import { ChevronDown, ChevronUp, Waves, ArrowUpRight, ArrowDownRight, Minus, Sparkles } from 'lucide-react';
+import { Waves } from 'lucide-react';
 import { EegSpectralBarChart } from './visuals/EegSpectralBarChart';
 import { NeuroArousalCompass } from './visuals/NeuroArousalCompass';
+import { EegBandSymptomMatrix } from './visuals/EegBandSymptomMatrix';
 
 interface EegWaveVisualizerProps {
   anodeId: string;
@@ -20,7 +21,6 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
   telemetry
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [expandedBand, setExpandedBand] = useState<string | null>('alpha');
   const [selectedBandFilter, setSelectedBandFilter] = useState<string>('all');
 
   const anodeNode = BRAIN_NODES[anodeId] || BRAIN_NODES['F3'];
@@ -180,48 +180,51 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
   }, [bandShifts, selectedBandFilter]);
 
   return (
-    <div className="flex flex-col h-full bg-[#0F1623] border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0C121E] shadow-2xl">
       {/* Header Bar */}
-      <div className="p-3 bg-[#131B2C] border-b border-slate-800 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Waves className="w-4 h-4 text-cyan-400" />
-          <h3 className="font-mono text-xs font-bold text-slate-100 tracking-wider uppercase">
-            Live EEG Spectral Synthesizer
-          </h3>
+      <div className="border-b border-slate-800 bg-[#0E1524] px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Waves className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+            <h3 className="truncate text-[12.5px] font-semibold tracking-tight text-slate-100">
+              EEG spectral synthesizer
+            </h3>
+          </div>
+          <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-amber-300">
+            {telemetry.peakEFieldVm} <span className="font-normal text-slate-400">V/m</span>
+          </span>
         </div>
-        <div className="flex items-center gap-1.5 font-mono text-[10px]">
-          <span className="text-slate-400">Peak |E|:</span>
-          <span className="bg-slate-800 text-amber-300 font-bold px-1.5 py-0.5 rounded">
-            {telemetry.peakEFieldVm} V/m
-          </span>
-          <span className="text-slate-600">|</span>
-          <span className="bg-red-950/60 text-red-400 border border-red-800/60 px-1.5 py-0.5 rounded font-bold">
-            {anodeNode.id} (+)
-          </span>
-          <span className="text-slate-600">→</span>
-          <span className="bg-cyan-950/60 text-cyan-400 border border-cyan-800/60 px-1.5 py-0.5 rounded font-bold">
-            {cathodeNode.id} (–)
-          </span>
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <span className="text-[11px] text-slate-500">Live 6-band cortical monitor</span>
+          <div className="flex shrink-0 items-center gap-1 font-mono text-[11px]">
+            <span className="rounded border border-red-800/60 bg-red-950/60 px-1.5 py-0.5 font-semibold text-red-300">
+              {anodeNode.id} +
+            </span>
+            <span className="text-slate-600">→</span>
+            <span className="rounded border border-cyan-800/60 bg-cyan-950/60 px-1.5 py-0.5 font-semibold text-cyan-300">
+              {cathodeNode.id} –
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-1 px-3 py-2 bg-slate-900/50 border-b border-slate-800/80 text-[10px] font-mono overflow-x-auto">
+      <div className="custom-scrollbar flex items-center gap-1 overflow-x-auto border-b border-slate-800/80 bg-slate-900/40 px-3 py-2 text-[11px] font-medium">
         <button
           onClick={() => setSelectedBandFilter('all')}
-          className={`px-2 py-0.5 rounded transition ${
+          className={`shrink-0 rounded px-2 py-0.5 transition ${
             selectedBandFilter === 'all'
               ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          All 6 Bands
+          All 6 bands
         </button>
         {Object.values(EEG_BANDS).map((b) => (
           <button
             key={b.id}
             onClick={() => setSelectedBandFilter(b.id)}
-            className={`px-2 py-0.5 rounded transition whitespace-nowrap ${
+            className={`shrink-0 whitespace-nowrap rounded px-2 py-0.5 transition ${
               selectedBandFilter === b.id
                 ? 'bg-slate-800 text-white border border-slate-600 font-semibold'
                 : 'text-slate-400 hover:text-slate-200'
@@ -235,7 +238,7 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
       {/* Real-Time Canvas Multi-Channel Oscilloscope */}
       <div className="relative w-full h-44 bg-[#070B12] border-b border-slate-800">
         <canvas ref={canvasRef} className="w-full h-full block" />
-        <div className="absolute bottom-1 right-2 flex items-center gap-3 text-[9px] font-mono text-slate-500 pointer-events-none">
+        <div className="absolute bottom-1 right-2 flex items-center gap-3 text-[10.5px] font-mono text-slate-500 pointer-events-none">
           <div className="flex items-center gap-1">
             <span className="w-2.5 h-0.5 bg-slate-500 border-dashed" />
             <span>Normative Baseline</span>
@@ -255,124 +258,8 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
         {/* 2D Neuro-Arousal & Executive Drive Compass */}
         <NeuroArousalCompass bandShifts={bandShifts} anodeId={anodeId} />
 
-        <div className="text-[11px] font-mono font-semibold text-slate-400 flex items-center justify-between pt-1">
-          <span>INDIVIDUAL FREQUENCY BANDS</span>
-          <span className="text-[10px] text-cyan-400 font-normal">
-            Ref: Koessler et al., Bikson 2016
-          </span>
-        </div>
-
-        {Object.values(EEG_BANDS).map((band) => {
-          const shift = bandShifts[band.id] || 0;
-          const isExpanded = expandedBand === band.id;
-
-          return (
-            <div
-              key={band.id}
-              className={`border rounded-lg transition-all ${
-                isExpanded
-                  ? 'bg-slate-900/90 border-slate-700 shadow-md'
-                  : 'bg-slate-900/40 border-slate-800 hover:border-slate-700/80'
-              }`}
-            >
-              {/* Header Card Row */}
-              <div
-                onClick={() => setExpandedBand(isExpanded ? null : band.id)}
-                className="p-2.5 flex items-center justify-between cursor-pointer select-none"
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: band.color }}
-                  />
-                  <div>
-                    <span className="font-mono text-xs font-bold text-slate-200">
-                      {band.name} ({band.symbol})
-                    </span>
-                    <span className="text-[10px] text-slate-400 ml-1.5 font-mono">
-                      {band.frequencyRange}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {/* Shift Badge */}
-                  <div
-                    className={`font-mono text-xs px-2 py-0.5 rounded flex items-center gap-1 font-bold ${
-                      shift > 0
-                        ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-800/60'
-                        : shift < 0
-                        ? 'bg-rose-950/70 text-rose-300 border border-rose-800/60'
-                        : 'bg-slate-800 text-slate-400 border border-slate-700'
-                    }`}
-                  >
-                    {shift > 0 ? (
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    ) : shift < 0 ? (
-                      <ArrowDownRight className="w-3.5 h-3.5" />
-                    ) : (
-                      <Minus className="w-3 h-3" />
-                    )}
-                    <span>{shift > 0 ? `+${shift}%` : `${shift}%`}</span>
-                  </div>
-
-                  {isExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-slate-400" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-slate-400" />
-                  )}
-                </div>
-              </div>
-
-              {/* Expanded Clinical Breakdown */}
-              {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-slate-800 text-xs space-y-2 font-sans">
-                  {/* Baseline Meaning */}
-                  <div className="bg-slate-950/60 p-2 rounded border border-slate-800/60 text-[11px]">
-                    <span className="text-slate-400 font-semibold">Baseline Norm: </span>
-                    <span className="text-slate-300">{band.normalBaseline}</span>
-                  </div>
-
-                  {/* Why this montage changed it */}
-                  <div className="bg-cyan-950/30 p-2 rounded border border-cyan-800/40 text-[11px]">
-                    <div className="flex items-center gap-1 text-cyan-400 font-mono font-semibold mb-0.5">
-                      <Sparkles className="w-3 h-3 text-cyan-400" />
-                      <span>Montage Modulation Mechanism:</span>
-                    </div>
-                    <p className="text-slate-300">{band.tdcsModulation.anodalEffect}</p>
-                  </div>
-
-                  {/* Up vs Down Norms Grid */}
-                  <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
-                    <div className="bg-rose-950/20 border border-rose-900/40 rounded p-2">
-                      <div className="font-mono font-bold text-rose-400 flex items-center gap-1 mb-1">
-                        <span>↑ WHEN ELEVATED (UP)</span>
-                      </div>
-                      <p className="text-slate-300 mb-1">{band.whenElevated.clinicalMeaning}</p>
-                      <ul className="text-slate-400 space-y-0.5 list-disc list-inside">
-                        {band.whenElevated.symptoms.slice(0, 2).map((s, i) => (
-                          <li key={i}>{s}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="bg-sky-950/20 border border-sky-900/40 rounded p-2">
-                      <div className="font-mono font-bold text-sky-400 flex items-center gap-1 mb-1">
-                        <span>↓ WHEN SUPPRESSED (DOWN)</span>
-                      </div>
-                      <p className="text-slate-300 mb-1">{band.whenSuppressed.clinicalMeaning}</p>
-                      <ul className="text-slate-400 space-y-0.5 list-disc list-inside">
-                        {band.whenSuppressed.symptoms.slice(0, 2).map((s, i) => (
-                          <li key={i}>{s}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {/* Glanceable Deficit vs Excess Symptom Matrix (replaces expandable text accordions) */}
+        <EegBandSymptomMatrix bandShifts={bandShifts} selectedBandFilter={selectedBandFilter} />
       </div>
     </div>
   );

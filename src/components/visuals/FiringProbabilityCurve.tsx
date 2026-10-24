@@ -4,19 +4,20 @@ interface FiringProbabilityCurveProps {
   isAnode: boolean;
   currentMa: number;
   maxMembraneShiftMv: number;
+  /** Relative spontaneous firing rate vs. no stimulation (1 = unchanged). */
+  firingRatio: number;
 }
 
 export const FiringProbabilityCurve: React.FC<FiringProbabilityCurveProps> = ({
   isAnode,
   currentMa,
-  maxMembraneShiftMv
+  maxMembraneShiftMv,
+  firingRatio
 }) => {
   // Baseline resting potential is -70 mV, threshold is -55 mV
   // Shift moves curve center: Anode (+0.8 mV -> +1.5 mV), Cathode (-0.8 mV -> -1.5 mV)
   const dVm = isAnode ? maxMembraneShiftMv : -maxMembraneShiftMv;
-  const firingProbPct = isAnode
-    ? Math.round(25 + (maxMembraneShiftMv / 1.5) * 35)
-    : Math.round(Math.max(6, 25 - (maxMembraneShiftMv / 1.5) * 16));
+  const changePct = Math.round((firingRatio - 1) * 100);
 
   // Gaussian Curve generation on a 200x80 canvas
   // Center mu shifts with dVm. Baseline mu = 90
@@ -43,14 +44,14 @@ export const FiringProbabilityCurve: React.FC<FiringProbabilityCurveProps> = ({
     : '';
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl select-none font-mono text-xs">
-      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+    <div className="panel-card select-none p-3 text-xs">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-emerald-400" />
-          ACTION POTENTIAL FIRING PROBABILITY
+          Firing probability
         </span>
-        <span className={`text-[10px] font-bold ${isAnode ? 'text-emerald-400' : 'text-cyan-400'}`}>
-          {isAnode ? `↑ +${firingProbPct}% (Facilitated)` : `↓ -${25 - firingProbPct}% (Depressed)`}
+        <span className={`text-[11px] font-bold ${isAnode ? 'text-emerald-400' : 'text-cyan-400'}`}>
+          {changePct >= 0 ? <>↑ <span className="font-mono">+{changePct}%</span> facilitated</> : <>↓ <span className="font-mono">{changePct}%</span> depressed</>}
         </span>
       </div>
 
@@ -61,7 +62,7 @@ export const FiringProbabilityCurve: React.FC<FiringProbabilityCurveProps> = ({
 
           {/* Action Potential Threshold Line (-55 mV) */}
           <line x1={thresholdX} y1="8" x2={thresholdX} y2="72" stroke="#EF4444" strokeWidth="1.2" strokeDasharray="3 3" />
-          <text x={thresholdX} y="6" fill="#EF4444" fontSize="6.5" textAnchor="middle" fontWeight="bold">-55mV THRESHOLD</text>
+          <text x={thresholdX} y="6" fill="#EF4444" fontSize="7.5" textAnchor="middle" fontWeight="bold">−55 mV threshold</text>
 
           {/* Shaded Firing Zone (Area under curve above threshold) */}
           {firingAreaPath && (
@@ -84,13 +85,13 @@ export const FiringProbabilityCurve: React.FC<FiringProbabilityCurveProps> = ({
 
           {/* Resting Potential Marker */}
           <circle cx={mu} cy="14" r="3" fill="#F59E0B" />
-          <text x={mu} y="22" fill="#FBBF24" fontSize="6" textAnchor="middle">Vrest</text>
+          <text x={mu} y="22" fill="#FBBF24" fontSize="6.9" textAnchor="middle">Vrest</text>
         </svg>
       </div>
 
-      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800/60">
+      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
         <span>At {currentMa.toFixed(1)} mA — Synaptic Noise Distribution</span>
-        <span className="text-emerald-300 font-bold">{firingProbPct}% Firing Pool</span>
+        <span className="text-emerald-300 font-bold">Rate ×{firingRatio.toFixed(2)}</span>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { BRAIN_NODES } from '../data/brain_nodes';
@@ -11,7 +11,16 @@ interface StreamlineParticlesProps {
   montageType: 'sponge' | 'hd4x1';
   surroundNodes?: string[];
   visible: boolean;
+  /** Live simulation clock: ramped current (mA) and playback speed multiplier. */
+  simRef?: React.MutableRefObject<{ ma: number; speed: number }>;
+  opacity?: number;
 }
+
+// Deterministic per-path variation so streamlines never reshuffle between renders.
+const seeded = (i: number, k: number) => {
+  const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+};
 
 export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
   anodeId,
@@ -19,7 +28,9 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
   currentMa,
   montageType,
   surroundNodes,
-  visible
+  visible,
+  simRef,
+  opacity = 1
 }) => {
   const pointsRef = useRef<THREE.Points>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
@@ -64,7 +75,7 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
       const actualUp = new THREE.Vector3().crossVectors(right, dir).normalize();
 
       const spreadAngle = (i / NUM_PATHS) * Math.PI * 2;
-      const spreadRadius = (0.05 + Math.random() * 0.08) * (isShunt ? 1.4 : 0.8);
+      const spreadRadius = (0.05 + seeded(i, 1) * 0.08) * (isShunt ? 1.4 : 0.8);
 
       const lateralOffset = right.clone().multiplyScalar(Math.cos(spreadAngle) * spreadRadius)
         .add(actualUp.clone().multiplyScalar(Math.sin(spreadAngle) * spreadRadius));
@@ -76,7 +87,7 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
         // Directs vertical current vector through deep subcortical/brainstem nuclei into shoulder
         const pDeep = pACortical.clone();
         const pBrainstem = new THREE.Vector3(pA.x * 0.25, -0.42, pA.z * 0.25);
-        const pNeck = new THREE.Vector3(targetC.x * 0.45, -0.82, targetC.z * 0.45 + (Math.random() - 0.5) * 0.08);
+        const pNeck = new THREE.Vector3(targetC.x * 0.45, -0.82, targetC.z * 0.45 + (seeded(i, 2) - 0.5) * 0.08);
         const pShoulder = new THREE.Vector3(targetC.x * 0.85, -1.10, targetC.z * 0.85).add(lateralOffset.clone().multiplyScalar(0.6));
 
         const curve = isShunt
@@ -124,7 +135,7 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
       } else {
         // Deep Intracortical Path: Dives through skull into gray/white matter
         const pCCortical = targetC.clone().multiplyScalar(0.85);
-        const deepDivingDepth = 0.55 + Math.random() * 0.25;
+        const deepDivingDepth = 0.55 + seeded(i, 3) * 0.25;
         const midIntra = pACortical.clone().lerp(pCCortical, 0.5).multiplyScalar(deepDivingDepth);
         midIntra.add(lateralOffset);
 
@@ -162,10 +173,12 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
     for (let i = 0; i < TOTAL_PARTICLES; i++) {
       const pathIdx = i % paths.length;
       indices[i] = pathIdx;
-      // Stagger initial progress along trajectory
-      progress[i] = Math.random();
-      // Speed variation
-      speeds[i] = 0.8 + Math.random() * 0.5;
+      // Charges are evenly spaced along each streamline (uniform carrier density).
+      const slot = Math.floor(i / paths.length);
+      progress[i] = (slot + seeded(pathIdx, 4) * 0.5) / PARTICLES_PER_PATH % 1;
+      // Drift velocity v = μE is constant along a streamline, so the
+      // normalized progress rate is inversely proportional to arc length.
+      speeds[i] = 1 / Math.max(0.4, paths[pathIdx].getLength());
 
       const p = paths[pathIdx].getPointAt(progress[i]);
       pos[i * 3] = p.x;
@@ -194,6 +207,12 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
     };
   }, [paths, TOTAL_PARTICLES]);
 
+  useEffect(() => () => lineGeometry.dispose(), [lineGeometry]);
+  useEffect(() => () => particleGeometry.dispose(), [particleGeometry]);
+  useEffect(() => () => glowTexture.dispose(), [glowTexture]);
+
+  const scratch = useMemo(() => new THREE.Vector3(), []);
+
   // Frame animation loop
   useFrame((_, delta) => {
     if (!visible || !pointsRef.current) return;
@@ -203,8 +222,10 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
     const positions = posAttr.array as Float32Array;
     const colors = colAttr.array as Float32Array;
 
-    // Current-dependent flow velocity (faster mA = faster particle flux)
-    const baseVelocity = (0.18 + currentMa * 0.12) * Math.min(delta, 0.1);
+    // Drift velocity scales linearly with the (ramped) injected current.
+    const ma = simRef ? simRef.current.ma : currentMa;
+    const speed = simRef ? simRef.current.speed : 1;
+    const baseVelocity = 0.32 * ma * speed * Math.min(delta, 0.1);
 
     for (let i = 0; i < TOTAL_PARTICLES; i++) {
       const pathIdx = pathIndices[i];
@@ -215,7 +236,7 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
       if (p > 1.0) p -= 1.0;
       progressArray[i] = p;
 
-      const pt = curve.getPointAt(p);
+      const pt = curve.getPointAt(p, scratch);
       positions[i * 3] = pt.x;
       positions[i * 3 + 1] = pt.y;
       positions[i * 3 + 2] = pt.z;
@@ -236,25 +257,25 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
   return (
     <group>
       {/* Ghost streamline trajectories */}
-      <lineSegments ref={linesRef} geometry={lineGeometry}>
+      <lineSegments ref={linesRef} geometry={lineGeometry} renderOrder={0}>
         <lineBasicMaterial
           color="#38BDF8"
           transparent
-          opacity={0.16}
+          opacity={0.16 * opacity}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
       </lineSegments>
 
       {/* Flowing electric charge particle nodes */}
-      <points ref={pointsRef} geometry={particleGeometry}>
+      <points ref={pointsRef} geometry={particleGeometry} renderOrder={0}>
         <pointsMaterial
           map={glowTexture}
           size={0.038}
           sizeAttenuation
           vertexColors
           transparent
-          opacity={0.95}
+          opacity={0.95 * opacity}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />

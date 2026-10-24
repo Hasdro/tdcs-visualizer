@@ -33,13 +33,13 @@ export const NeuroArousalCompass: React.FC<NeuroArousalCompassProps> = ({ bandSh
   }
 
   return (
-    <div className="bg-[#0C121E]/95 border border-slate-800/90 rounded-xl p-3 shadow-xl select-none font-mono text-xs">
-      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px]">
-        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+    <div className="panel-card select-none p-3 text-xs">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
-          NEURO-AROUSAL COMPASS ({anodeId})
+          Neuro-arousal compass · {anodeId}
         </span>
-        <span className="text-[10px] text-cyan-300 font-semibold">{quadrantLabel}</span>
+        <span className="text-[11px] text-cyan-300 font-semibold">{quadrantLabel}</span>
       </div>
 
       <div className="relative flex justify-center py-2">
@@ -55,10 +55,10 @@ export const NeuroArousalCompass: React.FC<NeuroArousalCompassProps> = ({ bandSh
           <rect x="50" y="50" width="45" height="45" fill="#F59E0B" opacity="0.08" rx="4" />
 
           {/* Axis Labels */}
-          <text x="50" y="10" fill="#38BDF8" fontSize="4.5" textAnchor="middle" fontWeight="bold">▲ EXTERNAL FOCUS</text>
-          <text x="50" y="94" fill="#818CF8" fontSize="4.5" textAnchor="middle">▼ INTERNAL CALM</text>
-          <text x="7" y="52" fill="#34D399" fontSize="4.5" textAnchor="start">◄ RELAXED</text>
-          <text x="93" y="52" fill="#F59E0B" fontSize="4.5" textAnchor="end">VIGILANT ►</text>
+          <text x="50" y="10" fill="#38BDF8" fontSize="5.2" textAnchor="middle" fontWeight="bold">▲ External focus</text>
+          <text x="50" y="94" fill="#818CF8" fontSize="5.2" textAnchor="middle">▼ Internal calm</text>
+          <text x="7" y="52" fill="#34D399" fontSize="5.2" textAnchor="start">◄ Relaxed</text>
+          <text x="93" y="52" fill="#F59E0B" fontSize="5.2" textAnchor="end">Vigilant ►</text>
 
           {/* Normative Center Ring */}
           <circle cx="50" cy="50" r="10" fill="none" stroke="#334155" strokeWidth="1" strokeDasharray="2 2" />
@@ -70,44 +70,44 @@ export const NeuroArousalCompass: React.FC<NeuroArousalCompassProps> = ({ bandSh
       </div>
 
       {/* Outcome Benefit Chips */}
-      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-800/60 text-[10px]">
+      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-800/60 text-[11px]">
         {cursorX > 50 && cursorY < 50 && (
           <>
             <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded">
-              🎯 Deep Working Memory
+              🎯 Deep working memory
             </span>
             <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 px-2 py-0.5 rounded">
-              ☀️ Mood Elevation
+              ☀️ Mood elevation
             </span>
           </>
         )}
         {cursorX <= 50 && cursorY < 50 && (
           <>
             <span className="bg-sky-950/60 text-sky-300 border border-sky-800/60 px-2 py-0.5 rounded">
-              🧘 Meditative Alpha Flow
+              🧘 Meditative alpha flow
             </span>
             <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded">
-              ✨ Creative Synthesis
+              ✨ Creative synthesis
             </span>
           </>
         )}
         {cursorX <= 50 && cursorY >= 50 && (
           <>
             <span className="bg-indigo-950/60 text-indigo-300 border border-indigo-800/60 px-2 py-0.5 rounded">
-              🌊 Somatic Calming
+              🌊 Somatic calming
             </span>
             <span className="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-2 py-0.5 rounded">
-              💤 Sleep Consolidation
+              💤 Sleep consolidation
             </span>
           </>
         )}
         {cursorX > 50 && cursorY >= 50 && (
           <>
             <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded">
-              ⚡ Motor Priming
+              ⚡ Motor priming
             </span>
             <span className="bg-rose-950/60 text-rose-300 border border-rose-800/60 px-2 py-0.5 rounded">
-              ⚠️ Monitor Over-Arousal
+              ⚠️ Monitor over-arousal
             </span>
           </>
         )}

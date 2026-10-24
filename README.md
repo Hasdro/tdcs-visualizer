@@ -1,0 +1,51 @@
+# NeuroFlow tDCS — Clinical Simulation Lab
+
+Interactive transcranial direct-current stimulation (tDCS) visualizer built with
+React, TypeScript, Three.js and Tailwind CSS.
+
+**Live:** https://tdcs-visualizer.vercel.app
+
+> **Educational use only.** This is a teaching and visualization tool built on
+> simplified biophysical models. It is not a medical device and must not be used
+> to plan or deliver stimulation. Cross-check every figure against peer-reviewed
+> literature and established guidelines, and consult a qualified clinician.
+
+## Reporting bugs
+
+Use **Report bug** in the app header. Reports are filed as issues in this
+repository through the `api/report-bug.ts` Vercel Function. It needs one
+environment variable on the Vercel project:
+
+- `GITHUB_ISSUES_TOKEN`: a fine-grained GitHub token limited to this repository
+  with **Issues: Read and write** permission only.
+
+Without the token the form falls back to opening a prefilled GitHub issue.
+You can also [open an issue directly](https://github.com/Hasdro/tdcs-visualizer/issues/new).
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+Production build:
+
+```bash
+npm run build
+```
+
+## 3D assets and attribution
+
+The cortical surface in `public/models/brain.glb` is derived from the
+**Detailed Human Brain Model** published on [NIH 3D](https://3d.nih.gov/entries/3DPX-021161)
+(entry `3DPX-021161`), licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+The source mesh was welded, normalised, its medullary stump tucked, and
+per-vertex cortical curvature baked into `COLOR_0` for the tissue and E-field
+shaders. The pre-processing script is `scripts/process_brain.py`; the raw
+download and its transform are documented there.
+
+All biophysical calculations remain procedural and live in
+`src/utils/biophysicsEngine.ts`.
