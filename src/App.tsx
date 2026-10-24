@@ -3,7 +3,6 @@ import { useUrlMontageState } from './hooks/useUrlMontageState';
 import { CLINICAL_PRESETS, ClinicalPreset } from './data/clinical_presets';
 import { calculateTelemetry, MultiChannelChannel } from './utils/biophysicsEngine';
 import { BrainViewport3D } from './components/BrainViewport3D';
-import { AudioSonificationModal } from './components/AudioSonificationModal';
 import { ProtocolExportModal } from './components/ProtocolExportModal';
 import { MultiChannelMatrixModal } from './components/MultiChannelMatrixModal';
 import { SafetyBeacon } from './components/SafetyBeacon';
@@ -25,7 +24,6 @@ import {
   PanelLeftOpen,
   PanelRightOpen,
   Share2,
-  Volume2,
   Bug
 } from 'lucide-react';
 import { DisclaimerModal } from './components/DisclaimerModal';
@@ -74,7 +72,6 @@ export function App() {
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Modals
-  const [isAudioOpen, setIsAudioOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isMatrixOpen, setIsMatrixOpen] = useState(false);
   // Educational-use notice: shown on every page load, not remembered.
@@ -241,13 +238,6 @@ export function App() {
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
-            <HeaderAction
-              icon={<Volume2 className="h-3.5 w-3.5 text-cyan-400" />}
-              label="Audio ASSR"
-              title="Open Web Audio EEG sonification"
-              onClick={() => setIsAudioOpen(true)}
-              hideLabelBelow="xl"
-            />
             <HeaderAction
               icon={<Grid className="h-3.5 w-3.5 text-amber-400" />}
               label="HD Matrix"
@@ -446,12 +436,6 @@ export function App() {
       </footer>
 
       {/* Modals */}
-      <AudioSonificationModal
-        isOpen={isAudioOpen}
-        onClose={() => setIsAudioOpen(false)}
-        activeBandRecommendation="alpha"
-      />
-
       <ProtocolExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
