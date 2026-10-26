@@ -45,6 +45,21 @@ function taperedCapsule(px, py, pz, ax, ay, az, bx, by, bz, ra, rb) {
   return len3(pax - bax * h, pay - bay * h, paz - baz * h) - (ra + (rb - ra) * h);
 }
 
+// Signed distance to an axis-aligned 2D ellipse (good near the outline).
+function ellipse2(u, v, a, b) {
+  const k0 = len2(u / a, v / b);
+  const k1 = len2(u / (a * a), v / (b * b));
+  return k1 === 0 ? -Math.min(a, b) : (k0 * (k0 - 1)) / k1;
+}
+
+// Smooth max(0, t): avoids creases where a penalty switches on.
+const softplus = (t, e = 0.003) => 0.5 * (t + Math.sqrt(t * t + e));
+
+const smoothstep = (a, b, t) => {
+  const k = clamp((t - a) / (b - a), 0, 1);
+  return k * k * (3 - 2 * k);
+};
+
 const smin = (a, b, k) => {
   const h = clamp(0.5 + (0.5 * (b - a)) / k, 0, 1);
   return b + (a - b) * h - k * h * (1 - h);
@@ -69,7 +84,7 @@ function head(x, y, z) {
 
   // Mid-face (maxilla and zygomas).
   d = smin(d, ellipsoid(x, y, z, 0, -0.5, 0.43, 0.66, 0.5, 0.56), 0.16);
-  d = smin(d, ellipsoid(ax, y, z, 0.5, -0.36, 0.66, 0.2, 0.13, 0.2), 0.12);
+  d = smin(d, ellipsoid(ax, y, z, 0.5, -0.36, 0.68, 0.17, 0.1, 0.15), 0.12);
 
   // Lower face: mandible body, ramus, angle and chin.
   d = smin(d, ellipsoid(x, y, z, 0, -0.92, 0.42, 0.5, 0.38, 0.5), 0.18);
@@ -77,43 +92,92 @@ function head(x, y, z) {
   d = smin(d, capsule(ax, y, z, 0.53, -1.0, 0.08, 0.16, -1.23, 0.7, 0.1), 0.12);
   d = smin(d, ellipsoid(x, y, z, 0, -1.14, 0.75, 0.22, 0.17, 0.17), 0.1);
 
-  // Mouth: muzzle, lips and the oral fissure.
-  d = smin(d, ellipsoid(x, y, z, 0, -0.78, 0.78, 0.3, 0.24, 0.26), 0.1);
-  d = smin(d, ellipsoid(x, y, z, 0, -0.745, 0.985, 0.2, 0.055, 0.075), 0.05);
-  d = smin(d, ellipsoid(x, y, z, 0, -0.865, 0.975, 0.175, 0.06, 0.075), 0.05);
-  d = ssub(d, ellipsoid(x, y, z, 0, -0.805, 1.06, 0.19, 0.008, 0.07), 0.02);
+  // Mouth: muzzle, a cupid's-bow upper lip, a fuller lower lip, the oral
+  // fissure and the corners tucked in.
+  d = smin(d, ellipsoid(x, y, z, 0, -0.8, 0.8, 0.3, 0.24, 0.25), 0.1);
+  d = smin(d, ellipsoid(ax, y, z, 0.06, -0.755, 1.0, 0.13, 0.045, 0.07), 0.04);
+  d = smin(d, ellipsoid(x, y, z, 0, -0.775, 1.025, 0.05, 0.03, 0.05), 0.02);
+  d = smin(d, ellipsoid(x, y, z, 0, -0.85, 1.0, 0.17, 0.055, 0.075), 0.04);
+  d = ssub(d, ellipsoid(x, y, z, 0, -0.807, 1.07, 0.2, 0.007, 0.085), 0.015);
+  d = ssub(d, ellipsoid(ax, y, z, 0.215, -0.808, 0.98, 0.03, 0.025, 0.04), 0.03);
   // Philtrum groove and labiomental fold.
   d = ssub(d, ellipsoid(x, y, z, 0, -0.67, 1.03, 0.03, 0.06, 0.03), 0.02);
   d = ssub(d, ellipsoid(x, y, z, 0, -0.97, 1.0, 0.15, 0.03, 0.05), 0.05);
 
-  // Nose: dorsum, lobule, alae; nostrils carved underneath.
-  d = smin(d, taperedCapsule(x, y, z, 0, -0.13, 0.96, 0, -0.5, 1.2, 0.045, 0.075), 0.07);
-  d = smin(d, ellipsoid(x, y, z, 0, -0.53, 1.18, 0.085, 0.07, 0.08), 0.06);
-  d = smin(d, ellipsoid(ax, y, z, 0.1, -0.585, 1.075, 0.07, 0.055, 0.065), 0.05);
-  d = ssub(d, ellipsoid(ax, y, z, 0.055, -0.635, 1.12, 0.03, 0.016, 0.045), 0.02);
-
-  // Orbits: carve the sockets, then set the globes and lids back in.
-  d = ssub(d, ellipsoid(ax, y, z, 0.33, -0.2, 0.99, 0.19, 0.12, 0.16), 0.07);
-  d = smin(d, ellipsoid(ax, y, z, 0.33, -0.21, 0.84, 0.125, 0.125, 0.125), 0.02);
-  d = smin(d, ellipsoid(ax, y, z, 0.33, -0.165, 0.875, 0.16, 0.07, 0.1), 0.03);
-  d = smin(d, ellipsoid(ax, y, z, 0.33, -0.255, 0.87, 0.15, 0.05, 0.09), 0.03);
-
-  // Ears: a tilted, flattened helix with the concha hollowed out.
+  // Nose: a wedge whose triangular cross-section widens from the bridge to
+  // the alae, with a rounded lobule, alar wings and nostrils underneath.
   {
-    const cy = -0.32, cz = -0.1;
-    const tilt = 0.26; // top leans back
-    const ly = (y - cy) * Math.cos(tilt) + (z - cz) * Math.sin(tilt);
-    const lz = -(y - cy) * Math.sin(tilt) + (z - cz) * Math.cos(tilt);
-    let ear = ellipsoid(ax, ly, lz, 0.9, 0.0, 0.0, 0.05, 0.3, 0.17);
-    ear = ssub(ear, ellipsoid(ax, ly, lz, 0.955, -0.04, 0.03, 0.045, 0.14, 0.09), 0.03);
-    d = smin(d, ear, 0.05);
+    const top = -0.08, tipY = -0.57;
+    const s01 = clamp((top - y) / (top - tipY), 0, 1);
+    const zf = 0.99 + 0.27 * Math.pow(s01, 1.15); // dorsum line, nasion to tip
+    const half = 0.05 + 0.07 * s01 * s01; // half-width at the dorsum base
+    const depth = 0.3;
+    // Side walls slope from the dorsum ridge back into the cheeks.
+    const rx = Math.sqrt(x * x + 0.0012); // rounded dorsum ridge
+    const side = (rx * depth + (z - zf) * half) / Math.hypot(depth, half) - 0.012;
+    // Underside rises from the tip back to the subnasale.
+    const under = -(y - (-0.645 + (z - 1.04) * 0.35));
+    let nose = smax(side, under, 0.06);
+    nose = smax(nose, y - top, 0.1);
+    nose = smax(nose, 0.8 - z, 0.05); // the wedge ends inside the face
+    // Lobule (tip) and the alar wings flaring at the base.
+    nose = smin(nose, ellipsoid(x, y, z, 0, -0.565, 1.2, 0.075, 0.07, 0.07), 0.07);
+    nose = smin(nose, ellipsoid(ax, y, z, 0.095, -0.6, 1.08, 0.06, 0.048, 0.085), 0.08);
+    d = smin(d, nose, 0.06);
+    // Alar crease and nostrils.
+    d = ssub(d, ellipsoid(ax, y, z, 0.15, -0.575, 1.06, 0.01, 0.05, 0.05), 0.02);
+    d = ssub(d, ellipsoid(ax, y, z, 0.05, -0.645, 1.13, 0.035, 0.014, 0.055), 0.015);
+  }
+
+  // Orbits: a shallow socket, the globe, and thin lids that wrap the globe
+  // around an almond-shaped opening.
+  d = ssub(d, ellipsoid(ax, y, z, 0.32, -0.2, 0.99, 0.18, 0.11, 0.12), 0.08);
+  {
+    const ex = 0.32, ey = -0.21, ez = 0.85;
+    const globe = len3(ax - ex, y - ey, z - ez) - 0.125;
+    // Almond opening: half-height tapers to the corners, tilted slightly up laterally.
+    const dx = (ax - ex) / 0.125;
+    const openHalf = 0.054 * Math.max(0, 1 - dx * dx);
+    const yc = ey - 0.005 + 0.012 * dx;
+    const opening = openHalf - Math.abs(y - yc);
+    const lids = smax(len3(ax - ex, y - ey, z - ez) - 0.14, opening, 0.012);
+    d = smin(d, globe, 0.015);
+    d = smin(d, lids, 0.02);
+  }
+
+  // Ears: a thin auricle on the side of the head, with a rolled helix rim,
+  // the antihelix ridge, a deep concha bowl, tragus and a soft lobule.
+  {
+    const cy = -0.32, cz = -0.12;
+    const tilt = 0.28; // long axis leans back
+    const u = (y - cy) * Math.cos(tilt) + (z - cz) * Math.sin(tilt); // up the ear
+    const v = -(y - cy) * Math.sin(tilt) + (z - cz) * Math.cos(tilt); // toward the face
+    // The back edge stands away from the scalp (≈ 25°).
+    const back = -v - 0.02;
+    const w = ax - 0.875 - 0.45 * 0.5 * (back + Math.sqrt(back * back + 0.004));
+
+    const outline = smin(ellipse2(u - 0.03, v + 0.02, 0.29, 0.17), ellipse2(u + 0.22, v - 0.0, 0.1, 0.085), 0.08);
+    let ear = smax(outline, Math.abs(w) - 0.022, 0.02);
+    // Helix: a tube rolled along the rim, open at the front where it meets the face.
+    const rimMask = 1 - (1 - smoothstep(0.1, 0.0, v)) * (1 - smoothstep(-0.05, 0.12, u));
+    const rim = len2(outline + 0.032, w - 0.018) - 0.03;
+    ear = smin(ear, rim + (1 - rimMask) * 0.05, 0.02);
+    // Antihelix: an inner ridge on the upper back half.
+    const anti = len2(ellipse2(u - 0.06, v + 0.0, 0.17, 0.095), w - 0.015) - 0.02;
+    ear = smin(ear, anti + softplus(-0.1 - u) + softplus(v - 0.06), 0.02);
+    // Concha bowl in front of the antihelix, opening toward the ear canal.
+    ear = ssub(ear, ellipsoid(w, u, v, 0.045, -0.07, 0.02, 0.06, 0.085, 0.07), 0.025);
+    // Tragus flap just in front of the bowl.
+    ear = smin(ear, ellipsoid(w, u, v, 0.02, -0.11, 0.115, 0.03, 0.045, 0.03), 0.02);
+    d = smin(d, ear, 0.025);
   }
 
   return d;
 }
 
 function body(x, y, z) {
-  const ax = Math.abs(x);
+  // Soft |x| so mirrored left/right parts meet without a midline crease.
+  const ax = Math.sqrt(x * x + 0.012);
 
   // Neck: an elliptic column leaning slightly forward, capped top and bottom.
   const nz = z + 0.16 - 0.08 * (y + 1.0);
@@ -123,8 +187,8 @@ function body(x, y, z) {
   let d = neck;
 
   // Sternocleidomastoids, the larynx, and the trapezius slope to each acromion.
-  d = smin(d, taperedCapsule(ax, y, z, 0.6, -0.55, -0.22, 0.12, -2.15, 0.44, 0.13, 0.1), 0.16);
-  d = smin(d, ellipsoid(x, y, z, 0, -1.55, 0.42, 0.09, 0.12, 0.08), 0.08);
+  d = smin(d, taperedCapsule(ax, y, z, 0.6, -0.6, -0.24, 0.12, -2.1, 0.36, 0.11, 0.08), 0.3);
+  d = smin(d, ellipsoid(x, y, z, 0, -1.5, 0.36, 0.08, 0.13, 0.08), 0.18);
   d = smin(d, taperedCapsule(ax, y, z, 0.32, -1.45, -0.32, 1.25, -2.05, -0.2, 0.3, 0.3), 0.28);
   d = smin(d, taperedCapsule(ax, y, z, 1.25, -2.05, -0.2, 1.95, -2.38, -0.05, 0.3, 0.32), 0.22);
 
@@ -133,11 +197,15 @@ function body(x, y, z) {
   d = smin(d, taperedCapsule(ax, y, z, 2.2, -2.7, -0.02, 2.32, -3.9, -0.04, 0.4, 0.36), 0.12);
 
   // Upper chest, pectorals and clavicles.
-  d = smin(d, ellipsoid(x, y, z, 0, -3.35, -0.08, 1.95, 1.25, 0.86), 0.32);
-  d = smin(d, ellipsoid(ax, y, z, 0.78, -2.98, 0.5, 0.78, 0.46, 0.34), 0.25);
-  d = smin(d, capsule(ax, y, z, 0.16, -2.2, 0.5, 1.85, -2.34, 0.12, 0.065), 0.12);
+  const rx = Math.sqrt(x * x + 0.02); // soft sternal midline
+  d = smin(d, ellipsoid(x, y, z, 0, -3.2, -0.1, 1.9, 1.2, 0.82), 0.45);
+  // The upper chest slopes forward from the clavicles instead of a shelf.
+  d = smin(d, ellipsoid(x, y, z, 0, -2.55, 0.02, 1.5, 0.55, 0.55), 0.35);
+  d = smin(d, ellipsoid(rx, y, z, 0.7, -3.0, 0.3, 0.7, 0.4, 0.3), 0.4);
+  // Clavicles: a low ridge under the skin from the sternum to each shoulder.
+  d = smin(d, taperedCapsule(rx, y, z, 0.15, -2.2, 0.44, 1.75, -2.33, 0.1, 0.04, 0.035), 0.16);
   // Suprasternal notch.
-  d = ssub(d, ellipsoid(x, y, z, 0, -2.17, 0.62, 0.11, 0.08, 0.1), 0.07);
+  d = ssub(d, ellipsoid(x, y, z, 0, -2.2, 0.48, 0.14, 0.07, 0.06), 0.1);
 
   // Open the bust below the chest; the shader fades this edge out.
   d = smax(d, -(y + 3.8), 0.05);
@@ -148,7 +216,7 @@ const bust = (x, y, z) => smin(head(x, y, z), body(x, y, z), 0.24);
 
 /* ------------------------------------------------------- naive surface nets */
 
-const STEP = 0.022;
+const STEP = 0.02;
 const MIN = [-2.95, -3.88, -1.45];
 const MAX = [2.95, 1.12, 1.55];
 const NX = Math.ceil((MAX[0] - MIN[0]) / STEP) + 1;

@@ -396,7 +396,9 @@ export function App() {
             activePlacementMode={activePlacementMode}
             setActivePlacementMode={setActivePlacementMode}
             layerOpacity={layerOpacity}
-            onTissueOpacityChange={(value) => setOpacity('tissue', value)}
+            layers={layers}
+            onToggleLayer={toggleLayer}
+            onOpacityChange={setOpacity}
             simSpeed={simSpeed}
             onSimSpeedChange={setSimSpeed}
             lightStage={theme === 'light'}

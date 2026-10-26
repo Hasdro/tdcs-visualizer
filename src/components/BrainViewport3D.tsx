@@ -8,9 +8,10 @@ import { HeadBust } from './HeadBust';
 import { BRAIN_NODES } from '../data/brain_nodes';
 import { StreamlineParticles } from './StreamlineParticles';
 import { BiophysicalTelemetry } from '../utils/biophysicsEngine';
-import { AlertTriangle, Pause, Play, FastForward, RotateCcw, Droplet } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { ViewportOrientationCube, type CameraView } from './visuals/ViewportOrientationCube';
-import type { LayerOpacity } from './visuals/IsometricLayerStack';
+import type { LayerOpacity, LayerVisibility } from './visuals/IsometricLayerStack';
+import { ViewSettings } from './visuals/ViewSettings';
 
 interface BrainViewport3DProps {
   anodeId: string;
@@ -32,7 +33,9 @@ interface BrainViewport3DProps {
   activePlacementMode: 'anode' | 'cathode' | null;
   setActivePlacementMode: (mode: 'anode' | 'cathode' | null) => void;
   layerOpacity: LayerOpacity;
-  onTissueOpacityChange: (value: number) => void;
+  layers: LayerVisibility;
+  onToggleLayer: (key: keyof LayerVisibility) => void;
+  onOpacityChange: (key: keyof LayerOpacity, value: number) => void;
   simSpeed: number;
   onSimSpeedChange: (speed: number) => void;
   lightStage: boolean;
@@ -1371,12 +1374,6 @@ const FpsProbe: React.FC<{ target: React.RefObject<HTMLSpanElement> }> = ({ targ
   return null;
 };
 
-const SPEEDS: Array<{ value: number; label: string; title: string; icon: React.ReactNode }> = [
-  { value: 0, label: 'Pause', title: 'Pause the simulation', icon: <Pause className="h-3.5 w-3.5" /> },
-  { value: 1, label: '1×', title: 'Play at 1× speed', icon: <Play className="h-3.5 w-3.5" /> },
-  { value: 2, label: '2×', title: 'Fast forward at 2× speed', icon: <FastForward className="h-3.5 w-3.5" /> }
-];
-
 export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
   anodeId,
   cathodeId,
@@ -1396,7 +1393,9 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
   activePlacementMode,
   setActivePlacementMode,
   layerOpacity,
-  onTissueOpacityChange,
+  layers,
+  onToggleLayer,
+  onOpacityChange,
   simSpeed,
   onSimSpeedChange,
   lightStage
@@ -1456,56 +1455,18 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
         <ViewportOrientationCube onSnapCamera={handleSnapCamera} />
       </div>
 
-      {/* Bottom-centre: simulation playback and tissue translucency */}
-      <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-slate-800/80 bg-ink-3/90 p-1 shadow-2xl backdrop-blur-md">
-        {SPEEDS.map((speed) => (
-          <button
-            key={speed.value}
-            type="button"
-            onClick={() => onSimSpeedChange(speed.value)}
-            aria-pressed={simSpeed === speed.value}
-            title={speed.title}
-            className={`flex items-center gap-1 rounded-lg px-1.5 py-1.5 text-[13px] font-medium transition ${
-              simSpeed === speed.value ? 'bg-cyan-500/15 text-cyan-200' : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-100'
-            }`}
-          >
-            {speed.icon}
-            {speed.value > 0 && <span className="font-mono">{speed.label}</span>}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setResetNonce((n) => n + 1)}
-          title="Reset the session clock"
-          aria-label="Reset the session clock"
-          className="rounded-lg px-1.5 py-1.5 text-slate-400 transition hover:bg-slate-800/80 hover:text-slate-100"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-        </button>
-        <span
-          ref={fpsRef}
-          className="whitespace-nowrap rounded-md px-1.5 font-mono text-[13px] text-slate-500"
-          title="Measured WebGL frame rate"
-        >
-          — FPS
-        </span>
-        <label
-          className="ml-1 flex items-center gap-1.5 border-l border-slate-800 pl-2 pr-1.5"
-          title="Cortical tissue translucency: slide left to see current paths and deep nuclei inside"
-        >
-          <Droplet className="h-3.5 w-3.5 shrink-0 text-rose-300" />
-          <input
-            type="range"
-            min={0.15}
-            max={0.9}
-            step={0.01}
-            value={layerOpacity.tissue}
-            onChange={(event) => onTissueOpacityChange(parseFloat(event.target.value))}
-            className="slider w-20 text-rose-300"
-            aria-label="Cortical tissue opacity"
-          />
-          <span className="w-7 text-right font-mono text-[12.5px] text-slate-400">{Math.round(layerOpacity.tissue * 100)}%</span>
-        </label>
+      {/* Bottom-right: view settings (layers, transparency, playback) */}
+      <div className="pointer-events-auto absolute bottom-4 right-4 z-10">
+        <ViewSettings
+          visibility={layers}
+          onToggle={onToggleLayer}
+          opacity={layerOpacity}
+          onOpacityChange={onOpacityChange}
+          simSpeed={simSpeed}
+          onSimSpeedChange={onSimSpeedChange}
+          onResetClock={() => setResetNonce((n) => n + 1)}
+          fpsRef={fpsRef}
+        />
       </div>
 
       {/* Calibrated scientific colorbar */}

@@ -31,7 +31,7 @@ interface IsometricLayerStackProps {
   onOpacityChange: (key: keyof LayerOpacity, value: number) => void;
 }
 
-interface LayerRow {
+export interface LayerRow {
   id: string;
   label: string;
   color: string;
@@ -100,7 +100,7 @@ const NeuronIcon: React.FC<IconProps> = (p) => (
 );
 
 // Ordered outside-in, the way current crosses the head.
-const ROWS: LayerRow[] = [
+export const LAYER_ROWS: LayerRow[] = [
   { id: 'face', Icon: FaceIcon, label: 'Head & shoulders', color: '#F4B8A0', tooltip: 'See-through skin of the head, neck and shoulders', visibilityKey: 'face', opacityKey: 'face' },
   { id: 'scalp', Icon: GridHeadIcon, label: '10–20 grid', color: '#06B6D4', tooltip: '10–20 calvarium grid and electrode sites', visibilityKey: 'scalp', opacityKey: 'scalp' },
   { id: 'shunt', Icon: Skull, label: 'Skull shunt', color: '#FB7185', tooltip: 'Skull barrier and lateral shunt shell', visibilityKey: 'shunt', opacityKey: 'shunt' },
@@ -129,7 +129,7 @@ export const LayerControlsPanel: React.FC<IsometricLayerStackProps> = ({ visibil
     <p className="px-1 text-[13px] leading-relaxed text-slate-400">
       Layers are listed in the order the current crosses them, from skin to neurons.
     </p>
-    {ROWS.map((row) => {
+    {LAYER_ROWS.map((row) => {
       const visible = row.visibilityKey ? visibility[row.visibilityKey] : true;
       const value = row.opacityKey ? opacity[row.opacityKey] : 1;
       const min = row.min ?? 0;
