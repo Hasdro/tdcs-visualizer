@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect, Component, ErrorInfo, ReactNode, Suspense } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-import { OrbitControls, Text, Html } from '@react-three/drei';
+import { Billboard, OrbitControls, Text, Html } from '@react-three/drei';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createCurvedPadGeometry } from '../utils/brainGeometry';
 import { HeadBust } from './HeadBust';
@@ -1044,9 +1044,10 @@ const BrainScene: React.FC<BrainSceneProps> = ({
 
         {/* 7. Clinical status badge */}
         <group position={[0, 0.088 * padScale + 0.095, 0.03]}>
+<Billboard>
           <Text
             position={[0, 0, 0.005]}
-            fontSize={padLabelFontSize * 0.58}
+            fontSize={padLabelFontSize * 0.85}
             color="#FCA5A5"
             anchorX="center"
             anchorY="middle"
@@ -1056,6 +1057,7 @@ const BrainScene: React.FC<BrainSceneProps> = ({
           >
             {`+ ANODE (${anodeNode.id})`}
           </Text>
+</Billboard>
         </group>
       </group>
 
@@ -1093,15 +1095,11 @@ const BrainScene: React.FC<BrainSceneProps> = ({
                 <circleGeometry args={[0.034, 24]} />
                 <meshStandardMaterial color="#00D2FF" transparent opacity={0.65} side={THREE.DoubleSide} />
               </mesh>
-              <Text
-                position={[0, 0, 0.026]}
-                fontSize={0.032}
-                color="#38BDF8"
-                anchorX="center"
-                anchorY="middle"
-              >
-                {`- ${sNode.id}`}
-              </Text>
+              <Billboard position={[0, 0, 0.07]}>
+                <Text fontSize={0.04} color="#38BDF8" anchorX="center" anchorY="middle" outlineWidth={0.004} outlineColor="#070B12">
+                  {`- ${sNode.id}`}
+                </Text>
+              </Billboard>
             </group>
           );
         })
@@ -1178,9 +1176,10 @@ const BrainScene: React.FC<BrainSceneProps> = ({
 
             {/* 7. Clinical status badge */}
             <group position={[0, 0.088 * padScale + 0.095, 0.03]}>
+<Billboard>
               <Text
                 position={[0, 0, 0.005]}
-                fontSize={padLabelFontSize * 0.58}
+                fontSize={padLabelFontSize * 0.85}
                 color="#7DD3FC"
                 anchorX="center"
                 anchorY="middle"
@@ -1190,6 +1189,7 @@ const BrainScene: React.FC<BrainSceneProps> = ({
               >
                 {`- CATHODE (${cathodeNode.id})`}
               </Text>
+</Billboard>
             </group>
           </group>
         </>
@@ -1282,17 +1282,20 @@ const BrainScene: React.FC<BrainSceneProps> = ({
             </mesh>
 
             {(showBrodmannLabels || isHovered) && !isAnode && !isCathode && (
-              <Text
-                position={[0, 0.052, 0.02]}
-                fontSize={0.034}
-                color="#E2E8F0"
-                anchorX="center"
-                anchorY="bottom"
-                outlineWidth={0.004}
-                outlineColor="#070B12"
-              >
-                {node.id}
-              </Text>
+              // Labels always face the camera, from any orbit angle.
+              <Billboard position={[node.normal[0] * 0.08, node.normal[1] * 0.08, node.normal[2] * 0.08]}>
+                <Text
+                  fontSize={0.05}
+                  color="#E2E8F0"
+                  anchorX="center"
+                  anchorY="middle"
+                  fontWeight="bold"
+                  outlineWidth={0.006}
+                  outlineColor="#070B12"
+                >
+                  {node.id}
+                </Text>
+              </Billboard>
             )}
 
             {isHovered && (

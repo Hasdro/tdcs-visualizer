@@ -84,7 +84,7 @@ function head(x, y, z) {
 
   // Mid-face (maxilla and zygomas).
   d = smin(d, ellipsoid(x, y, z, 0, -0.5, 0.43, 0.66, 0.5, 0.56), 0.16);
-  d = smin(d, ellipsoid(ax, y, z, 0.5, -0.36, 0.68, 0.17, 0.1, 0.15), 0.12);
+  d = smin(d, ellipsoid(ax, y, z, 0.5, -0.36, 0.64, 0.16, 0.09, 0.15), 0.2);
 
   // Lower face: mandible body, ramus, angle and chin.
   d = smin(d, ellipsoid(x, y, z, 0, -0.92, 0.42, 0.5, 0.38, 0.5), 0.18);
@@ -98,63 +98,66 @@ function head(x, y, z) {
   d = smin(d, ellipsoid(ax, y, z, 0.06, -0.755, 1.0, 0.13, 0.045, 0.07), 0.04);
   d = smin(d, ellipsoid(x, y, z, 0, -0.775, 1.025, 0.05, 0.03, 0.05), 0.02);
   d = smin(d, ellipsoid(x, y, z, 0, -0.85, 1.0, 0.17, 0.055, 0.075), 0.04);
-  d = ssub(d, ellipsoid(x, y, z, 0, -0.807, 1.07, 0.2, 0.007, 0.085), 0.015);
+  d = ssub(d, ellipsoid(x, y, z, 0, -0.807, 1.07, 0.18, 0.01, 0.085), 0.02);
   d = ssub(d, ellipsoid(ax, y, z, 0.215, -0.808, 0.98, 0.03, 0.025, 0.04), 0.03);
   // Philtrum groove and labiomental fold.
-  d = ssub(d, ellipsoid(x, y, z, 0, -0.67, 1.03, 0.03, 0.06, 0.03), 0.02);
   d = ssub(d, ellipsoid(x, y, z, 0, -0.97, 1.0, 0.15, 0.03, 0.05), 0.05);
 
   // Nose: a wedge whose triangular cross-section widens from the bridge to
   // the alae, with a rounded lobule, alar wings and nostrils underneath.
   {
-    const top = -0.08, tipY = -0.57;
+    const top = -0.1, tipY = -0.55;
     const s01 = clamp((top - y) / (top - tipY), 0, 1);
-    const zf = 0.99 + 0.27 * Math.pow(s01, 1.15); // dorsum line, nasion to tip
-    const half = 0.05 + 0.07 * s01 * s01; // half-width at the dorsum base
+    const zf = 0.99 + 0.2 * Math.pow(s01, 1.15); // dorsum line, nasion to tip
+    const half = 0.045 + 0.055 * s01 * s01; // half-width at the dorsum base
     const depth = 0.3;
     // Side walls slope from the dorsum ridge back into the cheeks.
     const rx = Math.sqrt(x * x + 0.0012); // rounded dorsum ridge
     const side = (rx * depth + (z - zf) * half) / Math.hypot(depth, half) - 0.012;
     // Underside rises from the tip back to the subnasale.
-    const under = -(y - (-0.645 + (z - 1.04) * 0.35));
+    const under = -(y - (-0.62 + (z - 1.04) * 0.4));
     let nose = smax(side, under, 0.06);
     nose = smax(nose, y - top, 0.1);
     nose = smax(nose, 0.8 - z, 0.05); // the wedge ends inside the face
     // Lobule (tip) and the alar wings flaring at the base.
-    nose = smin(nose, ellipsoid(x, y, z, 0, -0.565, 1.2, 0.075, 0.07, 0.07), 0.07);
-    nose = smin(nose, ellipsoid(ax, y, z, 0.095, -0.6, 1.08, 0.06, 0.048, 0.085), 0.08);
+    nose = smin(nose, ellipsoid(x, y, z, 0, -0.545, 1.14, 0.06, 0.055, 0.055), 0.06);
+    nose = smin(nose, ellipsoid(ax, y, z, 0.08, -0.585, 1.06, 0.048, 0.04, 0.07), 0.07);
     d = smin(d, nose, 0.06);
     // Alar crease and nostrils.
-    d = ssub(d, ellipsoid(ax, y, z, 0.15, -0.575, 1.06, 0.01, 0.05, 0.05), 0.02);
-    d = ssub(d, ellipsoid(ax, y, z, 0.05, -0.645, 1.13, 0.035, 0.014, 0.055), 0.015);
+    d = ssub(d, ellipsoid(ax, y, z, 0.125, -0.56, 1.05, 0.008, 0.04, 0.04), 0.02);
+    d = ssub(d, ellipsoid(ax, y, z, 0.042, -0.618, 1.09, 0.028, 0.011, 0.045), 0.012);
   }
 
-  // Orbits: a shallow socket, the globe, and thin lids that wrap the globe
-  // around an almond-shaped opening.
-  d = ssub(d, ellipsoid(ax, y, z, 0.32, -0.2, 0.99, 0.18, 0.11, 0.12), 0.08);
+  // Orbits: a soft hollow, the globe with its corneal bulge, and lids that
+  // follow the globe and blend into the face (no raised ring).
+  d = ssub(d, ellipsoid(ax, y, z, 0.32, -0.19, 0.98, 0.17, 0.1, 0.09), 0.12);
   {
     const ex = 0.32, ey = -0.21, ez = 0.85;
-    const globe = len3(ax - ex, y - ey, z - ez) - 0.125;
-    // Almond opening: half-height tapers to the corners, tilted slightly up laterally.
-    const dx = (ax - ex) / 0.125;
-    const openHalf = 0.054 * Math.max(0, 1 - dx * dx);
-    const yc = ey - 0.005 + 0.012 * dx;
+    const r = len3(ax - ex, y - ey, z - ez);
+    const globe = smin(r - 0.12, len3(ax - ex, y - ey, z - (ez + 0.075)) - 0.06, 0.03);
+    // Almond opening, tilted slightly up at the outer corner.
+    const dx = (ax - ex) / 0.13;
+    const openHalf = 0.06 * Math.max(0, 1 - dx * dx);
+    const yc = ey - 0.004 + 0.01 * dx;
     const opening = openHalf - Math.abs(y - yc);
-    const lids = smax(len3(ax - ex, y - ey, z - ez) - 0.14, opening, 0.012);
-    d = smin(d, globe, 0.015);
-    d = smin(d, lids, 0.02);
+    // Upper lid fuller than the lower one, with a soft crease above it.
+    const lidR = 0.13 + 0.008 * smoothstep(yc - 0.02, yc + 0.03, y);
+    const lids = smax(r - lidR, opening, 0.01);
+    d = smin(d, globe, 0.01);
+    d = smin(d, lids, 0.045);
   }
 
   // Ears: a thin auricle on the side of the head, with a rolled helix rim,
   // the antihelix ridge, a deep concha bowl, tragus and a soft lobule.
   {
-    const cy = -0.32, cz = -0.12;
+    const S = 0.84; // overall ear scale
+    const cy = -0.33, cz = -0.03;
     const tilt = 0.28; // long axis leans back
-    const u = (y - cy) * Math.cos(tilt) + (z - cz) * Math.sin(tilt); // up the ear
-    const v = -(y - cy) * Math.sin(tilt) + (z - cz) * Math.cos(tilt); // toward the face
+    const u = ((y - cy) * Math.cos(tilt) + (z - cz) * Math.sin(tilt)) / S; // up the ear
+    const v = (-(y - cy) * Math.sin(tilt) + (z - cz) * Math.cos(tilt)) / S; // toward the face
     // The back edge stands away from the scalp (≈ 25°).
     const back = -v - 0.02;
-    const w = ax - 0.875 - 0.45 * 0.5 * (back + Math.sqrt(back * back + 0.004));
+    const w = (ax - 0.87) / S - 0.4 * 0.5 * (back + Math.sqrt(back * back + 0.004));
 
     const outline = smin(ellipse2(u - 0.03, v + 0.02, 0.29, 0.17), ellipse2(u + 0.22, v - 0.0, 0.1, 0.085), 0.08);
     let ear = smax(outline, Math.abs(w) - 0.022, 0.02);
@@ -169,7 +172,7 @@ function head(x, y, z) {
     ear = ssub(ear, ellipsoid(w, u, v, 0.045, -0.07, 0.02, 0.06, 0.085, 0.07), 0.025);
     // Tragus flap just in front of the bowl.
     ear = smin(ear, ellipsoid(w, u, v, 0.02, -0.11, 0.115, 0.03, 0.045, 0.03), 0.02);
-    d = smin(d, ear, 0.025);
+    d = smin(d, ear * S, 0.025);
   }
 
   return d;

@@ -85,21 +85,20 @@ const FRAGMENT = `
     // Two lobes of skin sheen: a broad oily lobe and a tight highlight.
     vec3 H = normalize(L + V);
     float nh = clamp(dot(N, H), 0.0, 1.0);
-    float spec = pow(nh, 24.0) * 0.18 + pow(nh, 120.0) * 0.4;
+    // Soft, skin-tinted sheen only: no white hot spots on broad surfaces.
+    float spec = pow(nh, 24.0) * 0.07 + pow(nh, 90.0) * 0.08;
 
     vec3 rim = mix(vec3(1.0, 0.8, 0.68), vec3(0.6, 0.36, 0.3), uLight);
-    vec3 color = mix(diffuse, rim, fresnel * 0.55) + vec3(spec);
+    vec3 color = mix(diffuse, rim, fresnel * 0.55) + albedo * spec;
 
     // Shading drives opacity too: faces turned from the light (eye sockets,
     // under the nose and chin) darken and thicken, so the anatomy reads
     // while the lit centre of each surface stays clear.
     float shade = 1.0 - key;
-    // Creases gather shadow like a cavity map; ridges catch a little light.
+    // Creases gather shadow like a cavity map.
     float crease = smoothstep(0.05, 0.6, -vCurvature);
-    float ridge = smoothstep(0.1, 0.8, vCurvature);
-    float alpha = 0.17 + fresnel * 0.5 + shade * 0.2 + spec * 0.6 + crease * 0.32 + ridge * 0.1;
+    float alpha = 0.17 + fresnel * 0.5 + shade * 0.2 + spec * 0.3 + crease * 0.32;
     color *= (1.0 - shade * 0.45) * (1.0 - crease * 0.55);
-    color += rim * ridge * 0.12;
     // Dissolve the chest so the bust has no hard cut.
     alpha *= smoothstep(-3.8, -2.85, vWorldPosition.y);
     gl_FragColor = vec4(color, clamp(alpha, 0.0, 0.9) * uOpacity);
