@@ -36,7 +36,7 @@ export const PresetGlyphRibbon: React.FC<PresetGlyphRibbonProps> = ({ activePres
           onClick={() => onSelectPreset(preset)}
           aria-pressed={active}
           title={`${preset.name} · ${preset.anode} → ${preset.montageType === 'hd4x1' ? 'HD ring' : preset.cathode} · ${preset.currentMa} mA`}
-          className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11.5px] font-medium transition ${
+          className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[13.5px] font-medium transition ${
             active
               ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-100'
               : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-600 hover:text-slate-200'

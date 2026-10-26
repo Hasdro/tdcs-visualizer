@@ -85,7 +85,7 @@ export const PatientPadGuide: React.FC<PatientPadGuideProps> = ({
           </h3>
           <p className="panel-kicker">Your placement guide for this session</p>
         </div>
-        <div className="rounded-md border border-slate-700/80 bg-slate-950/70 px-2 py-1 font-mono text-[11px]">
+        <div className="rounded-md border border-slate-700/80 bg-slate-950/70 px-2 py-1 font-mono text-[13px]">
           <span className="text-rose-300">{anodeId} +</span>
           <span className="mx-1 text-slate-600">/</span>
           <span className="text-cyan-300">{cathodeId} −</span>
@@ -93,7 +93,7 @@ export const PatientPadGuide: React.FC<PatientPadGuideProps> = ({
       </div>
 
       <div className="p-3">
-        <div className="overflow-hidden rounded-xl border border-slate-800/80 bg-[#070B12]">
+        <div className="overflow-hidden rounded-xl border border-slate-800/80 bg-ink-0">
           <svg viewBox="0 0 200 176" className="h-auto w-full" role="img" aria-label={`Red pad at ${anodeId} and blue pad at ${cathodeId}`}>
             <defs>
               <radialGradient id="patientScalp" cx="50%" cy="42%" r="62%">
@@ -218,15 +218,15 @@ const Step: React.FC<{ index: number; tone: 'red' | 'cyan' | 'emerald'; title: s
 
   return (
     <div className="flex gap-2.5">
-      <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border font-mono text-[11px] font-bold ${toneClasses}`}>
+      <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border font-mono text-[13px] font-bold ${toneClasses}`}>
         {index}
       </span>
       <div className="min-w-0">
-        <div className="flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-100">
+        <div className="flex items-center gap-1.5 text-[14.5px] font-semibold text-slate-100">
           <CheckCircle2 className="h-3 w-3 shrink-0 text-slate-500" />
           {title}
         </div>
-        <p className="mt-0.5 text-[11.5px] leading-relaxed text-slate-400">{body}</p>
+        <p className="mt-0.5 text-[13.5px] leading-relaxed text-slate-400">{body}</p>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Microscope } from 'lucide-react';
+import { Microscope } from 'lucide-react';
 import { BRAIN_NODES } from '../../data/brain_nodes';
 import { FIRING_NOISE_SIGMA_MV, membraneShiftAtNode } from '../../utils/biophysicsEngine';
 
@@ -12,8 +12,6 @@ interface NeuronalMagnifyingLensProps {
   surroundNodes?: string[];
   /** Playback multiplier shared with the 3D stage (0 = paused). */
   simSpeed: number;
-  collapsed: boolean;
-  onToggle: () => void;
 }
 
 type LensTarget = 'anode' | 'cathode';
@@ -49,7 +47,8 @@ interface Ion {
 }
 
 /**
- * Microscope picture-in-picture over the stimulated cortical patch. Shows the
+ * Cellular microscope over the stimulated cortical patch, drawn at the width
+ * of its dashboard tab. Shows the
  * sub-threshold mechanism of tDCS on one layer-V pyramidal neuron: the radial
  * field polarizes the soma (and oppositely the apical tuft), which changes the
  * probability of spontaneous firing and, downstream, NMDA-dependent plasticity.
@@ -61,12 +60,23 @@ export const NeuronalMagnifyingLens: React.FC<NeuronalMagnifyingLensProps> = ({
   padAreaCm2,
   montageType,
   surroundNodes,
-  simSpeed,
-  collapsed,
-  onToggle
+  simSpeed
 }) => {
   const [target, setTarget] = useState<LensTarget>('anode');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  // The scene is authored at 320 × 300 and scaled to fill the tab.
+  const [scale, setScale] = useState(1.4);
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const next = Math.max(1, entry.contentRect.width / CANVAS_W);
+      setScale((prev) => (Math.abs(prev - next) > 0.01 ? next : prev));
+    });
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, []);
 
   const returnId = montageType === 'hd4x1' ? surroundNodes?.[0] ?? cathodeId : cathodeId;
   const cathodeHasCortex = !returnId.startsWith('EX_') && Boolean(BRAIN_NODES[returnId]);
@@ -92,16 +102,15 @@ export const NeuronalMagnifyingLens: React.FC<NeuronalMagnifyingLensProps> = ({
   stateRef.current = { ...physics, speed: simSpeed };
 
   useEffect(() => {
-    if (collapsed) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = CANVAS_W * dpr;
-    canvas.height = CANVAS_H * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvas.width = Math.round(CANVAS_W * scale * dpr);
+    canvas.height = Math.round(CANVAS_H * scale * dpr);
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
 
     let raf = 0;
     let last = performance.now();
@@ -470,7 +479,7 @@ export const NeuronalMagnifyingLens: React.FC<NeuronalMagnifyingLensProps> = ({
 
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [collapsed]);
+  }, [scale]);
 
   const { dVm, rateHz, eNormal } = physics;
   const rateChangePct = (rateHz / BASE_RATE_HZ - 1) * 100;
@@ -478,71 +487,17 @@ export const NeuronalMagnifyingLens: React.FC<NeuronalMagnifyingLensProps> = ({
   const plasticity = Math.abs(dVm) < 0.1 ? 'None' : depol ? 'LTP-like' : 'LTD-like';
 
   return (
-    <div className="pointer-events-auto w-[336px] select-none overflow-hidden rounded-xl border border-slate-700/80 bg-[#0B111C]/95 shadow-2xl backdrop-blur-md">
-      {/* The whole header toggles the microscope open and closed. */}
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={!collapsed}
-        title={collapsed ? 'Open the cellular microscope' : 'Collapse the cellular microscope'}
-        className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition hover:bg-slate-800/50 ${
-          collapsed ? '' : 'border-b border-slate-800'
-        }`}
-      >
+    <div className="custom-scrollbar flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3 [&>*]:shrink-0">
+      <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
-          <Microscope className="h-4 w-4 shrink-0 text-emerald-300" />
-          <span className="truncate text-[12.5px] font-semibold text-slate-100">{node.shortName}</span>
+          <Microscope className="h-5 w-5 shrink-0 text-emerald-300" />
+          <span className="truncate text-[15px] font-semibold text-slate-100">
+            Layer V pyramidal neuron · {node.shortName}
+          </span>
         </span>
-        <span className="flex shrink-0 items-center gap-2">
-          {collapsed && (
-            <span className="font-mono text-[12px]">
-              <span className={depol ? 'text-orange-300' : 'text-cyan-300'}>
-                {dVm >= 0 ? '+' : ''}
-                {dVm.toFixed(2)} mV
-              </span>
-              <span className="mx-1.5 text-slate-600">·</span>
-              <span className={rateChangePct >= 0 ? 'text-amber-300' : 'text-cyan-300'}>
-                {rateChangePct >= 0 ? '▲' : '▼'} {Math.abs(rateChangePct).toFixed(0)}%
-              </span>
-            </span>
-          )}
-          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-        </span>
-      </button>
-
-      {!collapsed && (
-      <>
-      <canvas
-        ref={canvasRef}
-        style={{ width: CANVAS_W, height: CANVAS_H }}
-        className="mx-auto block"
-        aria-label={`Layer V pyramidal neuron under ${node.shortName}: membrane shift ${dVm.toFixed(2)} millivolts, firing ${rateChangePct >= 0 ? 'up' : 'down'} ${Math.abs(rateChangePct).toFixed(0)} percent`}
-        role="img"
-      />
-
-      {/* Live readouts as glyph chips */}
-      <div className="grid grid-cols-3 gap-1 border-t border-slate-800 px-2 py-1.5">
-        <Readout
-          label="ΔVm soma"
-          value={`${dVm >= 0 ? '+' : ''}${dVm.toFixed(2)}`}
-          unit="mV"
-          tone={depol ? 'text-orange-300' : 'text-cyan-300'}
-        />
-        <Readout
-          label="Firing"
-          value={`${rateChangePct >= 0 ? '▲' : '▼'} ${Math.abs(rateChangePct).toFixed(0)}`}
-          unit="%"
-          tone={rateChangePct >= 0 ? 'text-amber-300' : 'text-cyan-300'}
-        />
-        <Readout
-          label="Plasticity"
-          value={plasticity}
-          unit=""
-          tone={plasticity === 'LTP-like' ? 'text-emerald-300' : plasticity === 'LTD-like' ? 'text-violet-300' : 'text-slate-300'}
-        />
       </div>
 
-      <div className="flex items-center gap-1 border-t border-slate-800 px-2 py-1.5">
+      <div className="flex items-center gap-1.5">
         <TargetButton
           active={activeTarget === 'anode'}
           onClick={() => setTarget('anode')}
@@ -557,22 +512,60 @@ export const NeuronalMagnifyingLens: React.FC<NeuronalMagnifyingLensProps> = ({
           disabled={!cathodeHasCortex}
           title={cathodeHasCortex ? undefined : 'The return electrode is off the head: no cortex beneath it'}
         />
-        <span className="ml-auto font-mono text-[10.5px] text-slate-500">
+        <span className="ml-auto font-mono text-[13px] text-slate-500">
           E<sub>n</sub> <span className="text-slate-300">{eNormal >= 0 ? '+' : ''}{eNormal.toFixed(2)}</span> V/m
         </span>
       </div>
-      </>
-      )}
+
+      <div
+        ref={frameRef}
+        className="shrink-0 overflow-hidden rounded-xl border border-slate-700/80 bg-[#05080F] shadow-inner"
+      >
+        <canvas
+          ref={canvasRef}
+          style={{ width: CANVAS_W * scale, height: CANVAS_H * scale }}
+          className="block"
+          aria-label={`Layer V pyramidal neuron under ${node.shortName}: membrane shift ${dVm.toFixed(2)} millivolts, firing ${rateChangePct >= 0 ? 'up' : 'down'} ${Math.abs(rateChangePct).toFixed(0)} percent`}
+          role="img"
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <Readout
+          label="ΔVm soma"
+          value={`${dVm >= 0 ? '+' : ''}${dVm.toFixed(2)}`}
+          unit="mV"
+          tone={depol ? 'text-orange-300' : 'text-cyan-300'}
+        />
+        <Readout
+          label="Firing rate"
+          value={`${rateChangePct >= 0 ? '▲' : '▼'} ${Math.abs(rateChangePct).toFixed(0)}`}
+          unit="%"
+          tone={rateChangePct >= 0 ? 'text-amber-300' : 'text-cyan-300'}
+        />
+        <Readout
+          label="Plasticity"
+          value={plasticity}
+          unit=""
+          tone={plasticity === 'LTP-like' ? 'text-emerald-300' : plasticity === 'LTD-like' ? 'text-violet-300' : 'text-slate-300'}
+        />
+      </div>
+
+      <p className="text-[13px] leading-relaxed text-slate-400">
+        The field shifts the resting membrane by a fraction of a millivolt. That small shift changes how often the neuron
+        fires on its own: ×{(rateHz / BASE_RATE_HZ).toFixed(2)} at {rateHz.toFixed(1)} Hz versus {BASE_RATE_HZ} Hz at rest.
+        Spikes travel down the axon to the synapse, where glutamate opens AMPA and, once Mg²⁺ leaves, NMDA channels.
+      </p>
     </div>
   );
 };
 
 const Readout: React.FC<{ label: string; value: string; unit: string; tone: string }> = ({ label, value, unit, tone }) => (
-  <div className="rounded-md bg-slate-950/70 px-1.5 py-1">
-    <div className="text-[10px] text-slate-500">{label}</div>
-    <div className={`font-mono text-[12px] font-semibold ${tone}`}>
+  <div className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-2">
+    <div className="text-[12px] text-slate-500">{label}</div>
+    <div className={`font-mono text-[14px] font-semibold ${tone}`}>
       {value}
-      {unit && <span className="ml-0.5 text-[10px] font-normal text-slate-500">{unit}</span>}
+      {unit && <span className="ml-0.5 text-[12px] font-normal text-slate-500">{unit}</span>}
     </div>
   </div>
 );
@@ -591,7 +584,7 @@ const TargetButton: React.FC<{
     disabled={disabled}
     title={title ?? `Inspect cortex under ${label}`}
     aria-pressed={active}
-    className={`flex items-center gap-1 rounded-md border px-1.5 py-1 font-mono text-[11px] transition disabled:cursor-not-allowed disabled:opacity-40 ${
+    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[13.5px] transition disabled:cursor-not-allowed disabled:opacity-40 ${
       active
         ? tone === 'anode'
           ? 'border-orange-400/50 bg-orange-500/15 text-orange-200'

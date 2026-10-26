@@ -60,11 +60,11 @@ export const SomatosensorySensationMap: React.FC<SomatosensorySensationMapProps>
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-rose-400" />
           Somatosensory map
         </span>
-        <span className="text-[11px] text-slate-400">Real-time body telemetry</span>
+        <span className="text-[13px] text-slate-400">Real-time body telemetry</span>
       </div>
 
       <div className="flex gap-2 mt-1.5">
@@ -189,7 +189,7 @@ export const SomatosensorySensationMap: React.FC<SomatosensorySensationMapProps>
         </svg>
 
         {/* Sensation telemetry readouts */}
-        <div className="flex-1 min-w-0 space-y-2 text-[11px]">
+        <div className="flex-1 min-w-0 space-y-2 text-[13px]">
           {/* Post-session skin erythema dermal swatch */}
           <div className="bg-slate-950/70 border border-slate-800/70 rounded p-2 flex items-center gap-2">
             <div className="relative shrink-0">
@@ -206,7 +206,7 @@ export const SomatosensorySensationMap: React.FC<SomatosensorySensationMapProps>
             <div className="min-w-0">
               <div className="text-slate-400 flex items-center gap-1">🔴 Skin erythema (redness)</div>
               <div className="font-bold text-rose-300">{effects.skinErythemaRisk} / 10</div>
-              <div className="truncate font-mono text-[9.5px] text-slate-500">Q = {telemetry.chargeDensityCCm2} C/cm²</div>
+              <div className="truncate font-mono text-[11.5px] text-slate-500">Q = {telemetry.chargeDensityCCm2} C/cm²</div>
             </div>
           </div>
 
@@ -215,7 +215,7 @@ export const SomatosensorySensationMap: React.FC<SomatosensorySensationMapProps>
             <div className="text-slate-400 flex items-center gap-1">🐜 Scalp tingling / itching</div>
             <div className="flex items-center justify-between">
               <span className="font-mono font-semibold text-amber-300">{effects.tinglingScore} / 10</span>
-              <span className="font-mono text-[9.5px] text-slate-500">J = {telemetry.currentDensityMaCm2} mA/cm²</span>
+              <span className="font-mono text-[11.5px] text-slate-500">J = {telemetry.currentDensityMaCm2} mA/cm²</span>
             </div>
             <div className="h-1 bg-slate-900 rounded-full mt-1 overflow-hidden">
               <div
@@ -233,7 +233,7 @@ export const SomatosensorySensationMap: React.FC<SomatosensorySensationMapProps>
                 {effects.metallicTaste ? 'DETECTED' : 'ABSENT'}
               </span>
               <span
-                className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold border ${
+                className={`px-1.5 py-0.5 rounded text-[11.5px] font-bold border ${
                   effects.metallicTaste
                     ? 'bg-amber-950 text-amber-400 border-amber-800 animate-pulse'
                     : 'bg-slate-800 text-slate-500 border-slate-700'
@@ -246,7 +246,7 @@ export const SomatosensorySensationMap: React.FC<SomatosensorySensationMapProps>
 
           {/* Retinal phosphene flare */}
           {effects.phospheneRisk ? (
-            <div className="bg-rose-950/30 border border-rose-800/50 rounded p-2 text-[10.5px] text-slate-200 flex items-start gap-1.5">
+            <div className="bg-rose-950/30 border border-rose-800/50 rounded p-2 text-[12.5px] text-slate-200 flex items-start gap-1.5">
               <span className="shrink-0">💡</span>
               <div>
                 <span className="font-bold text-rose-300">Retinal phosphene flare: </span>
@@ -254,7 +254,7 @@ export const SomatosensorySensationMap: React.FC<SomatosensorySensationMapProps>
               </div>
             </div>
           ) : (
-            <div className="bg-slate-950/70 border border-slate-800/70 rounded p-2 text-[10.5px] text-slate-500 flex items-start gap-1.5">
+            <div className="bg-slate-950/70 border border-slate-800/70 rounded p-2 text-[12.5px] text-slate-500 flex items-start gap-1.5">
               <span className="shrink-0">👁️</span>
               <div>Optic pathway clear — no frontopolar or orbital stimulation</div>
             </div>

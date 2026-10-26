@@ -57,13 +57,13 @@ export const TissueConductivityStratum: React.FC<TissueConductivityStratumProps>
           </h3>
           <p className="panel-kicker">Why ~60% of current never reaches cortex</p>
         </div>
-        <span className="shrink-0 rounded-md border border-slate-700 bg-slate-950/60 px-1.5 py-0.5 text-[10.5px] font-medium text-slate-400">
+        <span className="shrink-0 rounded-md border border-slate-700 bg-slate-950/60 px-1.5 py-0.5 text-[12.5px] font-medium text-slate-400">
           σ · <span className="font-mono">S/m</span>
         </span>
       </div>
 
       <div className="p-3">
-        <div className="overflow-hidden rounded-lg border border-slate-800/80 bg-[#070B12]">
+        <div className="overflow-hidden rounded-lg border border-slate-800/80 bg-ink-0">
           <svg viewBox="0 0 300 244" className="h-auto w-full" role="img" aria-label="Layered scalp, skull, CSF, grey and white matter conductivity cross-section">
             <defs>
               <marker id="shuntArrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
@@ -142,7 +142,7 @@ export const TissueConductivityStratum: React.FC<TissueConductivityStratumProps>
           </svg>
         </div>
 
-        <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-500">
+        <div className="mt-1.5 flex items-center justify-between text-[12px] text-slate-500">
           <span className="flex items-center gap-1">
             <span className="h-1 w-3 rounded bg-amber-400" /> lateral shunt
           </span>
@@ -154,23 +154,23 @@ export const TissueConductivityStratum: React.FC<TissueConductivityStratumProps>
 
         {/* Bottom verdict strip */}
         <div className="mt-2 flex items-center gap-2 border-t border-slate-800/70 pt-2">
-          <span className="text-[10.5px] text-slate-400">CSF + scalp shunt</span>
+          <span className="text-[12.5px] text-slate-400">CSF + scalp shunt</span>
           <div className="h-1.5 flex-1 overflow-hidden rounded-full border border-slate-800 bg-slate-950">
             <div
               className="h-full bg-gradient-to-r from-rose-500 to-rose-300 transition-all duration-500"
               style={{ width: `${shuntPercentage}%` }}
             />
           </div>
-          <span className="text-[11px] font-semibold text-rose-300">{shuntPercentage.toFixed(1)}%</span>
+          <span className="text-[13px] font-semibold text-rose-300">{shuntPercentage.toFixed(1)}%</span>
           <span
-            className="rounded border border-emerald-800/50 bg-emerald-950/50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-300"
+            className="rounded border border-emerald-800/50 bg-emerald-950/50 px-1.5 py-0.5 text-[13px] font-semibold text-emerald-300"
             title="Fraction of applied current penetrating the skull toward cortex"
           >
             {corticalFraction.toFixed(1)}% → cortex
           </span>
         </div>
 
-        <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+        <p className="mt-2 text-[13px] leading-relaxed text-slate-500">
           Current follows the path of least resistance. The CSF layer conducts roughly 165× better
           than bone, so most charge spreads sideways before the cortex sees it.
         </p>

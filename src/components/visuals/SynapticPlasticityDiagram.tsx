@@ -14,11 +14,11 @@ export const SynapticPlasticityDiagram: React.FC<SynapticPlasticityDiagramProps>
   return (
     <div className="panel-card select-none p-3 text-xs relative">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-amber-400" />
           Synaptic dynamics
         </span>
-        <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${
+        <span className={`text-[13px] font-bold px-1.5 py-0.5 rounded border ${
           isAnode
             ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
             : 'bg-cyan-950/80 text-cyan-300 border-cyan-800'
@@ -147,7 +147,7 @@ export const SynapticPlasticityDiagram: React.FC<SynapticPlasticityDiagramProps>
 
         {/* Micro-Tooltip Popup */}
         {activeTooltip && (
-          <div className="absolute inset-x-2 bottom-2 bg-slate-900/95 border border-amber-500/60 p-2 rounded-lg shadow-2xl text-[11px] text-slate-200 backdrop-blur-md flex items-center justify-between z-20">
+          <div className="absolute inset-x-2 bottom-2 bg-slate-900/95 border border-amber-500/60 p-2 rounded-lg shadow-2xl text-[13px] text-slate-200 backdrop-blur-md flex items-center justify-between z-20">
             <span>{activeTooltip}</span>
             <button
               onClick={() => setActiveTooltip(null)}
@@ -159,7 +159,7 @@ export const SynapticPlasticityDiagram: React.FC<SynapticPlasticityDiagramProps>
         )}
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+      <div className="flex items-center justify-between text-[13px] text-slate-400 pt-1">
         <span>At {currentMa.toFixed(1)} mA — Click channels to inspect</span>
         <span className="text-amber-400 font-bold">{isAnode ? '↑ BDNF Facilitated' : '↓ BDNF Resting'}</span>
       </div>

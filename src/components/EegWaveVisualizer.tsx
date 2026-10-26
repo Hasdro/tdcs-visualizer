@@ -180,23 +180,23 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
   }, [bandShifts, selectedBandFilter]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0C121E] shadow-2xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-ink-2 shadow-2xl">
       {/* Header Bar */}
-      <div className="border-b border-slate-800 bg-[#0E1524] px-3 py-2.5">
+      <div className="border-b border-slate-800 bg-ink-3 px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <Waves className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
-            <h3 className="truncate text-[12.5px] font-semibold tracking-tight text-slate-100">
+            <h3 className="truncate text-[14.5px] font-semibold tracking-tight text-slate-100">
               EEG spectral synthesizer
             </h3>
           </div>
-          <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-amber-300">
+          <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-[13px] font-semibold text-amber-300">
             {telemetry.peakEFieldVm} <span className="font-normal text-slate-400">V/m</span>
           </span>
         </div>
         <div className="mt-1 flex items-center justify-between gap-2">
-          <span className="text-[11px] text-slate-500">Live 6-band cortical monitor</span>
-          <div className="flex shrink-0 items-center gap-1 font-mono text-[11px]">
+          <span className="text-[13px] text-slate-500">Live 6-band cortical monitor</span>
+          <div className="flex shrink-0 items-center gap-1 font-mono text-[13px]">
             <span className="rounded border border-red-800/60 bg-red-950/60 px-1.5 py-0.5 font-semibold text-red-300">
               {anodeNode.id} +
             </span>
@@ -209,7 +209,7 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
       </div>
 
       {/* Filter Tabs */}
-      <div className="custom-scrollbar flex items-center gap-1 overflow-x-auto border-b border-slate-800/80 bg-slate-900/40 px-3 py-2 text-[11px] font-medium">
+      <div className="custom-scrollbar flex items-center gap-1 overflow-x-auto border-b border-slate-800/80 bg-slate-900/40 px-3 py-2 text-[13px] font-medium">
         <button
           onClick={() => setSelectedBandFilter('all')}
           className={`shrink-0 rounded px-2 py-0.5 transition ${
@@ -236,9 +236,9 @@ export const EegWaveVisualizer: React.FC<EegWaveVisualizerProps> = ({
       </div>
 
       {/* Real-Time Canvas Multi-Channel Oscilloscope */}
-      <div className="relative w-full h-44 bg-[#070B12] border-b border-slate-800">
+      <div className="relative w-full h-44 bg-ink-0 border-b border-slate-800">
         <canvas ref={canvasRef} className="w-full h-full block" />
-        <div className="absolute bottom-1 right-2 flex items-center gap-3 text-[10.5px] font-mono text-slate-500 pointer-events-none">
+        <div className="absolute bottom-1 right-2 flex items-center gap-3 text-[12.5px] font-mono text-slate-500 pointer-events-none">
           <div className="flex items-center gap-1">
             <span className="w-2.5 h-0.5 bg-slate-500 border-dashed" />
             <span>Normative Baseline</span>

@@ -81,7 +81,7 @@ export const ScalpLeadFieldContourMap: React.FC<ScalpLeadFieldContourMapProps> =
 
   return (
     <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center">
-      <div className="flex items-center justify-between w-full text-[10.5px] font-mono text-slate-400 mb-1">
+      <div className="flex items-center justify-between w-full text-[12.5px] font-mono text-slate-400 mb-1">
         <span>Lead-field isopotential map</span>
         <span>
           <span className="text-red-400">+V anodal</span> · <span className="text-cyan-400">−V cathodal</span>
@@ -182,7 +182,7 @@ export const ScalpLeadFieldContourMap: React.FC<ScalpLeadFieldContourMapProps> =
       </svg>
 
       {/* Live Kirchhoff confirmation strip */}
-      <div className="w-full flex items-center justify-between text-[10px] font-mono mt-1 pt-1 border-t border-slate-800/60">
+      <div className="w-full flex items-center justify-between text-[12px] font-mono mt-1 pt-1 border-t border-slate-800/60">
         <span className="text-red-400 font-bold">{anodes.length} A · {anodes.reduce((s, e) => s + e.ma, 0).toFixed(2)}mA</span>
         <span className="text-slate-500">ΣI conservation →</span>
         <span className="text-cyan-400 font-bold">{cathodes.length} S · {Math.abs(cathodes.reduce((s, e) => s + e.ma, 0)).toFixed(2)}mA</span>

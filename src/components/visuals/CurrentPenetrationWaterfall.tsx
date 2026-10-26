@@ -25,11 +25,11 @@ export const CurrentPenetrationWaterfall: React.FC<CurrentPenetrationWaterfallPr
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-rose-400" />
           Current shunt breakdown
         </span>
-        <span className="text-[11px] text-slate-400">
+        <span className="text-[13px] text-slate-400">
           {isHD ? 'HD 4×1 focused' : 'Broad dispersion'}
         </span>
       </div>
@@ -40,7 +40,7 @@ export const CurrentPenetrationWaterfall: React.FC<CurrentPenetrationWaterfallPr
         <div className="flex items-center justify-between bg-slate-900/70 px-2 py-1.5 rounded border border-slate-800">
           <div className="flex items-center gap-2">
             <span className="font-medium text-amber-300">Applied input</span>
-            <span className="font-mono text-[11px] text-slate-400">(100%)</span>
+            <span className="font-mono text-[13px] text-slate-400">(100%)</span>
           </div>
           <span className="font-mono font-semibold text-amber-300">{currentMa.toFixed(1)} <span className="font-normal text-slate-400">mA</span></span>
         </div>
@@ -100,7 +100,7 @@ export const CurrentPenetrationWaterfall: React.FC<CurrentPenetrationWaterfallPr
         </div>
 
         {/* Telemetry Breakdown Rows */}
-        <div className="space-y-1.5 text-[11px]">
+        <div className="space-y-1.5 text-[13px]">
           {/* Scalp loss */}
           <div className="flex items-center justify-between bg-rose-950/30 border border-rose-900/40 px-2 py-1 rounded">
             <span className="flex items-center gap-1.5 text-rose-300">

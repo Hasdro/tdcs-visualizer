@@ -1,12 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ArrowLeftRight,
   ChevronDown,
   BookOpen,
   Grid,
   MapPin,
-  PanelLeftClose,
-  SlidersHorizontal,
   Sparkles,
   Target,
   Zap
@@ -32,7 +30,8 @@ interface SetupDockProps {
   onSelectNode: (nodeId: string, polarity: 'anode' | 'cathode') => void;
   onFlipPolarity: () => void;
   onOpenMatrix: () => void;
-  onCollapse: () => void;
+  /** Montage = indication and electrode sites; dose = current, time and pads. */
+  view: 'montage' | 'dose';
 }
 
 type DockSectionId = 'preset' | 'compass' | 'dosage';
@@ -56,24 +55,16 @@ export const SetupDock: React.FC<SetupDockProps> = ({
   onSelectNode,
   onFlipPolarity,
   onOpenMatrix,
-  onCollapse
+  view
 }) => {
   const [openSections, setOpenSections] = useState<Record<DockSectionId, boolean>>({
     preset: true,
     compass: true,
     dosage: true
   });
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   const toggleSection = (id: DockSectionId) =>
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
-
-  const jumpToDosage = () => {
-    setOpenSections((prev) => (prev.dosage ? prev : { ...prev, dosage: true }));
-    window.setTimeout(() => {
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-    }, 60);
-  };
 
   const groupedPresets = useMemo(() => {
     return CATEGORY_ORDER.map((category) => ({
@@ -88,29 +79,9 @@ export const SetupDock: React.FC<SetupDockProps> = ({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Dock title */}
-      <div className="flex shrink-0 items-center justify-between border-b border-slate-800 bg-[#0A101D] px-3 py-2.5">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-          </span>
-          <div className="min-w-0">
-            <div className="truncate text-[12px] font-semibold tracking-tight text-slate-100">Session setup</div>
-            <div className="mt-0.5 truncate text-[11px] text-slate-400">Indication, montage, and dose</div>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onCollapse}
-          className="rounded p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-          title="Collapse setup panel to see the full 3D head"
-          aria-label="Collapse setup panel"
-        >
-          <PanelLeftClose className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div ref={scrollRef} className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
+        {view === 'montage' && (
+        <>
         {/* 1 · Indication & preset */}
         <DockSection
           step="1"
@@ -131,7 +102,7 @@ export const SetupDock: React.FC<SetupDockProps> = ({
                     const preset = CLINICAL_PRESETS.find((item) => item.id === event.target.value);
                     if (preset) onSelectPreset(preset);
                   }}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-[12px] text-slate-200 outline-none transition focus:border-cyan-500/70"
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-[14px] text-slate-200 outline-none transition focus:border-cyan-500/70"
                 >
                   <option value="">Custom montage</option>
                   {groupedPresets.map((group) => (
@@ -148,19 +119,19 @@ export const SetupDock: React.FC<SetupDockProps> = ({
 
               <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-2.5">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 text-[12.5px] font-semibold leading-snug text-slate-100">
+                  <div className="min-w-0 text-[14.5px] font-semibold leading-snug text-slate-100">
                     {currentPreset?.name ?? 'Custom montage'}
                   </div>
                   {currentPreset ? (
                     <EvidenceBadge level={currentPreset.evidenceLevel} />
                   ) : (
-                    <span className="shrink-0 rounded-md border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[11px] text-slate-400">
+                    <span className="shrink-0 rounded-md border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[13px] text-slate-400">
                       Custom
                     </span>
                   )}
                 </div>
 
-                <div className="mt-2 flex items-center gap-1.5 font-mono text-[12px]">
+                <div className="mt-2 flex items-center gap-1.5 font-mono text-[14px]">
                   <span className="rounded border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 font-semibold text-rose-300">
                     {montageState.anode} +
                   </span>
@@ -170,7 +141,7 @@ export const SetupDock: React.FC<SetupDockProps> = ({
                   </span>
                 </div>
 
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[11px] text-slate-400">
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[13px] text-slate-400">
                   <span><span className="text-amber-300">{montageState.ma.toFixed(1)}</span> mA</span>
                   <span className="text-slate-600">·</span>
                   <span><span className="text-cyan-300">{montageState.dur}</span> min</span>
@@ -178,7 +149,7 @@ export const SetupDock: React.FC<SetupDockProps> = ({
                   <span><span className="text-violet-300">{montageState.pad}</span> cm²</span>
                 </div>
 
-                <div className="mt-2 flex items-start gap-1.5 border-t border-slate-800/70 pt-2 text-[11px] leading-snug text-slate-500">
+                <div className="mt-2 flex items-start gap-1.5 border-t border-slate-800/70 pt-2 text-[13px] leading-snug text-slate-500">
                   <Target className="mt-0.5 h-3 w-3 shrink-0 text-slate-500" />
                   <span>
                     {currentPreset?.targetStructure ??
@@ -187,13 +158,13 @@ export const SetupDock: React.FC<SetupDockProps> = ({
                 </div>
 
                 <details className="group mt-2 rounded-lg border border-slate-800/80 bg-slate-900/30 px-2 py-1.5">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[11px] font-medium text-slate-400 marker:hidden">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[13px] font-medium text-slate-400 marker:hidden">
                     Why this protocol?
                     <span className="text-slate-500 transition group-open:rotate-45">+</span>
                   </summary>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">{protocolCopy}</p>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-slate-400">{protocolCopy}</p>
                   {currentPreset && (
-                    <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-400">
+                    <p className="mt-1.5 flex items-start gap-1.5 text-[13px] leading-relaxed text-slate-400">
                       <Zap className="mt-0.5 h-3 w-3 shrink-0 text-amber-400" />
                       {currentPreset.primaryMechanism}
                     </p>
@@ -203,7 +174,7 @@ export const SetupDock: React.FC<SetupDockProps> = ({
                       href={`https://pubmed.ncbi.nlm.nih.gov/${currentPreset.referenceStudy.pmid}/`}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-1.5 flex items-center gap-1 text-[10.5px] text-slate-500 transition hover:text-cyan-300"
+                      className="mt-1.5 flex items-center gap-1 text-[12.5px] text-slate-500 transition hover:text-cyan-300"
                     >
                       <BookOpen className="h-3 w-3" />
                       {currentPreset.referenceStudy.authors.split(',')[0]} {currentPreset.referenceStudy.year} · PMID {currentPreset.referenceStudy.pmid}
@@ -243,7 +214,7 @@ export const SetupDock: React.FC<SetupDockProps> = ({
                 <button
                   type="button"
                   onClick={onFlipPolarity}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-[11.5px] font-medium text-slate-300 transition hover:border-cyan-500/50 hover:text-cyan-300"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-[13.5px] font-medium text-slate-300 transition hover:border-cyan-500/50 hover:text-cyan-300"
                   title="Swap anode and cathode positions"
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5 text-cyan-400" />
@@ -252,7 +223,7 @@ export const SetupDock: React.FC<SetupDockProps> = ({
                 <button
                   type="button"
                   onClick={onOpenMatrix}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-[11.5px] font-medium text-slate-300 transition hover:border-amber-500/40 hover:text-amber-300"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-[13.5px] font-medium text-slate-300 transition hover:border-amber-500/40 hover:text-amber-300"
                   title="Open the multi-channel HD array matrix"
                 >
                   <Grid className="h-3.5 w-3.5 text-amber-400" />
@@ -261,13 +232,13 @@ export const SetupDock: React.FC<SetupDockProps> = ({
               </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-2.5 py-2">
-                  <div className="flex items-center gap-1.5 text-[11.5px] text-cyan-200">
+                  <div className="flex items-center gap-1.5 text-[13.5px] text-cyan-200">
                     <Sparkles className="h-3.5 w-3.5" />
                     {montageState.mode === 'hd4x1'
                       ? `4×1 ring · ${surroundNodes?.length ?? 4} returns`
                       : 'Conventional sponge pair'}
                   </div>
-                  <span className="font-mono text-[11px] text-slate-400">
+                  <span className="font-mono text-[13px] text-slate-400">
                     <span className="text-cyan-300">{telemetry.peakEFieldVm.toFixed(3)}</span> V/m peak
                   </span>
                 </div>
@@ -276,7 +247,11 @@ export const SetupDock: React.FC<SetupDockProps> = ({
           </>
         </DockSection>
 
+        </>
+        )}
+
         {/* 3 · Dosage controls */}
+        {view === 'dose' && (
         <DockSection
           step="3"
           title="Dosage controls"
@@ -309,41 +284,17 @@ export const SetupDock: React.FC<SetupDockProps> = ({
               />
 
               <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/50 px-2.5 py-2">
-                <span className="flex items-center gap-1.5 text-[11.5px] text-slate-400">
+                <span className="flex items-center gap-1.5 text-[13.5px] text-slate-400">
                   <Zap className="h-3.5 w-3.5 text-amber-400" />
                   Current density
                 </span>
-                <span className="font-mono text-[11px] text-slate-300">
+                <span className="font-mono text-[13px] text-slate-300">
                   <span className="font-semibold text-amber-300">{telemetry.currentDensityMaCm2.toFixed(3)}</span> mA/cm²
                 </span>
               </div>
           </>
         </DockSection>
-      </div>
-
-      {/* Persistent dose summary keeps the third section one click away on short screens. */}
-      <div className="flex shrink-0 items-center justify-between gap-2 border-t border-slate-800 bg-[#080E19] px-3 py-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-[10.5px] font-medium text-slate-500">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-            Delivered dose
-          </div>
-          <div className="mt-0.5 font-mono text-[11px] text-slate-300">
-            <span className="text-amber-300">{montageState.ma.toFixed(1)}</span> mA
-            <span className="mx-1 text-slate-600">·</span>
-            <span className="text-cyan-300">{montageState.dur}</span> min
-            <span className="mx-1 text-slate-600">·</span>
-            <span className="text-violet-300">{montageState.pad}</span> cm²
-          </div>
-        </div>
-        <button
-            type="button"
-            onClick={jumpToDosage}
-            className="flex shrink-0 items-center gap-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] font-medium text-slate-300 transition hover:border-amber-500/40 hover:text-amber-200"
-          >
-            Adjust
-            <ChevronDown className="h-3 w-3" />
-          </button>
+        )}
       </div>
     </div>
   );
@@ -364,8 +315,8 @@ const MontageModeSegment: React.FC<{
           : 'border border-transparent text-slate-400 hover:bg-slate-900 hover:text-slate-200'
       }`}
     >
-      <span className="block text-[11.5px] font-semibold">Sponge</span>
-      <span className="block font-mono text-[10.5px] text-slate-500">25 cm² · broad</span>
+      <span className="block text-[13.5px] font-semibold">Sponge</span>
+      <span className="block font-mono text-[12.5px] text-slate-500">25 cm² · broad</span>
     </button>
     <button
       type="button"
@@ -377,8 +328,8 @@ const MontageModeSegment: React.FC<{
           : 'border border-transparent text-slate-400 hover:bg-slate-900 hover:text-slate-200'
       }`}
     >
-      <span className="block text-[11.5px] font-semibold">HD 4×1 ring</span>
-      <span className="block font-mono text-[10.5px] text-slate-500">3.14 cm² · focal</span>
+      <span className="block text-[13.5px] font-semibold">HD 4×1 ring</span>
+      <span className="block font-mono text-[12.5px] text-slate-500">3.14 cm² · focal</span>
     </button>
   </div>
 );
@@ -403,12 +354,12 @@ const DockSection: React.FC<{
       className="flex w-full items-start justify-between gap-2 px-3 py-2.5 text-left transition hover:bg-slate-900/40"
     >
       <div className="flex min-w-0 items-start gap-2.5">
-        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-900 font-mono text-[10.5px] font-semibold text-slate-400">
+        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-900 font-mono text-[12.5px] font-semibold text-slate-400">
           {step}
         </span>
         <div className="min-w-0">
-          <div className="truncate text-[12.5px] font-semibold tracking-tight text-slate-200">{title}</div>
-          <div className="mt-0.5 truncate text-[11px] text-slate-500">{subtitle}</div>
+          <div className="truncate text-[14.5px] font-semibold tracking-tight text-slate-200">{title}</div>
+          <div className="mt-0.5 truncate text-[13px] text-slate-500">{subtitle}</div>
         </div>
       </div>
       <ChevronDown className={`mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform ${open ? '' : '-rotate-90'}`} />
@@ -420,8 +371,8 @@ const DockSection: React.FC<{
 const PatientPadSummary: React.FC<{ montageState: MontageUrlState }> = ({ montageState }) => (
   <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-2.5">
     <div className="mb-2 flex items-center justify-between">
-      <span className="text-[12px] font-semibold text-slate-200">Your two pads</span>
-      <span className="flex items-center gap-1 text-[10.5px] text-slate-500">
+      <span className="text-[14px] font-semibold text-slate-200">Your two pads</span>
+      <span className="flex items-center gap-1 text-[12.5px] text-slate-500">
         <MapPin className="h-3 w-3" />
         {montageState.mode === 'hd4x1' ? 'HD 4×1 ring' : 'Sponge pads'}
       </span>
@@ -444,7 +395,7 @@ const PatientPadSummary: React.FC<{ montageState: MontageUrlState }> = ({ montag
         }
       />
     </div>
-    <p className="mt-2 border-t border-slate-800/70 pt-2 text-[11px] leading-relaxed text-slate-500">
+    <p className="mt-2 border-t border-slate-800/70 pt-2 text-[13px] leading-relaxed text-slate-500">
       Your clinician will place the pads. Sit comfortably and keep your head still so they stay in contact.
     </p>
   </div>
@@ -460,9 +411,9 @@ const PadRow: React.FC<{ tone: 'red' | 'cyan'; label: string; site: string; plac
     <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${tone === 'red' ? 'bg-rose-400' : 'bg-cyan-400'}`} />
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[11.5px] font-medium text-slate-200">{label}</span>
+        <span className="text-[13.5px] font-medium text-slate-200">{label}</span>
         <span
-          className={`rounded border px-1 py-0.5 font-mono text-[10.5px] ${
+          className={`rounded border px-1 py-0.5 font-mono text-[12.5px] ${
             tone === 'red'
               ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
               : 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300'
@@ -471,7 +422,7 @@ const PadRow: React.FC<{ tone: 'red' | 'cyan'; label: string; site: string; plac
           {site}
         </span>
       </div>
-      <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{placement}</p>
+      <p className="mt-0.5 text-[13px] leading-snug text-slate-500">{placement}</p>
     </div>
   </div>
 );
@@ -488,7 +439,7 @@ const PadAreaControl: React.FC<{
       </label>
       {montageState.mode === 'hd4x1' ? (
         <div className="flex items-baseline gap-1">
-          <span className="font-mono text-[12px] font-semibold text-violet-300">3.14</span>
+          <span className="font-mono text-[14px] font-semibold text-violet-300">3.14</span>
           <span className="metric-unit">cm² · fixed</span>
         </div>
       ) : (
@@ -506,7 +457,7 @@ const PadAreaControl: React.FC<{
                 updateMontageState({ pad: Math.max(10, Math.min(35, value)) });
               }
             }}
-            className="no-spin w-9 bg-transparent text-right font-mono text-[12px] font-semibold text-violet-300 outline-none"
+            className="no-spin w-9 bg-transparent text-right font-mono text-[14px] font-semibold text-violet-300 outline-none"
             aria-label="Pad area in square centimetres"
           />
           <span className="metric-unit">cm²</span>
@@ -526,14 +477,14 @@ const PadAreaControl: React.FC<{
           className="slider mt-2.5 w-full text-violet-400"
           aria-label="Pad area slider"
         />
-        <div className="mt-1 flex justify-between font-mono text-[10px] text-slate-500">
+        <div className="mt-1 flex justify-between font-mono text-[12px] text-slate-500">
           <span>10</span>
           <span className="text-violet-300">25 standard</span>
           <span>35</span>
         </div>
       </>
     ) : (
-      <p className="mt-2 text-[11px] leading-snug text-slate-500">
+      <p className="mt-2 text-[13px] leading-snug text-slate-500">
         The 4×1 ring uses fixed 3.14 cm² gel electrodes; switching montage mode restores the sponge size.
       </p>
     )}

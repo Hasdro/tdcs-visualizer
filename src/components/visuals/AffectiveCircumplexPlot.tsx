@@ -41,11 +41,11 @@ export const AffectiveCircumplexPlot: React.FC<AffectiveCircumplexPlotProps> = (
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-fuchsia-400" />
           Affective state (Russell)
         </span>
-        <span className={`text-[11px] font-semibold ${labelColor}`}>{quadrantLabel}</span>
+        <span className={`text-[13px] font-semibold ${labelColor}`}>{quadrantLabel}</span>
       </div>
 
       <div className="flex items-center gap-2 mt-1">
@@ -100,7 +100,7 @@ export const AffectiveCircumplexPlot: React.FC<AffectiveCircumplexPlotProps> = (
         </svg>
 
         {/* Numeric state telemetry */}
-        <div className="flex-1 space-y-1.5 text-[11px] min-w-0">
+        <div className="flex-1 space-y-1.5 text-[13px] min-w-0">
           <div className="bg-slate-950/70 border border-slate-800/70 rounded px-2 py-1">
             <div className="flex items-center justify-between">
               <span className="text-slate-400">Valence</span>
@@ -139,19 +139,19 @@ export const AffectiveCircumplexPlot: React.FC<AffectiveCircumplexPlotProps> = (
 
           {/* Cortical driver attribution of the quadrant shift */}
           {rightHalf && topHalf ? (
-            <div className="text-[10px] text-emerald-400/90 leading-tight bg-emerald-950/30 border border-emerald-800/40 rounded px-1.5 py-1">
+            <div className="text-[12px] text-emerald-400/90 leading-tight bg-emerald-950/30 border border-emerald-800/40 rounded px-1.5 py-1">
               Anodal frontal drive → positive approach vector
             </div>
           ) : !rightHalf && !topHalf ? (
-            <div className="text-[10px] text-indigo-400/90 leading-tight bg-indigo-950/30 border border-indigo-800/40 rounded px-1.5 py-1">
+            <div className="text-[12px] text-indigo-400/90 leading-tight bg-indigo-950/30 border border-indigo-800/40 rounded px-1.5 py-1">
               Hypo-frontal signature: restore with F3 anodal priming
             </div>
           ) : !rightHalf && topHalf ? (
-            <div className="text-[10px] text-rose-400/90 leading-tight bg-rose-950/30 border border-rose-800/40 rounded px-1.5 py-1">
+            <div className="text-[12px] text-rose-400/90 leading-tight bg-rose-950/30 border border-rose-800/40 rounded px-1.5 py-1">
               Arousal surplus: watch β/γ excess under high current
             </div>
           ) : (
-            <div className="text-[10px] text-cyan-400/90 leading-tight bg-cyan-950/30 border border-cyan-800/40 rounded px-1.5 py-1">
+            <div className="text-[12px] text-cyan-400/90 leading-tight bg-cyan-950/30 border border-cyan-800/40 rounded px-1.5 py-1">
               De-aroused calm: alpha/idling enhancement zone
             </div>
           )}

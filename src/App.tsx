@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useUrlMontageState } from './hooks/useUrlMontageState';
 import { CLINICAL_PRESETS, ClinicalPreset } from './data/clinical_presets';
 import { calculateTelemetry, MultiChannelChannel } from './utils/biophysicsEngine';
@@ -7,10 +7,13 @@ import { ProtocolExportModal } from './components/ProtocolExportModal';
 import { MultiChannelMatrixModal } from './components/MultiChannelMatrixModal';
 import { SafetyBeacon } from './components/SafetyBeacon';
 import { SetupDock } from './components/SetupDock';
-import { InspectorDock } from './components/InspectorDock';
+import { InspectorDock, type InspectorTabId } from './components/InspectorDock';
+import { DashboardDock, type DashboardTabId } from './components/DashboardDock';
+import { StimulatorDevice } from './components/StimulatorDevice';
+import { NeuronalMagnifyingLens } from './components/visuals/NeuronalMagnifyingLens';
 import { EvidenceBadge } from './components/ui/EvidenceBadge';
 import {
-  IsometricLayerStack,
+  LayerControlsPanel,
   type LayerOpacity,
   type LayerVisibility
 } from './components/visuals/IsometricLayerStack';
@@ -21,30 +24,29 @@ import {
   Check,
   FileText,
   Grid,
-  PanelLeftOpen,
-  PanelRightOpen,
+  Moon,
   Share2,
+  Sun,
   Bug
 } from 'lucide-react';
 import { DisclaimerModal } from './components/DisclaimerModal';
 import { BugReportModal } from './components/BugReportModal';
 
-// One unified stage: the E-field map and current flow are on by default so
-// the stimulation is visible at first glance; everything else is one click away.
+// Every layer starts on: skin, scalp grid, skull, field, current and neurons.
 const DEFAULT_VISIBILITY: LayerVisibility = {
-  face: false,
-  scalp: false,
-  shunt: false,
+  face: true,
+  scalp: true,
+  shunt: true,
   efield: true,
   streamlines: true,
-  pointCloud: false,
-  brodmann: false
+  pointCloud: true,
+  brodmann: true
 };
 
 const DEFAULT_OPACITY: LayerOpacity = {
-  face: 0.85,
+  face: 0.8,
   scalp: 0.7,
-  shunt: 0.55,
+  shunt: 0.12,
   tissue: 0.6,
   efield: 1,
   streamlines: 1,
@@ -61,9 +63,25 @@ export function App() {
   const setOpacity = (key: keyof LayerOpacity, value: number) =>
     setLayerOpacity((prev) => ({ ...prev, [key]: value }));
 
-  // Collapsible docks
-  const [isLeftDockCollapsed, setIsLeftDockCollapsed] = useState(false);
-  const [isRightDockCollapsed, setIsRightDockCollapsed] = useState(false);
+  // One left dashboard: the active tab and whether its panel is unfolded.
+  const [activeTab, setActiveTab] = useState<DashboardTabId>('montage');
+  const [isDashboardOpen, setIsDashboardOpen] = useState(true);
+
+  // Simulation playback shared by the 3D stage and the neuron view.
+  const [simSpeed, setSimSpeed] = useState(1);
+
+  // Theme: dark by default, remembered per browser (applied before paint in index.html).
+  const [theme, setTheme] = useState<'dark' | 'light'>(() =>
+    document.documentElement.classList.contains('light') ? 'light' : 'dark'
+  );
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', theme === 'light');
+    try {
+      localStorage.setItem('neuroflow-theme', theme);
+    } catch {
+      // Storage can be unavailable (private mode); the toggle still works.
+    }
+  }, [theme]);
 
   // Active 3D placement tool
   const [activePlacementMode, setActivePlacementMode] = useState<'anode' | 'cathode' | null>(null);
@@ -174,23 +192,23 @@ export function App() {
     : 'No evidence preset attached to this custom montage.';
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#070B12] font-sans text-slate-100">
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-ink-0 font-sans text-slate-100">
       {/* ------------------------------------------------------------------ */}
       {/* Top bar: brand · indication glyph ribbon · global safety beacon     */}
       {/* ------------------------------------------------------------------ */}
-      <header className="z-20 flex shrink-0 flex-col border-b border-slate-800 bg-[#0A101D]">
+      <header className="z-20 flex shrink-0 flex-col border-b border-slate-800 bg-ink-1">
         <div className="flex h-[54px] items-center gap-3 px-4">
           <div className="flex shrink-0 items-center gap-2.5">
             <div className="h-8 w-8 shrink-0 rounded-lg bg-gradient-to-tr from-cyan-600 via-sky-500 to-amber-500 p-[1px] shadow-glow-cyan">
-              <div className="flex h-full w-full items-center justify-center rounded-lg bg-[#0A101D]">
+              <div className="flex h-full w-full items-center justify-center rounded-lg bg-ink-1">
                 <Brain className="h-4 w-4 text-cyan-400" />
               </div>
             </div>
             <div className="hidden sm:block">
-              <h1 className="whitespace-nowrap text-[13px] font-semibold tracking-tight text-white">
+              <h1 className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-white">
                 NeuroFlow <span className="text-cyan-400">tDCS</span>
               </h1>
-              <p className="text-[10.5px] font-medium uppercase tracking-[0.12em] text-slate-500">
+              <p className="text-[12.5px] font-medium uppercase tracking-[0.12em] text-slate-500">
                 Clinical stimulation lab
               </p>
             </div>
@@ -200,18 +218,28 @@ export function App() {
             <PresetGlyphRibbon activePresetId={currentPreset?.id} onSelectPreset={handleSelectPreset} />
           </div>
 
-          <div className="flex shrink-0 items-center justify-end">
+          <div className="flex shrink-0 items-center justify-end gap-2">
             <SafetyBeacon telemetry={telemetry} />
+            <button
+              type="button"
+              onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+              className="flex h-9 items-center gap-2 rounded-lg border border-slate-700/80 bg-slate-900/80 px-2.5 text-[13px] font-medium text-slate-300 transition hover:border-cyan-500/50 hover:text-cyan-200"
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-300" /> : <Moon className="h-4 w-4 text-indigo-400" />}
+              <span className="hidden lg:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            </button>
           </div>
         </div>
 
         {/* Secondary context/action bar */}
-        <div className="flex h-10 items-center justify-between gap-3 border-t border-slate-800/60 bg-[#080E19] px-4">
+        <div className="flex h-10 items-center justify-between gap-3 border-t border-slate-800/60 bg-ink-1 px-4">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="hidden text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate-500 sm:inline">
+            <span className="hidden text-[12.5px] font-medium uppercase tracking-[0.14em] text-slate-500 sm:inline">
               Session
             </span>
-            <span className="truncate text-[12.5px] font-medium text-slate-200" title={protocolTitle}>
+            <span className="truncate text-[14.5px] font-medium text-slate-200" title={protocolTitle}>
               {protocolTitle}
             </span>
             {currentPreset && (
@@ -219,7 +247,7 @@ export function App() {
                 <EvidenceBadge level={currentPreset.evidenceLevel} />
               </span>
             )}
-            <div className="hidden shrink-0 items-center gap-1.5 border-l border-slate-800 pl-2.5 font-mono text-[11px] lg:flex">
+            <div className="hidden shrink-0 items-center gap-1.5 border-l border-slate-800 pl-2.5 font-mono text-[13px] lg:flex">
               <span className="text-rose-300">{montageState.anode} +</span>
               <span className="text-slate-600">→</span>
               <span className="text-cyan-300">
@@ -263,10 +291,10 @@ export function App() {
             <button
               type="button"
               onClick={handleCopyShareUrl}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium shadow transition ${
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[14px] font-medium shadow transition ${
                 copiedLink
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-cyan-600 text-white hover:bg-cyan-500'
+                  ? 'bg-emerald-600 text-[#fff]'
+                  : 'bg-cyan-600 text-[#fff] hover:bg-cyan-500'
               }`}
               title="Copy a shareable link to this exact montage"
             >
@@ -278,45 +306,75 @@ export function App() {
       </header>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Main three-column lab bench                                        */}
+      {/* One left dashboard · 3D stage                                       */}
       {/* ------------------------------------------------------------------ */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {isLeftDockCollapsed && (
-          <button
-            type="button"
-            onClick={() => setIsLeftDockCollapsed(false)}
-            className="absolute left-0 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2 rounded-r-lg border border-l-0 border-slate-700 bg-[#0F1623]/95 px-1.5 py-3 text-[11.5px] font-medium text-slate-300 shadow-2xl backdrop-blur-md transition hover:border-cyan-500/60 hover:text-white"
-            title="Expand setup panel"
-            aria-label="Expand setup panel"
-          >
-            <PanelLeftOpen className="h-4 w-4 text-cyan-400" />
-            <span className="[writing-mode:vertical-rl]">Setup</span>
-          </button>
-        )}
-
-        {/* Left dock — three clean collapsible sections */}
-        <aside
-          className={`${
-            isLeftDockCollapsed
-              ? 'pointer-events-none w-0 overflow-hidden border-r-0 opacity-0'
-              : 'w-[320px] border-r border-slate-800 opacity-100'
-          } relative z-10 flex shrink-0 flex-col select-none bg-[#0C121E] transition-all duration-300 ease-in-out`}
+        <DashboardDock
+          activeTab={activeTab}
+          open={isDashboardOpen}
+          onSelectTab={(tab) => {
+            setActiveTab(tab);
+            setIsDashboardOpen(true);
+          }}
+          onClose={() => setIsDashboardOpen(false)}
         >
-          <SetupDock
-            montageState={montageState}
-            updateMontageState={updateMontageState}
-            currentPreset={currentPreset}
-            telemetry={telemetry}
-            surroundNodes={surroundNodes}
-            onSelectPreset={handleSelectPreset}
-            onSelectNode={handleSelectNode}
-            onFlipPolarity={handleFlipPolarity}
-            onOpenMatrix={() => setIsMatrixOpen(true)}
-            onCollapse={() => setIsLeftDockCollapsed(true)}
-          />
-        </aside>
+          {(activeTab === 'montage' || activeTab === 'dose') && (
+            <SetupDock
+              view={activeTab}
+              montageState={montageState}
+              updateMontageState={updateMontageState}
+              currentPreset={currentPreset}
+              telemetry={telemetry}
+              surroundNodes={surroundNodes}
+              onSelectPreset={handleSelectPreset}
+              onSelectNode={handleSelectNode}
+              onFlipPolarity={handleFlipPolarity}
+              onOpenMatrix={() => setIsMatrixOpen(true)}
+            />
+          )}
+          {activeTab === 'device' && (
+            <StimulatorDevice
+              anodeId={montageState.anode}
+              cathodeId={montageState.cathode}
+              currentMa={montageState.ma}
+              durationMin={montageState.dur}
+              padAreaCm2={montageState.pad}
+              montageType={montageState.mode}
+              onChangeMa={(ma) => updateMontageState({ ma })}
+            />
+          )}
+          {activeTab === 'neuron' && (
+            <NeuronalMagnifyingLens
+              anodeId={montageState.anode}
+              cathodeId={montageState.cathode}
+              currentMa={montageState.ma}
+              padAreaCm2={montageState.pad}
+              montageType={montageState.mode}
+              surroundNodes={surroundNodes}
+              simSpeed={simSpeed}
+            />
+          )}
+          {INSPECTOR_TABS[activeTab] && (
+            <InspectorDock
+              tab={INSPECTOR_TABS[activeTab]!}
+              telemetry={telemetry}
+              montageState={montageState}
+              currentPreset={currentPreset}
+              surroundNodes={surroundNodes}
+              onSelectMontageMode={handleSelectMontageMode}
+            />
+          )}
+          {activeTab === 'layers' && (
+            <LayerControlsPanel
+              visibility={layers}
+              onToggle={toggleLayer}
+              opacity={layerOpacity}
+              onOpacityChange={setOpacity}
+            />
+          )}
+        </DashboardDock>
 
-        {/* Center 3D stage */}
+        {/* 3D stage */}
         <main className="relative min-w-0 flex-1 overflow-hidden">
           <BrainViewport3D
             anodeId={montageState.anode}
@@ -337,57 +395,19 @@ export function App() {
             showBrodmannLabels={layers.brodmann}
             activePlacementMode={activePlacementMode}
             setActivePlacementMode={setActivePlacementMode}
-            isLeftDockCollapsed={isLeftDockCollapsed}
             layerOpacity={layerOpacity}
             onTissueOpacityChange={(value) => setOpacity('tissue', value)}
+            simSpeed={simSpeed}
+            onSimSpeedChange={setSimSpeed}
+            lightStage={theme === 'light'}
           />
-
-          <div className="pointer-events-auto absolute bottom-4 left-4 z-20">
-            <IsometricLayerStack
-              visibility={layers}
-              onToggle={toggleLayer}
-              opacity={layerOpacity}
-              onOpacityChange={setOpacity}
-            />
-          </div>
         </main>
-
-        {isRightDockCollapsed && (
-          <button
-            type="button"
-            onClick={() => setIsRightDockCollapsed(false)}
-            className="absolute right-0 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2 rounded-l-lg border border-r-0 border-slate-700 bg-[#0F1623]/95 px-1.5 py-3 text-[11.5px] font-medium text-slate-300 shadow-2xl backdrop-blur-md transition hover:border-cyan-500/60 hover:text-white"
-            title="Expand inspector panel"
-            aria-label="Expand inspector panel"
-          >
-            <PanelRightOpen className="h-4 w-4 text-cyan-400" />
-            <span className="[writing-mode:vertical-rl]">Inspector</span>
-          </button>
-        )}
-
-        {/* Right dock — dynamic inspector */}
-        <aside
-          className={`${
-            isRightDockCollapsed
-              ? 'pointer-events-none w-0 overflow-hidden border-l-0 opacity-0'
-              : 'w-[380px] border-l border-slate-800 opacity-100'
-          } relative z-10 flex shrink-0 flex-col select-none bg-[#0C121E] transition-all duration-300 ease-in-out`}
-        >
-          <InspectorDock
-            telemetry={telemetry}
-            montageState={montageState}
-            currentPreset={currentPreset}
-            surroundNodes={surroundNodes}
-            onSelectMontageMode={handleSelectMontageMode}
-            onCollapse={() => setIsRightDockCollapsed(true)}
-          />
-        </aside>
       </div>
 
       {/* ------------------------------------------------------------------ */}
       {/* Footer: evidence, shunt summary, and live status                    */}
       {/* ------------------------------------------------------------------ */}
-      <footer className="z-20 flex h-8 shrink-0 items-center justify-between gap-4 border-t border-slate-800 bg-[#0A101D] px-4 text-[11px] text-slate-500">
+      <footer className="z-20 flex h-8 shrink-0 items-center justify-between gap-4 border-t border-slate-800 bg-ink-1 px-4 text-[13px] text-slate-500">
         <div className="flex min-w-0 items-center gap-1.5">
           <BookOpen className="h-3 w-3 shrink-0 text-slate-500" />
           {currentPreset ? (
@@ -458,6 +478,14 @@ export function App() {
   );
 }
 
+// Dashboard tabs served by the inspector, mapped to its content ids.
+const INSPECTOR_TABS: Partial<Record<DashboardTabId, InspectorTabId>> = {
+  field: 'biophysics',
+  eeg: 'eeg',
+  cells: 'cellular',
+  outcomes: 'outcomes'
+};
+
 const HeaderAction: React.FC<{
   icon: React.ReactNode;
   label: string;
@@ -470,7 +498,7 @@ const HeaderAction: React.FC<{
     type="button"
     onClick={onClick}
     title={title}
-    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition ${
+    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[14px] font-medium transition ${
       active
         ? 'border-amber-500/50 bg-amber-500/10 text-amber-200'
         : 'border-slate-700/80 bg-slate-900/80 text-slate-300 hover:border-cyan-500/50 hover:text-cyan-200'

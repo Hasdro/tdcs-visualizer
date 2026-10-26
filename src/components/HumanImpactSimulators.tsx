@@ -38,19 +38,19 @@ export const HumanImpactSimulators: React.FC<HumanImpactSimulatorsProps> = ({
   const arousalScore = Math.round(metrics.motorSpeed * 0.6 + metrics.focus * 0.4);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0C121E] shadow-2xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-ink-2 shadow-2xl">
       {/* Header Bar */}
-      <div className="flex items-center justify-between border-b border-slate-800 bg-[#0E1524] px-3 py-2.5">
+      <div className="flex items-center justify-between border-b border-slate-800 bg-ink-3 px-3 py-2.5">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Activity className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-            <h3 className="truncate text-[12.5px] font-semibold tracking-tight text-slate-100">
+            <h3 className="truncate text-[14.5px] font-semibold tracking-tight text-slate-100">
               Outcome &amp; performance profile
             </h3>
           </div>
-          <p className="mt-0.5 text-[11px] text-slate-400">Projected cognitive, affective &amp; motor effects</p>
+          <p className="mt-0.5 text-[13px] text-slate-400">Projected cognitive, affective &amp; motor effects</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2 font-mono text-[11px] text-slate-400">
+        <div className="flex shrink-0 items-center gap-2 font-mono text-[13px] text-slate-400">
           <span className="text-amber-300">{currentMa.toFixed(1)} mA</span>
           <span className="text-slate-600">|</span>
           <span className="text-emerald-300">{anodeNode.id} / {cathodeNode.id}</span>

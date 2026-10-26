@@ -138,9 +138,9 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="bg-[#0B1322] border border-cyan-500/40 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden font-sans text-slate-100 max-h-[90vh] flex flex-col">
+      <div className="bg-ink-2 border border-cyan-500/40 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden font-sans text-slate-100 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-[#0E1729] shrink-0">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-ink-3 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-cyan-950 border border-cyan-700/60 flex items-center justify-center text-cyan-400">
               <Grid className="w-4 h-4" />
@@ -148,11 +148,11 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
             <div>
               <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white">
                 Multi-channel array
-                <span className="rounded bg-cyan-900/60 px-1.5 py-0.5 text-[11px] font-normal text-cyan-300">
+                <span className="rounded bg-cyan-900/60 px-1.5 py-0.5 text-[13px] font-normal text-cyan-300">
                   HD-tDCS · Kirchhoff solver
                 </span>
               </h2>
-              <p className="text-[12px] text-slate-400">
+              <p className="text-[14px] text-slate-400">
                 Arbitrary cortical lead-field superposition across up to 8 independent channels
               </p>
             </div>
@@ -169,7 +169,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
         <div className="p-5 overflow-y-auto space-y-4 custom-scrollbar flex-1">
           {/* Quick Presets Carousel */}
           <div>
-            <div className="mb-2 flex items-center gap-1 text-[12px] font-medium text-slate-400">
+            <div className="mb-2 flex items-center gap-1 text-[14px] font-medium text-slate-400">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>Array presets</span>
             </div>
@@ -183,7 +183,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
                   <div className="text-xs font-mono font-bold text-cyan-300 group-hover:text-cyan-200">
                     {preset.name}
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                  <div className="text-[13px] text-slate-400 mt-1 line-clamp-2">
                     {preset.description}
                   </div>
                 </button>
@@ -219,7 +219,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
                       Σ I = {telemetry.kirchhoffSumMa > 0 ? `+${telemetry.kirchhoffSumMa}` : telemetry.kirchhoffSumMa} mA
                     </span>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  <div className="text-[13px] text-slate-400 font-mono mt-0.5">
                     Source: +{telemetry.totalAnodalMa} mA | Sink: -{telemetry.totalCathodalMa} mA
                   </div>
                 </div>
@@ -242,7 +242,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
             <div className="grid grid-cols-3 gap-3 pt-2 border-t border-slate-800/80">
               {/* Balance Scale SVG */}
               <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center justify-center">
-                <span className="text-[10.5px] font-mono text-slate-400 mb-1">Current conservation scale</span>
+                <span className="text-[12.5px] font-mono text-slate-400 mb-1">Current conservation scale</span>
                 <svg viewBox="0 0 160 55" className="w-40 h-14">
                   {/* Fulcrum */}
                   <polygon points="80,28 72,50 88,50" fill="#1E293B" stroke="#475569" strokeWidth="1" />
@@ -277,7 +277,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
               <button
                 onClick={handleAddChannel}
                 disabled={channels.length >= 8}
-                className="flex items-center gap-1 text-[12px] text-cyan-400 hover:text-cyan-300 disabled:text-slate-600 transition"
+                className="flex items-center gap-1 text-[14px] text-cyan-400 hover:text-cyan-300 disabled:text-slate-600 transition"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add electrode</span>
@@ -291,14 +291,14 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
               return (
                 <div
                   key={idx}
-                  className="p-3 bg-[#070B12] border border-slate-800 rounded-lg flex items-center gap-3 font-mono"
+                  className="p-3 bg-ink-0 border border-slate-800 rounded-lg flex items-center gap-3 font-mono"
                 >
                   {/* Channel Number */}
                   <span className="text-slate-500 text-xs w-5 font-bold">#{idx + 1}</span>
 
                   {/* Polarity Tag */}
                   <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded w-16 text-center ${
+                    className={`text-[13px] font-bold px-2 py-0.5 rounded w-16 text-center ${
                       isAnode
                         ? 'bg-red-950 text-red-300 border border-red-800/60'
                         : isCathode
@@ -357,23 +357,23 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
           {/* Telemetry Summary */}
           <div className="grid grid-cols-3 gap-2 p-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs font-mono">
             <div>
-              <span className="text-slate-500 text-[11px] block">Peak cortical E-field</span>
+              <span className="text-slate-500 text-[13px] block">Peak cortical E-field</span>
               <span className="text-amber-300 font-bold">{telemetry.peakEFieldVm.toFixed(3)} V/m</span>
             </div>
             <div>
-              <span className="text-slate-500 text-[11px] block">Somatic polarization</span>
+              <span className="text-slate-500 text-[13px] block">Somatic polarization</span>
               <span className="text-red-300 font-bold">+{telemetry.maxMembraneShiftMv.toFixed(2)} mV</span>
             </div>
             <div>
-              <span className="text-slate-500 text-[11px] block">Safety profile</span>
+              <span className="text-slate-500 text-[13px] block">Safety profile</span>
               <span className="text-emerald-400 font-bold">{telemetry.safetyIndex}</span>
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="px-5 py-3.5 bg-[#0A101D] border-t border-slate-800 flex items-center justify-between shrink-0">
-          <div className="text-[12px] font-mono text-slate-400 flex items-center gap-1.5">
+        <div className="px-5 py-3.5 bg-ink-1 border-t border-slate-800 flex items-center justify-between shrink-0">
+          <div className="text-[14px] font-mono text-slate-400 flex items-center gap-1.5">
             {telemetry.isKirchhoffBalanced ? (
               <>
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
@@ -396,7 +396,7 @@ export const MultiChannelMatrixModal: React.FC<MultiChannelMatrixModalProps> = (
             </button>
             <button
               onClick={handleSaveAndApply}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-mono font-bold transition shadow-glow-cyan"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-[#fff] text-xs font-mono font-bold transition shadow-glow-cyan"
             >
               <Zap className="w-3.5 h-3.5" />
               <span>Apply array</span>

@@ -26,11 +26,11 @@ export const EegBandSymptomMatrix: React.FC<EegBandSymptomMatrixProps> = ({
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-violet-400" />
           Frequency-band symptoms
         </span>
-        <span className="text-[11px] text-slate-400">
+        <span className="text-[13px] text-slate-400">
           Deficit ◂──┤├──▸ excess
         </span>
       </div>
@@ -66,15 +66,15 @@ export const EegBandSymptomMatrix: React.FC<EegBandSymptomMatrixProps> = ({
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="text-sm leading-none shrink-0">{meta.icon}</span>
                   <span
-                    className="text-[12px] font-bold truncate"
+                    className="text-[14px] font-bold truncate"
                     style={{ color: band.color }}
                   >
                     {band.name}
                   </span>
                 </div>
-                <span className="text-[10.5px] text-slate-500 shrink-0">{band.frequencyRange}</span>
+                <span className="text-[12.5px] text-slate-500 shrink-0">{band.frequencyRange}</span>
               </div>
-              <div className="text-[10.5px] text-slate-400 mt-0.5 leading-tight">{meta.category}</div>
+              <div className="text-[12.5px] text-slate-400 mt-0.5 leading-tight">{meta.category}</div>
 
               {/* Bidirectional Deficit vs Excess Spectrum Gauge */}
               <div className="mt-1.5 relative h-8 px-3.5">
@@ -103,10 +103,10 @@ export const EegBandSymptomMatrix: React.FC<EegBandSymptomMatrixProps> = ({
                 </div>
 
                 {/* Zone labels */}
-                <span className="absolute bottom-0 left-0 text-[9px] font-medium text-rose-400/80">Deficit</span>
-                <span className="absolute bottom-0 right-0 text-[9px] font-medium text-slate-500">Excess</span>
+                <span className="absolute bottom-0 left-0 text-[11px] font-medium text-rose-400/80">Deficit</span>
+                <span className="absolute bottom-0 right-0 text-[11px] font-medium text-slate-500">Excess</span>
                 <span
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[9.5px] font-bold"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[11.5px] font-bold"
                   style={{ color: Math.abs(shift) < 3 ? '#64748B' : band.color }}
                 >
                   {shift > 0 ? `+${shift}` : `${shift}`}%
@@ -116,7 +116,7 @@ export const EegBandSymptomMatrix: React.FC<EegBandSymptomMatrixProps> = ({
               {/* Symptom chips on the active side */}
               <div className="mt-0.5 min-h-[16px]">
                 {Math.abs(shift) < 3 ? (
-                  <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                  <div className="text-[12px] text-slate-500 flex items-center gap-1">
                     <span className="w-1 h-1 rounded-full bg-slate-600" />
                     Normative homeostasis — no induced shift
                   </div>
@@ -125,7 +125,7 @@ export const EegBandSymptomMatrix: React.FC<EegBandSymptomMatrixProps> = ({
                     {symptomList.map((s, i) => (
                       <div
                         key={i}
-                        className={`text-[10px] leading-tight px-1.5 py-0.5 rounded flex items-start gap-1 ${
+                        className={`text-[12px] leading-tight px-1.5 py-0.5 rounded flex items-start gap-1 ${
                           chipPositive
                             ? 'bg-emerald-950/50 text-emerald-300 border border-emerald-800/50'
                             : 'bg-amber-950/40 text-amber-300 border border-amber-800/40'
@@ -152,7 +152,7 @@ export const EegBandSymptomMatrix: React.FC<EegBandSymptomMatrixProps> = ({
                     <circle cx="9" cy="2" r="1.5" fill="#F8FAFC" opacity="0.9" />
                   </g>
                 </svg>
-                <span className="text-[9px] text-slate-500">PAC</span>
+                <span className="text-[11px] text-slate-500">PAC</span>
               </div>
             </div>
           );

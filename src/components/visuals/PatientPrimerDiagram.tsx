@@ -23,7 +23,7 @@ export const PatientPrimerDiagram: React.FC<PatientPrimerDiagramProps> = ({ curr
           </h3>
           <p className="panel-kicker">Priming the brain — not shocking it</p>
         </div>
-        <div className="flex items-center gap-1 font-mono text-[11px] text-slate-400">
+        <div className="flex items-center gap-1 font-mono text-[13px] text-slate-400">
           <span className="text-amber-300">{currentMa.toFixed(1)}</span> mA
           <span className="text-slate-600">·</span>
           <span className="text-cyan-300">{durationMin}</span> min
@@ -79,7 +79,7 @@ export const PatientPrimerDiagram: React.FC<PatientPrimerDiagramProps> = ({ curr
         <div className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2.5">
           <div className="flex items-start gap-2">
             <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
-            <p className="text-[11.5px] leading-relaxed text-slate-300">
+            <p className="text-[13.5px] leading-relaxed text-slate-300">
               tDCS does not create thoughts or movement on its own. It makes brain cells more
               receptive while you practise a task or do therapy. That is why the session is paired
               with focused activity — the current opens a short window, and practice uses it.
@@ -87,7 +87,7 @@ export const PatientPrimerDiagram: React.FC<PatientPrimerDiagramProps> = ({ curr
           </div>
         </div>
 
-        <ul className="mt-3 space-y-1.5 text-[11.5px] leading-relaxed text-slate-400">
+        <ul className="mt-3 space-y-1.5 text-[13.5px] leading-relaxed text-slate-400">
           <li className="flex gap-1.5">
             <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-cyan-400" />
             The current is far too low to trigger a seizure or a shock — it is a gentle bias, not a signal generator.
@@ -115,8 +115,8 @@ const PrimerStage: React.FC<{
 }> = ({ icon, tone, title, summary, children }) => (
   <div className={`rounded-lg border bg-slate-950/50 p-2 ${tone.split(' ').slice(1).join(' ')}`}>
     <div className={`mb-1 flex h-6 w-6 items-center justify-center rounded-md border ${tone}`}>{icon}</div>
-    <div className="text-[11.5px] font-semibold leading-tight text-slate-100">{title}</div>
-    <div className="mt-0.5 text-[10.5px] leading-snug text-slate-500">{summary}</div>
+    <div className="text-[13.5px] font-semibold leading-tight text-slate-100">{title}</div>
+    <div className="mt-0.5 text-[12.5px] leading-snug text-slate-500">{summary}</div>
     <div className="mt-1">{children}</div>
   </div>
 );

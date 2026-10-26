@@ -11,8 +11,8 @@ export const EFieldThermalSpectrum: React.FC<EFieldThermalSpectrumProps> = ({ pe
   const markerPct = (clamped / maxScale) * 100;
 
   return (
-    <div className="w-full rounded-lg border border-slate-800/80 bg-[#0A111C] p-2.5 text-xs shadow-lg">
-      <div className="flex items-center justify-between pb-1 mb-1 text-[11px]">
+    <div className="w-full rounded-lg border border-slate-800/80 bg-ink-1 p-2.5 text-xs shadow-lg">
+      <div className="flex items-center justify-between pb-1 mb-1 text-[13px]">
         <span className="flex items-center gap-1 font-medium text-slate-400">
           Cortical E-field spectrum
         </span>
@@ -40,7 +40,7 @@ export const EFieldThermalSpectrum: React.FC<EFieldThermalSpectrumProps> = ({ pe
       </div>
 
       {/* Physiological Milestones Legend */}
-      <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+      <div className="flex justify-between text-[12px] text-slate-400 mt-1">
         <span><span className="font-mono">0.0</span> sulcal silence</span>
         <span className="text-cyan-300"><span className="font-mono">0.2</span> V/m synaptic</span>
         <span className="text-amber-300"><span className="font-mono">0.5</span> V/m action bias</span>

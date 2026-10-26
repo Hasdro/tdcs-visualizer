@@ -51,11 +51,11 @@ export const CognitiveImpactRadar: React.FC<CognitiveImpactRadarProps> = ({ tele
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-emerald-400" />
           Cognitive impact
         </span>
-        <span className="text-[11px] text-emerald-300 font-semibold">Hexagonal projection</span>
+        <span className="text-[13px] text-emerald-300 font-semibold">Hexagonal projection</span>
       </div>
 
       <div className="relative flex justify-center items-center py-1">
@@ -141,7 +141,7 @@ export const CognitiveImpactRadar: React.FC<CognitiveImpactRadarProps> = ({ tele
       </div>
 
       {/* Legend Footprint Guide */}
-      <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[11px]">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[13px]">
         <div className="flex items-center gap-1.5 text-slate-400">
           <span className="w-2 h-0.5 bg-slate-500 border-dashed" />
           <span>Normative Baseline</span>

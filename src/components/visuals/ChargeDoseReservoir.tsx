@@ -20,11 +20,11 @@ export const ChargeDoseReservoir: React.FC<ChargeDoseReservoirProps> = ({
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
           Charge dose
         </span>
-        <span className="rounded border border-cyan-800/60 bg-cyan-950/80 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-cyan-300">
+        <span className="rounded border border-cyan-800/60 bg-cyan-950/80 px-1.5 py-0.5 font-mono text-[13px] font-semibold text-cyan-300">
           {totalQ.toFixed(2)} C
         </span>
       </div>
@@ -63,8 +63,8 @@ export const ChargeDoseReservoir: React.FC<ChargeDoseReservoirProps> = ({
         </div>
 
         {/* Milestone Explanations & Density */}
-        <div className="flex-1 space-y-1.5 text-[11px]">
-          <div className="text-[10.5px] text-slate-400">
+        <div className="flex-1 space-y-1.5 text-[13px]">
+          <div className="text-[12.5px] text-slate-400">
             Formula: <span className="font-mono">{currentMa.toFixed(1)} mA × {durationMin} min ({durationMin * 60} s)</span>
           </div>
           <div className="flex items-center justify-between text-slate-300">

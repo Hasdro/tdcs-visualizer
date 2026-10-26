@@ -1,24 +1,49 @@
+@import './theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Dark Clinical Scrollbar */
+/* Surfaces: app background (0), bars (1), panels (2), floating cards (3). */
+:root {
+  --ink-0: 7 11 18;
+  --ink-1: 10 16 29;
+  --ink-2: 12 18 30;
+  --ink-3: 14 21 36;
+  --stage-a: #0e192a;
+  --stage-b: #09111d;
+  --stage-c: #070b12;
+  color-scheme: dark;
+}
+
+html.light {
+  --ink-0: 226 232 240;
+  --ink-1: 255 255 255;
+  --ink-2: 248 250 252;
+  --ink-3: 255 255 255;
+  --stage-a: #f8fafc;
+  --stage-b: #e2e8f0;
+  --stage-c: #cbd5e1;
+  color-scheme: light;
+}
+
+/* Custom clinical scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #070B12;
+  background: rgb(var(--ink-0));
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1E293B;
+  background: rgb(var(--slate-800));
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: rgb(var(--slate-700));
 }
 
 /* Base resets */
@@ -28,8 +53,8 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #070B12;
-  color: #F8FAFC;
+  background-color: rgb(var(--ink-0));
+  color: rgb(var(--slate-50));
 }
 
 body {
@@ -45,7 +70,7 @@ body {
 @layer components {
   /* Shared card shell + sentence-case clinical headers. */
   .panel-card {
-    @apply rounded-xl border border-slate-800/90 bg-[#0C121E]/95 shadow-lg;
+    @apply rounded-xl border border-slate-800/90 bg-ink-2/95 shadow-lg;
   }
 
   .panel-header {
@@ -53,11 +78,11 @@ body {
   }
 
   .panel-title {
-    @apply flex items-center gap-2 text-[12.5px] font-semibold leading-tight tracking-tight text-slate-100;
+    @apply flex items-center gap-2 text-[14.5px] font-semibold leading-tight tracking-tight text-slate-100;
   }
 
   .panel-kicker {
-    @apply mt-0.5 text-[11.5px] font-normal leading-snug text-slate-400;
+    @apply mt-0.5 text-[13px] font-normal leading-snug text-slate-400;
   }
 
   .metric-value {
@@ -65,15 +90,15 @@ body {
   }
 
   .metric-unit {
-    @apply font-mono text-[11px] font-normal text-slate-400;
+    @apply font-mono text-[12.5px] font-normal text-slate-400;
   }
 
   .field-label {
-    @apply text-[12px] font-medium text-slate-300;
+    @apply text-[13.5px] font-medium text-slate-300;
   }
 
   .micro-label {
-    @apply text-[11px] font-medium text-slate-400;
+    @apply text-[12.5px] font-medium text-slate-400;
   }
 }
 
@@ -83,7 +108,7 @@ input[type='range'].slider {
   appearance: none;
   height: 6px;
   border-radius: 9999px;
-  background: #1e293b;
+  background: rgb(var(--slate-800));
   outline: none;
   cursor: pointer;
 }
@@ -94,18 +119,18 @@ input[type='range'].slider::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #f8fafc;
+  background: rgb(var(--slate-50));
   border: 3px solid currentColor;
-  box-shadow: 0 0 0 3px rgb(15 23 42 / 0.8);
+  box-shadow: 0 0 0 3px rgb(var(--slate-900) / 0.8);
 }
 
 input[type='range'].slider::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #f8fafc;
+  background: rgb(var(--slate-50));
   border: 3px solid currentColor;
-  box-shadow: 0 0 0 3px rgb(15 23 42 / 0.8);
+  box-shadow: 0 0 0 3px rgb(var(--slate-900) / 0.8);
 }
 
 /* Native number fields: remove tiny spin buttons in favour of explicit steppers. */

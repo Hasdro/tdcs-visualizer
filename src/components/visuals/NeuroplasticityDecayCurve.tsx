@@ -63,15 +63,15 @@ export const NeuroplasticityDecayCurve: React.FC<NeuroplasticityDecayCurveProps>
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-lime-400" />
           Plasticity after-effect
         </span>
-        <span className="font-mono text-[10.5px] text-slate-500">Nitsche 2000 · Monte-Silva 2013</span>
+        <span className="font-mono text-[12.5px] text-slate-500">Nitsche 2000 · Monte-Silva 2013</span>
       </div>
 
       {/* Window readout chips */}
-      <div className="flex items-center gap-1.5 mt-1.5 text-[10.5px]">
+      <div className="flex items-center gap-1.5 mt-1.5 text-[12.5px]">
         <span className="bg-slate-950/70 border border-slate-800/70 rounded px-1.5 py-0.5 text-slate-300">
           Stimulation: <strong style={{ color: strokeColor }}>{durationMin} min</strong>
         </span>
@@ -148,7 +148,7 @@ export const NeuroplasticityDecayCurve: React.FC<NeuroplasticityDecayCurveProps>
         />
       </svg>
 
-      <div className="flex items-center gap-2 pt-1 border-t border-slate-800/60 text-[10.5px] text-slate-400">
+      <div className="flex items-center gap-2 pt-1 border-t border-slate-800/60 text-[12.5px] text-slate-400">
         <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 rounded" style={{ backgroundColor: strokeColor }} /> Excitability trace</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: `${isAnode ? '#FBBF24' : '#38BDF8'}22`, border: `1px solid ${strokeColor}` }} /> Plasticity window</span>
         <span className="ml-auto text-emerald-400">↑ Raise Duration in Dosimetry to extend the window</span>

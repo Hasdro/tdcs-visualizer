@@ -87,7 +87,7 @@ export const SensationTolerabilityBars: React.FC<SensationTolerabilityBarsProps>
           </h3>
           <p className="panel-kicker">Expected sensory profile for this dose</p>
         </div>
-        <div className="flex items-center gap-1 text-[11px] text-slate-400">
+        <div className="flex items-center gap-1 text-[13px] text-slate-400">
           <Droplets className="h-3 w-3 text-cyan-400" />
           Hydration matters
         </div>
@@ -101,11 +101,11 @@ export const SensationTolerabilityBars: React.FC<SensationTolerabilityBarsProps>
               <div className="mb-1 flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-1.5">
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${row.tone}`} />
-                  <span className="truncate text-[12.5px] font-medium text-slate-200">{row.name}</span>
+                  <span className="truncate text-[14.5px] font-medium text-slate-200">{row.name}</span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className={`text-[11px] font-medium ${row.tone}`}>{likelihoodWord(row.likelihood)}</span>
-                  <span className="font-mono text-[11px] text-slate-400">{row.reading}</span>
+                  <span className={`text-[13px] font-medium ${row.tone}`}>{likelihoodWord(row.likelihood)}</span>
+                  <span className="font-mono text-[13px] text-slate-400">{row.reading}</span>
                 </div>
               </div>
 
@@ -115,12 +115,12 @@ export const SensationTolerabilityBars: React.FC<SensationTolerabilityBarsProps>
                   style={{ width: `${Math.max(2, row.likelihood)}%` }}
                 />
               </div>
-              <p className="mt-1 text-[11px] leading-snug text-slate-500">{row.note}</p>
+              <p className="mt-1 text-[13px] leading-snug text-slate-500">{row.note}</p>
             </div>
           );
         })}
 
-        <p className="border-t border-slate-800/70 pt-2 text-[11px] leading-relaxed text-slate-500">
+        <p className="border-t border-slate-800/70 pt-2 text-[13px] leading-relaxed text-slate-500">
           Sensations are individual. Slow ramp-up, well-hydrated sponges, and intact skin reduce
           discomfort. Stop if burning or pain occurs.
         </p>

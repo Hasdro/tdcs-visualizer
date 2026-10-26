@@ -87,11 +87,11 @@ export const SessionRampChronometer: React.FC<SessionRampChronometerProps> = ({
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-center justify-between border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold tracking-tight text-slate-100">
           <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
           Session duration
         </span>
-        <span className="font-mono text-[11px] text-slate-400">5–30 min + ramps</span>
+        <span className="font-mono text-[13px] text-slate-400">5–30 min + ramps</span>
       </div>
 
       <div className="relative flex justify-center items-center mt-1.5">
@@ -178,10 +178,10 @@ export const SessionRampChronometer: React.FC<SessionRampChronometerProps> = ({
             step="1"
             value={durationMin}
             onChange={(e) => setDuration(parseInt(e.target.value, 10))}
-            className="no-spin w-8 bg-transparent text-center font-mono text-[12px] font-semibold text-cyan-300 outline-none"
+            className="no-spin w-8 bg-transparent text-center font-mono text-[14px] font-semibold text-cyan-300 outline-none"
             aria-label="Session duration value"
           />
-          <span className="font-mono text-[10.5px] text-slate-500">min</span>
+          <span className="font-mono text-[12.5px] text-slate-500">min</span>
         </label>
         <button
           type="button"
@@ -194,7 +194,7 @@ export const SessionRampChronometer: React.FC<SessionRampChronometerProps> = ({
       </div>
 
       {/* Three-phase legend chips with real durations */}
-      <div className="mt-2 grid grid-cols-3 gap-1 border-t border-slate-800/60 pt-1.5 text-[10px]">
+      <div className="mt-2 grid grid-cols-3 gap-1 border-t border-slate-800/60 pt-1.5 text-[12px]">
         <div className="rounded border border-emerald-800/40 bg-emerald-950/40 px-1 py-1 text-center">
           <div className="font-medium text-emerald-300">Ramp up</div>
           <div className="font-mono text-slate-400">30 s</div>
@@ -208,7 +208,7 @@ export const SessionRampChronometer: React.FC<SessionRampChronometerProps> = ({
           <div className="font-mono text-slate-400">30 s</div>
         </div>
       </div>
-      <div className="mt-1 text-center text-[10px] leading-snug text-slate-500">
+      <div className="mt-1 text-center text-[12px] leading-snug text-slate-500">
         Full runtime <span className="font-mono text-slate-400">{durationMin} min + 60 s</span> of ramp protection
       </div>
     </div>

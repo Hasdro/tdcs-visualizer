@@ -16,7 +16,7 @@ export const ActiveCircuitLiveWire: React.FC<ActiveCircuitLiveWireProps> = ({
   mode
 }) => {
   return (
-    <div className="flex select-none items-center justify-between gap-2 rounded-xl border border-slate-800/80 bg-slate-950/60 px-2.5 py-1.5 text-[11px]">
+    <div className="flex select-none items-center justify-between gap-2 rounded-xl border border-slate-800/80 bg-slate-950/60 px-2.5 py-1.5 text-[13px]">
       {/* Anode Badge */}
       <div className="flex shrink-0 items-center gap-1 font-mono font-semibold text-rose-300">
         <span className="w-2 h-2 rounded-full bg-red-500 shadow-glow-anode animate-pulse" />

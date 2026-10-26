@@ -209,24 +209,24 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
   }, [currentVrest, dVm, isAnode, baseVrest, thresholdVm, firingRatio]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0C121E] shadow-2xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-ink-2 shadow-2xl">
       {/* Header Bar */}
-      <div className="border-b border-slate-800 bg-[#0E1524] px-3 py-2.5">
+      <div className="border-b border-slate-800 bg-ink-3 px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <Activity className="h-3.5 w-3.5 shrink-0 text-amber-400" />
             <div className="min-w-0">
-              <h3 className="truncate text-[12.5px] font-semibold tracking-tight text-slate-100">Cellular membrane</h3>
-              <p className="text-[11px] text-slate-500">Synaptic polarization &amp; plasticity</p>
+              <h3 className="truncate text-[14.5px] font-semibold tracking-tight text-slate-100">Cellular membrane</h3>
+              <p className="text-[13px] text-slate-500">Synaptic polarization &amp; plasticity</p>
             </div>
           </div>
-          <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-amber-300">
+          <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-[13px] font-semibold text-amber-300">
             {currentMa.toFixed(1)} <span className="font-normal text-slate-400">mA</span>
           </span>
         </div>
 
         {/* Polarity Scope Toggle */}
-        <div className="mt-2 flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/60 p-0.5 text-[11px]">
+        <div className="mt-2 flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/60 p-0.5 text-[13px]">
           <button
             onClick={() => setSelectedElectrodeView('anode')}
             className={`flex-1 rounded px-2 py-1 font-medium transition ${
@@ -253,19 +253,19 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
       <div className="flex-1 overflow-y-auto p-3 space-y-3.5 custom-scrollbar">
         {/* Real-Time Oscilloscope Canvas */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 shadow-md">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[12px] font-mono">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[14px] font-mono">
             <span className="text-slate-300 font-semibold flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
               Somatic membrane potential <span className="font-mono text-slate-500">· {currentMa.toFixed(1)} mA</span>
             </span>
-            <span className="text-cyan-400 text-[11px]">
+            <span className="text-cyan-400 text-[13px]">
               Sub-threshold · Nitsche 2000
             </span>
           </div>
 
-          <div className="relative w-full h-44 bg-[#070B12] rounded-lg border border-slate-800/80 overflow-hidden mt-2">
+          <div className="relative w-full h-44 bg-ink-0 rounded-lg border border-slate-800/80 overflow-hidden mt-2">
             <canvas ref={canvasRef} className="w-full h-full block" />
-            <div className="absolute top-2 right-2 bg-slate-900/90 border border-slate-800 px-2 py-1 rounded text-[11px] font-mono text-slate-300 shadow">
+            <div className="absolute top-2 right-2 bg-slate-900/90 border border-slate-800 px-2 py-1 rounded text-[13px] font-mono text-slate-300 shadow">
               ΔVm: <span className={isAnode ? 'text-amber-400 font-bold' : 'text-cyan-400 font-bold'}>
                 {dVm > 0 ? `+${dVm.toFixed(2)}` : dVm.toFixed(2)} mV
               </span>
@@ -274,21 +274,21 @@ export const CellularMechanismWidget: React.FC<CellularMechanismWidgetProps> = (
 
           <div className="mt-2 grid grid-cols-3 gap-2 font-mono text-xs">
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/50">
-              <div className="text-[11px] text-slate-400">Resting potential</div>
+              <div className="text-[13px] text-slate-400">Resting potential</div>
               <div className="text-sm font-bold text-slate-200 mt-0.5">
-                {currentVrest} <span className="text-[11px] font-normal text-slate-400">mV</span>
+                {currentVrest} <span className="text-[13px] font-normal text-slate-400">mV</span>
               </div>
             </div>
 
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/50">
-              <div className="text-[11px] text-slate-400">Distance to threshold</div>
+              <div className="text-[13px] text-slate-400">Distance to threshold</div>
               <div className="text-sm font-bold text-amber-300 mt-0.5">
-                {distanceToThreshold} <span className="text-[11px] font-normal text-slate-400">mV</span>
+                {distanceToThreshold} <span className="text-[13px] font-normal text-slate-400">mV</span>
               </div>
             </div>
 
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/50">
-              <div className="text-[11px] text-slate-400">Firing probability</div>
+              <div className="text-[13px] text-slate-400">Firing probability</div>
               <div className="text-sm font-bold text-emerald-300 mt-0.5">
                 {firingChangePct >= 0 ? `↑ +${firingChangePct}%` : `↓ ${firingChangePct}%`}
               </div>

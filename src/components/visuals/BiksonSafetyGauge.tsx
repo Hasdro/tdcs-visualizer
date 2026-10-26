@@ -65,12 +65,12 @@ export const BiksonSafetyGauge: React.FC<BiksonSafetyGaugeProps> = ({ telemetry 
     <div className="panel-card relative overflow-hidden">
       {/* Top Header */}
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 px-3 py-2.5">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           Safety gauge
         </span>
         <span
-          className={`shrink-0 rounded border px-1.5 py-0.5 text-[11px] font-semibold transition ${
+          className={`shrink-0 rounded border px-1.5 py-0.5 text-[13px] font-semibold transition ${
             telemetry.safetyIndex === 'OPTIMAL'
               ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
               : telemetry.safetyIndex === 'MODERATE'
@@ -120,16 +120,16 @@ export const BiksonSafetyGauge: React.FC<BiksonSafetyGaugeProps> = ({ telemetry 
         {/* Digital Readout In Center Hub */}
         <div className="absolute bottom-1 text-center">
           <div className="text-sm font-bold text-slate-100">
-            {J.toFixed(4)} <span className="text-[11px] text-slate-400 font-normal">mA/cm²</span>
+            {J.toFixed(4)} <span className="text-[13px] text-slate-400 font-normal">mA/cm²</span>
           </div>
-          <div className="text-[11px] text-emerald-400 font-semibold mt-0.5">
+          <div className="text-[13px] text-emerald-400 font-semibold mt-0.5">
             {Number(safetyMultiple) > 1 ? `${safetyMultiple}× below threshold` : '⚠️ Boundary limit'}
           </div>
         </div>
       </div>
 
       {/* Legend & Safety Consensus Details */}
-      <div className="grid grid-cols-2 gap-1.5 border-t border-slate-800/60 px-3 pb-3 pt-2 text-[11px]">
+      <div className="grid grid-cols-2 gap-1.5 border-t border-slate-800/60 px-3 pb-3 pt-2 text-[13px]">
         <div className="flex items-center gap-1.5 text-slate-400">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           <span>Consensus safe</span>

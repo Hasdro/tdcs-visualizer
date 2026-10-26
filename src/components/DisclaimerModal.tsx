@@ -48,17 +48,17 @@ export const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ isOpen, onAcce
       aria-modal="true"
       aria-labelledby="disclaimer-title"
     >
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-amber-500/30 bg-[#0C121E] shadow-2xl">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-amber-500/30 bg-ink-2 shadow-2xl">
         <div className="border-b border-slate-800 bg-amber-500/5 px-5 py-4">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300">
               <GraduationCap className="h-5 w-5" />
             </span>
             <div>
-              <h2 id="disclaimer-title" className="text-[16px] font-semibold text-slate-100">
+              <h2 id="disclaimer-title" className="text-[18px] font-semibold text-slate-100">
                 An educational simulator
               </h2>
-              <p className="text-[12px] text-slate-400">Please read before you continue</p>
+              <p className="text-[14px] text-slate-400">Please read before you continue</p>
             </div>
           </div>
         </div>
@@ -68,20 +68,20 @@ export const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ isOpen, onAcce
             <li key={title} className="flex items-start gap-3">
               <Icon className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
               <div>
-                <div className="text-[13px] font-semibold text-slate-100">{title}</div>
-                <p className="mt-0.5 text-[12.5px] leading-relaxed text-slate-400">{body}</p>
+                <div className="text-[15px] font-semibold text-slate-100">{title}</div>
+                <p className="mt-0.5 text-[14.5px] leading-relaxed text-slate-400">{body}</p>
               </div>
             </li>
           ))}
         </ul>
 
-        <div className="flex items-center justify-between gap-3 border-t border-slate-800 bg-[#0A101D] px-5 py-3">
-          <p className="text-[11px] leading-snug text-slate-500">This notice appears on every visit.</p>
+        <div className="flex items-center justify-between gap-3 border-t border-slate-800 bg-ink-1 px-5 py-3">
+          <p className="text-[13px] leading-snug text-slate-500">This notice appears on every visit.</p>
           <button
             ref={buttonRef}
             type="button"
             onClick={onAccept}
-            className="shrink-0 rounded-lg bg-amber-500 px-4 py-2 text-[13px] font-semibold text-slate-950 transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+            className="shrink-0 rounded-lg bg-amber-500 px-4 py-2 text-[15px] font-semibold text-slate-950 transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
           >
             I understand
           </button>

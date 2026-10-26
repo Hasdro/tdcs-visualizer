@@ -1,22 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   Activity,
   AlertTriangle,
   BookOpen,
   CheckCircle2,
-  ClipboardList,
   HeartPulse,
-  Microscope,
-  PanelRightClose,
-  ShieldCheck,
-  Waves,
-  Zap
+  ShieldCheck
 } from 'lucide-react';
 import { BiophysicalTelemetry } from '../utils/biophysicsEngine';
 import { MontageUrlState } from '../hooks/useUrlMontageState';
 import { ClinicalPreset } from '../data/clinical_presets';
 import { BRAIN_NODES } from '../data/brain_nodes';
-import { EvidenceBadge } from './ui/EvidenceBadge';
 import { EegWaveVisualizer } from './EegWaveVisualizer';
 import { CellularMechanismWidget } from './CellularMechanismWidget';
 import { HumanImpactSimulators } from './HumanImpactSimulators';
@@ -31,6 +25,7 @@ import { PatientPrimerDiagram } from './visuals/PatientPrimerDiagram';
 import { LobeFunctionalSilhouette } from './visuals/LobeFunctionalSilhouette';
 import { MontageFocalityGraphic } from './visuals/MontageFocalityGraphic';
 import { ClinicalEvidenceTimeline } from './visuals/ClinicalEvidenceTimeline';
+import { EFieldThermalSpectrum } from './visuals/EFieldThermalSpectrum';
 
 interface InspectorDockProps {
   telemetry: BiophysicalTelemetry;
@@ -38,23 +33,16 @@ interface InspectorDockProps {
   currentPreset?: ClinicalPreset;
   surroundNodes?: string[];
   onSelectMontageMode: (mode: 'sponge' | 'hd4x1') => void;
-  onCollapse: () => void;
+  tab: InspectorTabId;
 }
 
-type InspectorTabId = 'biophysics' | 'eeg' | 'cellular' | 'outcomes';
-
-const TABS: Array<{ id: InspectorTabId; label: string; icon: React.ComponentType<{ className?: string }>; tone: string }> = [
-  { id: 'biophysics', label: 'Biophysics', icon: Zap, tone: 'text-amber-300' },
-  { id: 'eeg', label: 'EEG', icon: Waves, tone: 'text-cyan-300' },
-  { id: 'cellular', label: 'Cellular', icon: Microscope, tone: 'text-emerald-300' },
-  { id: 'outcomes', label: 'Outcomes', icon: ClipboardList, tone: 'text-rose-300' }
-];
+export type InspectorTabId = 'biophysics' | 'eeg' | 'cellular' | 'outcomes';
 
 const getPubMedUrl = (pmid: string) => `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
 
 /**
- * Unified inspector: every audience sees the same four tabs, ordered from
- * physics (what the current does) to people (what the patient experiences).
+ * Inspector content for one dashboard tab, ordered across tabs from physics
+ * (what the current does) to people (what the patient experiences).
  */
 export const InspectorDock: React.FC<InspectorDockProps> = ({
   telemetry,
@@ -62,75 +50,16 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   currentPreset,
   surroundNodes,
   onSelectMontageMode,
-  onCollapse
+  tab
 }) => {
-  const [activeTab, setActiveTab] = useState<InspectorTabId>('biophysics');
 
-  const protocolName = currentPreset?.name ?? `Custom montage · ${montageState.anode} → ${montageState.cathode}`;
   const anodeNode = BRAIN_NODES[montageState.anode] ?? BRAIN_NODES['F3'];
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-[#0C121E]">
-      {/* Inspector chrome */}
-      <div className="shrink-0 border-b border-slate-800 bg-[#0A101D]">
-        <div className="flex items-center justify-between px-3 py-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-md border border-cyan-500/30 bg-slate-950/60">
-              <Activity className="h-3 w-3 text-cyan-300" />
-            </span>
-            <span className="text-[12px] font-semibold tracking-tight text-slate-200">Inspector</span>
-            <span className="min-w-0 truncate text-[11px] text-slate-500" title={protocolName}>
-              {protocolName}
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            {currentPreset ? (
-              <EvidenceBadge level={currentPreset.evidenceLevel} />
-            ) : (
-              <span className="rounded-md border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[11px] font-medium text-slate-300">
-                Custom
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={onCollapse}
-              className="rounded p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-              title="Collapse inspector panel"
-              aria-label="Collapse inspector panel"
-            >
-              <PanelRightClose className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-1 px-2 pb-2" role="tablist" aria-label="Inspector tabs">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border px-1 py-1.5 text-[11px] font-medium transition ${
-                  isActive
-                    ? 'border-slate-600 bg-slate-800/80 text-slate-100'
-                    : 'border-transparent bg-slate-900/40 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-                }`}
-                title={tab.label}
-              >
-                <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? tab.tone : 'text-slate-500'}`} />
-                <span className="truncate">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {activeTab === 'biophysics' && (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      {tab === 'biophysics' && (
         <div className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+          <CorticalTelemetryCard telemetry={telemetry} anodeAreas={anodeNode.brodmannAreas} />
           <BiophysicsPanel
             telemetry={telemetry}
             montageState={montageState}
@@ -140,7 +69,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
         </div>
       )}
 
-      {activeTab === 'eeg' && (
+      {tab === 'eeg' && (
         <div className="flex min-h-0 flex-1 p-2">
           <EegWaveVisualizer
             anodeId={montageState.anode}
@@ -151,7 +80,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
         </div>
       )}
 
-      {activeTab === 'cellular' && (
+      {tab === 'cellular' && (
         <div className="flex min-h-0 flex-1 p-2">
           <CellularMechanismWidget
             anodeId={montageState.anode}
@@ -166,7 +95,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
         </div>
       )}
 
-      {activeTab === 'outcomes' && (
+      {tab === 'outcomes' && (
         <div className="flex min-h-0 flex-1 p-2">
           <HumanImpactSimulators
             anodeId={montageState.anode}
@@ -205,6 +134,62 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
 /* Panel pieces                                                                */
 /* -------------------------------------------------------------------------- */
 
+/** Live cortical readout: E-field band, membrane shift, density and shunt. */
+const CorticalTelemetryCard: React.FC<{ telemetry: BiophysicalTelemetry; anodeAreas: string[] }> = ({
+  telemetry,
+  anodeAreas
+}) => {
+  const shiftSign = telemetry.maxMembraneShiftMv >= 0 ? '+' : '';
+  return (
+    <section className="panel-card">
+      <PanelHeader
+        icon={<Activity className="h-4 w-4 text-cyan-300" />}
+        tone="bg-cyan-500/10"
+        title="Cortical telemetry"
+        subtitle="What reaches the cortex under the active pad"
+      />
+      <div className="space-y-3 p-3">
+        <EFieldThermalSpectrum peakEFieldVm={telemetry.peakEFieldVm} />
+        <div className="rounded-lg border border-slate-800/60 bg-slate-900/70 p-2.5">
+          <div className="flex justify-between text-[13.5px]">
+            <span className="text-slate-400">Peak membrane shift (ΔVm)</span>
+            <span className="font-mono font-semibold text-emerald-300">
+              {shiftSign}
+              {telemetry.maxMembraneShiftMv.toFixed(2)} mV
+            </span>
+          </div>
+          <div className="relative mt-2 h-2.5 w-full overflow-hidden rounded-full border border-slate-800 bg-slate-950">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-300"
+              style={{ width: `${Math.min(100, (Math.abs(telemetry.maxMembraneShiftMv) / 15) * 100)}%` }}
+            />
+          </div>
+          <div className="mt-1.5 flex justify-between font-mono text-[12px] text-slate-500">
+            <span>−70 mV rest</span>
+            <span className="text-slate-400">share of the 15 mV gap</span>
+            <span className="font-semibold text-rose-400">−55 mV</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Stat label="Current density J" value={telemetry.currentDensityMaCm2.toFixed(3)} unit="mA/cm²" tone="text-cyan-300" />
+          <Stat label="Scalp shunt" value={`${telemetry.shuntPercentage.toFixed(1)}%`} unit="lost" tone="text-rose-300" />
+          <Stat label="Peak E-field" value={telemetry.peakEFieldVm.toFixed(3)} unit="V/m" tone="text-amber-300" />
+          <Stat label="Target areas" value={anodeAreas.join(', ')} unit="" tone="text-amber-200" />
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Stat: React.FC<{ label: string; value: string; unit: string; tone: string }> = ({ label, value, unit, tone }) => (
+  <div className="rounded-lg border border-slate-800/60 bg-slate-900/60 px-2.5 py-2">
+    <div className="text-[12.5px] text-slate-400">{label}</div>
+    <div className={`mt-0.5 truncate font-mono text-[15px] font-semibold ${tone}`} title={`${value} ${unit}`}>
+      {value} {unit && <span className="text-[12px] font-normal text-slate-400">{unit}</span>}
+    </div>
+  </div>
+);
+
 const PanelHeader: React.FC<{
   icon: React.ReactNode;
   title: string;
@@ -225,7 +210,7 @@ const PanelHeader: React.FC<{
 );
 
 const CheckLine: React.FC<{ ok: boolean; children: React.ReactNode }> = ({ ok, children }) => (
-  <li className="flex items-start gap-2 text-[11.5px] leading-relaxed text-slate-300">
+  <li className="flex items-start gap-2 text-[13.5px] leading-relaxed text-slate-300">
     {ok ? (
       <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
     ) : (
@@ -274,7 +259,7 @@ const BiophysicsPanel: React.FC<{
             href={getPubMedUrl(currentPreset.referenceStudy.pmid)}
             target="_blank"
             rel="noreferrer"
-            className="group flex items-center justify-between gap-2 border-t border-slate-800/70 px-3 py-2 text-[11px] text-slate-400 transition hover:text-cyan-300"
+            className="group flex items-center justify-between gap-2 border-t border-slate-800/70 px-3 py-2 text-[13px] text-slate-400 transition hover:text-cyan-300"
           >
             <span className="flex min-w-0 items-center gap-1.5">
               <BookOpen className="h-3.5 w-3.5 shrink-0 text-slate-500 group-hover:text-cyan-400" />
@@ -282,7 +267,7 @@ const BiophysicsPanel: React.FC<{
                 {currentPreset.referenceStudy.authors} {currentPreset.referenceStudy.year} · {currentPreset.referenceStudy.journal}
               </span>
             </span>
-            <span className="shrink-0 font-mono text-[10.5px] text-slate-500 group-hover:text-cyan-300">
+            <span className="shrink-0 font-mono text-[12.5px] text-slate-500 group-hover:text-cyan-300">
               PMID {currentPreset.referenceStudy.pmid}
             </span>
           </a>
@@ -300,19 +285,19 @@ const BiophysicsPanel: React.FC<{
           title="Active cortical nodes"
           subtitle="Radial field and membrane shift per 10-20 site"
           tone="bg-amber-500/10 text-amber-300"
-          right={<span className="font-mono text-[11px] text-slate-400">{telemetry.activeAnodalNodes.length}</span>}
+          right={<span className="font-mono text-[13px] text-slate-400">{telemetry.activeAnodalNodes.length}</span>}
         />
         <div className="space-y-2 p-3">
           {activeNodes.length === 0 && (
-            <p className="text-[11.5px] text-slate-500">No cortical node reaches +0.08 V/m at this dose.</p>
+            <p className="text-[13.5px] text-slate-500">No cortical node reaches +0.08 V/m at this dose.</p>
           )}
           {activeNodes.map((node) => {
             const width = Math.min(100, Math.max(6, (node.eField / 0.8) * 100));
             return (
               <div key={node.id}>
-                <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
+                <div className="mb-1 flex items-center justify-between gap-2 text-[13px]">
                   <span className="flex min-w-0 items-center gap-1.5 text-slate-300">
-                    <span className="rounded border border-orange-500/30 bg-orange-500/10 px-1 py-0.5 font-mono text-[10.5px] font-bold text-orange-300">
+                    <span className="rounded border border-orange-500/30 bg-orange-500/10 px-1 py-0.5 font-mono text-[12.5px] font-bold text-orange-300">
                       {node.id}
                     </span>
                     <span className="truncate text-slate-500">{node.name}</span>
@@ -358,8 +343,8 @@ const SessionFeelTimeline: React.FC = () => (
         <li key={phase.time} className="relative flex flex-1 flex-col items-center text-center">
           {index < PHASES.length - 1 && <span className="absolute left-1/2 top-[5px] h-px w-full bg-slate-700" />}
           <span className={`relative h-2.5 w-2.5 rounded-full ring-4 ring-[#0C121E] ${phase.dot}`} />
-          <span className={`mt-1.5 font-mono text-[10.5px] ${phase.tone}`}>{phase.time}</span>
-          <span className="mt-0.5 text-[11px] leading-snug text-slate-300">{phase.title}</span>
+          <span className={`mt-1.5 font-mono text-[12.5px] ${phase.tone}`}>{phase.time}</span>
+          <span className="mt-0.5 text-[13px] leading-snug text-slate-300">{phase.title}</span>
         </li>
       ))}
     </ol>

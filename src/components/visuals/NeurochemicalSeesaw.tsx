@@ -14,11 +14,11 @@ export const NeurochemicalSeesaw: React.FC<NeurochemicalSeesawProps> = ({ isAnod
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
           GABA / glutamate balance
         </span>
-        <span className="text-[11px] text-amber-300 font-semibold">
+        <span className="text-[13px] text-amber-300 font-semibold">
           {isAnode ? 'Glutamatergic bias (LTP)' : 'GABAergic influx (LTD)'}
         </span>
       </div>
@@ -53,7 +53,7 @@ export const NeurochemicalSeesaw: React.FC<NeurochemicalSeesawProps> = ({ isAnod
         </svg>
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
+      <div className="flex items-center justify-between text-[13px] text-slate-400 pt-1 border-t border-slate-800/60">
         <span>{isAnode ? `Localized GABA reduction @ ${currentMa.toFixed(1)}mA` : `Suppressed excitability @ ${currentMa.toFixed(1)}mA`}</span>
         <span className="text-amber-400 font-bold">{isAnode ? 'Excitation ↑' : 'Inhibition ↑'}</span>
       </div>

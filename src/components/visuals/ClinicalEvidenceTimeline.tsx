@@ -82,11 +82,11 @@ export const ClinicalEvidenceTimeline: React.FC<ClinicalEvidenceTimelineProps> =
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
           Clinical evidence timeline
         </span>
-        <span className="font-mono text-[11px] text-slate-400">{MILESTONES[0].year} → {MILESTONES[MILESTONES.length - 1].year}</span>
+        <span className="font-mono text-[13px] text-slate-400">{MILESTONES[0].year} → {MILESTONES[MILESTONES.length - 1].year}</span>
       </div>
 
       {/* Interactive horizontal milestone spine */}
@@ -109,7 +109,7 @@ export const ClinicalEvidenceTimeline: React.FC<ClinicalEvidenceTimelineProps> =
                   : 'bg-slate-900 border-slate-600 group-hover:border-cyan-500'
               }`}
             />
-            <span className={`mt-1 font-mono text-[10.5px] font-semibold ${activeYear === m.year ? 'text-cyan-300' : 'text-slate-400'}`}>
+            <span className={`mt-1 font-mono text-[12.5px] font-semibold ${activeYear === m.year ? 'text-cyan-300' : 'text-slate-400'}`}>
               {m.year}
             </span>
           </button>
@@ -121,21 +121,21 @@ export const ClinicalEvidenceTimeline: React.FC<ClinicalEvidenceTimelineProps> =
         const m = MILESTONES.find((x) => x.year === activeYear);
         if (!m) {
           return (
-            <div className="text-[11px] text-slate-500 text-center py-1.5 border border-dashed border-slate-800 rounded">
+            <div className="text-[13px] text-slate-500 text-center py-1.5 border border-dashed border-slate-800 rounded">
               Select a timeline node to view the landmark study
             </div>
           );
         }
         return (
-          <div className="bg-slate-950/70 border border-slate-800/70 rounded-lg p-2 text-[11px] space-y-1.5">
+          <div className="bg-slate-950/70 border border-slate-800/70 rounded-lg p-2 text-[13px] space-y-1.5">
             <div className="flex items-center gap-1.5 flex-wrap">
               {m.badges.map((b) => (
-                <span key={b} className="px-1.5 py-0.5 rounded bg-cyan-950/70 text-cyan-300 border border-cyan-800/50 text-[9.5px] font-medium">
+                <span key={b} className="px-1.5 py-0.5 rounded bg-cyan-950/70 text-cyan-300 border border-cyan-800/50 text-[11.5px] font-medium">
                   {b}
                 </span>
               ))}
               {citationYears.has(m.year) && (
-                <span className="px-1.5 py-0.5 rounded bg-amber-950/70 text-amber-300 border border-amber-800/50 text-[9.5px] font-bold">
+                <span className="px-1.5 py-0.5 rounded bg-amber-950/70 text-amber-300 border border-amber-800/50 text-[11.5px] font-bold">
                   Active target
                 </span>
               )}
@@ -146,7 +146,7 @@ export const ClinicalEvidenceTimeline: React.FC<ClinicalEvidenceTimelineProps> =
               href={pubmedUrl(m)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-amber-400 hover:text-amber-300 underline text-[10.5px]"
+              className="inline-flex items-center gap-1 text-amber-400 hover:text-amber-300 underline text-[12.5px]"
             >
               <span>{m.pmid ? `PubMed: ${m.pmid}` : 'Search PubMed'}</span>
               <ExternalLink className="w-2.5 h-2.5" />
@@ -158,7 +158,7 @@ export const ClinicalEvidenceTimeline: React.FC<ClinicalEvidenceTimelineProps> =
       {/* Additional site-specific evidence merged from the active node profile */}
       {extraCitations.length > 0 && (
         <div className="mt-2 pt-2 border-t border-slate-800/60">
-          <div className="text-[10.5px] text-slate-500 mb-1">Active electrode profile · supplementary evidence</div>
+          <div className="text-[12.5px] text-slate-500 mb-1">Active electrode profile · supplementary evidence</div>
           <div className="flex flex-wrap gap-1.5">
             {extraCitations.slice(0, 4).map((c) => (
               <a
@@ -167,7 +167,7 @@ export const ClinicalEvidenceTimeline: React.FC<ClinicalEvidenceTimelineProps> =
                 target="_blank"
                 rel="noopener noreferrer"
                 title={c.finding}
-                className="px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[10px] text-slate-300 hover:border-cyan-600 transition"
+                className="px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[12px] text-slate-300 hover:border-cyan-600 transition"
               >
                 <span className="text-cyan-300 font-bold">{c.year}</span> · {c.authors.split(',')[0]} · <span className="text-amber-400">PMID {c.pmid}</span>
               </a>

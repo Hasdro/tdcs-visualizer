@@ -108,7 +108,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
   };
 
   const inputClass =
-    'mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[13px] text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-500/70';
+    'mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[15px] text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-500/70';
 
   return (
     <div
@@ -118,9 +118,9 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
       aria-labelledby="bug-report-title"
       onClick={(event) => event.target === event.currentTarget && handleClose()}
     >
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-700 bg-[#0C121E] shadow-2xl">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-700 bg-ink-2 shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3.5">
-          <h2 id="bug-report-title" className="flex items-center gap-2 text-[15px] font-semibold text-slate-100">
+          <h2 id="bug-report-title" className="flex items-center gap-2 text-[17px] font-semibold text-slate-100">
             <Bug className="h-4 w-4 text-rose-300" />
             Report a bug
           </h2>
@@ -137,19 +137,19 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
         {status.kind === 'sent' ? (
           <div className="space-y-3 px-5 py-6 text-center">
             <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400" />
-            <p className="text-[14px] font-semibold text-slate-100">Thanks — your report was filed.</p>
+            <p className="text-[16px] font-semibold text-slate-100">Thanks — your report was filed.</p>
             <a
               href={status.issueUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-[13px] text-cyan-300 hover:text-cyan-200"
+              className="inline-flex items-center gap-1.5 text-[15px] text-cyan-300 hover:text-cyan-200"
             >
               View the issue on GitHub <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </div>
         ) : status.kind === 'fallback' ? (
           <div className="space-y-3 px-5 py-5">
-            <p className="text-[13px] leading-relaxed text-slate-300">
+            <p className="text-[15px] leading-relaxed text-slate-300">
               {status.reason} Your report is ready on GitHub instead — open it and press{' '}
               <span className="font-semibold text-slate-100">Submit new issue</span>. A free GitHub account is needed.
             </p>
@@ -157,14 +157,14 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
               href={status.githubUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-600 px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-cyan-500"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-600 px-3.5 py-2 text-[15px] font-semibold text-[#fff] transition hover:bg-cyan-500"
             >
               Open prefilled issue <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3 px-5 py-4">
-            <label className="block text-[12px] font-medium text-slate-300">
+            <label className="block text-[14px] font-medium text-slate-300">
               Short title
               <input
                 className={inputClass}
@@ -174,7 +174,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
                 required
               />
             </label>
-            <label className="block text-[12px] font-medium text-slate-300">
+            <label className="block text-[14px] font-medium text-slate-300">
               What happened?
               <textarea
                 className={`${inputClass} h-24 resize-none`}
@@ -184,7 +184,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
                 required
               />
             </label>
-            <label className="block text-[12px] font-medium text-slate-300">
+            <label className="block text-[14px] font-medium text-slate-300">
               Steps to reproduce <span className="font-normal text-slate-500">(optional)</span>
               <textarea
                 className={`${inputClass} h-20 resize-none`}
@@ -202,7 +202,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
               className="hidden"
               aria-hidden="true"
             />
-            <p className="text-[11px] leading-snug text-slate-500">
+            <p className="text-[13px] leading-snug text-slate-500">
               Reports are posted publicly as GitHub issues, with your current montage link, browser and screen size. Please
               don&apos;t include personal or medical information.
             </p>
@@ -210,14 +210,14 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
               <button
                 type="button"
                 onClick={handleClose}
-                className="rounded-lg border border-slate-700 px-3.5 py-2 text-[13px] text-slate-300 transition hover:border-slate-500"
+                className="rounded-lg border border-slate-700 px-3.5 py-2 text-[15px] text-slate-300 transition hover:border-slate-500"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={status.kind === 'sending' || !title.trim() || !description.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-rose-500 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2 text-[15px] font-semibold text-[#fff] transition hover:bg-rose-500 disabled:opacity-50"
               >
                 {status.kind === 'sending' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Send report

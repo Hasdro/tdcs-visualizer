@@ -35,11 +35,11 @@ export const NeuroArousalCompass: React.FC<NeuroArousalCompassProps> = ({ bandSh
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
           Neuro-arousal compass · {anodeId}
         </span>
-        <span className="text-[11px] text-cyan-300 font-semibold">{quadrantLabel}</span>
+        <span className="text-[13px] text-cyan-300 font-semibold">{quadrantLabel}</span>
       </div>
 
       <div className="relative flex justify-center py-2">
@@ -70,7 +70,7 @@ export const NeuroArousalCompass: React.FC<NeuroArousalCompassProps> = ({ bandSh
       </div>
 
       {/* Outcome Benefit Chips */}
-      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-800/60 text-[11px]">
+      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-800/60 text-[13px]">
         {cursorX > 50 && cursorY < 50 && (
           <>
             <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded">

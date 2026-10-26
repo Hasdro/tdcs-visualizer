@@ -14,11 +14,11 @@ export const ReactionTimeRaceTrack: React.FC<ReactionTimeRaceTrackProps> = ({ mo
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-emerald-400" />
           Reaction time
         </span>
-        <span className="text-[11px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded">
+        <span className="text-[13px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded">
           ⚡ <span className="font-mono">{deltaMs}</span> ms faster initiation
         </span>
       </div>
@@ -26,7 +26,7 @@ export const ReactionTimeRaceTrack: React.FC<ReactionTimeRaceTrackProps> = ({ mo
       <div className="space-y-2 mt-2.5">
         {/* Track 1: Baseline */}
         <div>
-          <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+          <div className="flex justify-between text-[13px] text-slate-400 mb-1">
             <span>Normative baseline</span>
             <span className="font-mono">{baselineMs} ms</span>
           </div>
@@ -37,7 +37,7 @@ export const ReactionTimeRaceTrack: React.FC<ReactionTimeRaceTrackProps> = ({ mo
 
         {/* Track 2: tDCS Accelerated */}
         <div>
-          <div className="flex justify-between text-[11px] mb-1">
+          <div className="flex justify-between text-[13px] mb-1">
             <span className="flex items-center gap-1 font-medium text-emerald-300">
               <span>⚡</span> tDCS facilitated
             </span>

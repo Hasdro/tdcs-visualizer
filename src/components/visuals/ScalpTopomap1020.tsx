@@ -54,13 +54,13 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
   return (
     <div className="panel-card select-none p-3 text-xs relative">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
           Scalp compass · 10–20
         </span>
         <button
           onClick={onFlipPolarity}
-          className="text-[11px] text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded cursor-pointer"
+          className="text-[13px] text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded cursor-pointer"
           title="Swap anode and cathode polarity"
         >
           <span aria-hidden="true">⇄</span> Swap
@@ -192,9 +192,9 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
         {/* Tactile Radial Node Selection Flyout */}
         {activeMenuNode && (
           <div className="absolute inset-x-2 bottom-1 bg-slate-950/95 border border-cyan-500/60 rounded-lg p-2 shadow-2xl backdrop-blur-md flex items-center justify-between z-20 animate-in fade-in zoom-in-95">
-            <div className="text-[12px]">
+            <div className="text-[14px]">
               <span className="font-bold text-white">{activeMenuNode}</span>
-              <span className="text-[10.5px] text-slate-400 block">
+              <span className="text-[12.5px] text-slate-400 block">
                 {BRAIN_NODES[activeMenuNode]?.shortName || 'Scalp Landmark'}
               </span>
             </div>
@@ -204,7 +204,7 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
                   onSelectNode(activeMenuNode, 'anode');
                   setActiveMenuNode(null);
                 }}
-                className="px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] transition cursor-pointer shadow-sm"
+                className="px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-[#fff] font-bold text-[13px] transition cursor-pointer shadow-sm"
               >
                 + Anode
               </button>
@@ -213,7 +213,7 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
                   onSelectNode(activeMenuNode, 'cathode');
                   setActiveMenuNode(null);
                 }}
-                className="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[11px] transition cursor-pointer shadow-sm"
+                className="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-[#fff] font-bold text-[13px] transition cursor-pointer shadow-sm"
               >
                 – Cathode
               </button>
@@ -229,7 +229,7 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
       </div>
 
       {/* Active Dipole Circuit Pill */}
-      <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[11px]">
+      <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[13px]">
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-red-500" />
           <span className="font-mono font-semibold text-rose-300">{anodeId}</span>
@@ -239,7 +239,7 @@ export const ScalpTopomap1020: React.FC<ScalpTopomap1020Props> = ({
             {isHD ? 'HD 4×1 ring' : cathodeId}
           </span>
         </div>
-        <span className="text-slate-400 text-[10.5px]">Click a node to assign</span>
+        <span className="text-slate-400 text-[12.5px]">Click a node to assign</span>
       </div>
     </div>
   );

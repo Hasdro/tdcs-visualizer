@@ -84,11 +84,11 @@ export const CurrentIntensityAmmeter: React.FC<CurrentIntensityAmmeterProps> = (
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-center justify-between border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold tracking-tight text-slate-100">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
           Current intensity
         </span>
-        <span className="font-mono text-[11px] text-slate-400">0.5–2.5 mA</span>
+        <span className="font-mono text-[13px] text-slate-400">0.5–2.5 mA</span>
       </div>
 
       <div className="relative flex justify-center items-center mt-1.5">
@@ -182,10 +182,10 @@ export const CurrentIntensityAmmeter: React.FC<CurrentIntensityAmmeterProps> = (
             step="0.1"
             value={currentMa}
             onChange={(e) => setCurrent(parseFloat(e.target.value))}
-            className="no-spin w-10 bg-transparent text-center font-mono text-[12px] font-semibold text-amber-300 outline-none"
+            className="no-spin w-10 bg-transparent text-center font-mono text-[14px] font-semibold text-amber-300 outline-none"
             aria-label="Current intensity value"
           />
-          <span className="font-mono text-[10.5px] text-slate-500">mA</span>
+          <span className="font-mono text-[12.5px] text-slate-500">mA</span>
         </label>
         <button
           type="button"
@@ -198,13 +198,13 @@ export const CurrentIntensityAmmeter: React.FC<CurrentIntensityAmmeterProps> = (
       </div>
 
       {/* Safety zone chips */}
-      <div className="mt-2 flex items-center justify-between gap-1 border-t border-slate-800/60 pt-1.5 text-[10.5px]">
+      <div className="mt-2 flex items-center justify-between gap-1 border-t border-slate-800/60 pt-1.5 text-[12.5px]">
         <span className="flex items-center gap-1 text-emerald-400"><span className="h-2 w-2 rounded-sm bg-emerald-500" />≤1.0 mild</span>
         <span className="flex items-center gap-1 text-amber-400"><span className="h-2 w-2 rounded-sm bg-amber-500" />≤2.0 standard</span>
         <span className="flex items-center gap-1 text-rose-400"><span className="h-2 w-2 rounded-sm bg-rose-500" />&gt;2.0 caution</span>
       </div>
       <div
-        className={`mt-1 rounded border px-2 py-0.5 text-center text-[10.5px] font-medium ${
+        className={`mt-1 rounded border px-2 py-0.5 text-center text-[12.5px] font-medium ${
           currentMa <= 1.0
             ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800/60'
             : currentMa <= 2.0

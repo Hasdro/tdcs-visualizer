@@ -1,7 +1,7 @@
 import React from 'react';
-import { ArrowUp, Compass, Eye, RotateCcw, UserRound } from 'lucide-react';
+import { ArrowUp, Compass, Eye, PersonStanding, RotateCcw, UserRound } from 'lucide-react';
 
-export type CameraView = 'anterior' | 'left' | 'right' | 'vertex' | 'occipital' | 'reset';
+export type CameraView = 'anterior' | 'left' | 'right' | 'vertex' | 'occipital' | 'bust' | 'reset';
 
 interface ViewportOrientationCubeProps {
   onSnapCamera?: (view: CameraView) => void;
@@ -22,6 +22,7 @@ const VIEWS: Array<{ id: CameraView; label: string; title: string; icon: React.R
   { id: 'right', label: 'Right', title: 'Right lateral: right frontal and parietal', icon: <ProfileIcon facing="right" className="h-3.5 w-3.5" /> },
   { id: 'vertex', label: 'Top', title: 'Vertex: top-down 10-20 symmetry', icon: <ArrowUp className="h-3.5 w-3.5" /> },
   { id: 'occipital', label: 'Back', title: 'Occipital: visual cortex', icon: <Eye className="h-3.5 w-3.5" /> },
+  { id: 'bust', label: 'Shoulders', title: 'Zoom out to the head, neck and shoulders (extracephalic pads)', icon: <PersonStanding className="h-3.5 w-3.5" /> },
   { id: 'reset', label: 'Reset', title: 'Reset to the default orbit view', icon: <RotateCcw className="h-3.5 w-3.5" /> }
 ];
 
@@ -30,8 +31,8 @@ const VIEWS: Array<{ id: CameraView; label: string; title: string; icon: React.R
  * clinical viewpoint; labels collapse below 1440 px.
  */
 export const ViewportOrientationCube: React.FC<ViewportOrientationCubeProps> = ({ onSnapCamera }) => (
-  <div className="flex select-none items-center gap-0.5 rounded-xl border border-slate-800/80 bg-[#0E1524]/90 p-1 shadow-2xl backdrop-blur-md" role="toolbar" aria-label="Camera views">
-    <div className="hidden items-center gap-1 border-r border-slate-800 px-1.5 text-[11px] font-medium text-slate-400 min-[1600px]:flex">
+  <div className="flex select-none items-center gap-0.5 rounded-xl border border-slate-800/80 bg-ink-3/90 p-1 shadow-2xl backdrop-blur-md" role="toolbar" aria-label="Camera views">
+    <div className="hidden items-center gap-1 border-r border-slate-800 px-1.5 text-[13px] font-medium text-slate-400 min-[1600px]:flex">
       <Compass className="h-3.5 w-3.5 text-cyan-400" />
       <span>View</span>
     </div>
@@ -43,7 +44,7 @@ export const ViewportOrientationCube: React.FC<ViewportOrientationCubeProps> = (
         onClick={() => onSnapCamera?.(id)}
         title={title}
         aria-label={title}
-        className="flex items-center gap-1.5 rounded-lg border border-transparent px-1.5 py-1.5 text-[11px] font-medium text-slate-400 transition hover:border-slate-700 hover:bg-slate-800/80 hover:text-slate-100"
+        className="flex items-center gap-1.5 rounded-lg border border-transparent px-1.5 py-1.5 text-[13px] font-medium text-slate-400 transition hover:border-slate-700 hover:bg-slate-800/80 hover:text-slate-100"
       >
         {icon}
         <span className="hidden whitespace-nowrap min-[1600px]:inline">{label}</span>

@@ -46,11 +46,11 @@ export const FiringProbabilityCurve: React.FC<FiringProbabilityCurveProps> = ({
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-emerald-400" />
           Firing probability
         </span>
-        <span className={`text-[11px] font-bold ${isAnode ? 'text-emerald-400' : 'text-cyan-400'}`}>
+        <span className={`text-[13px] font-bold ${isAnode ? 'text-emerald-400' : 'text-cyan-400'}`}>
           {changePct >= 0 ? <>↑ <span className="font-mono">+{changePct}%</span> facilitated</> : <>↓ <span className="font-mono">{changePct}%</span> depressed</>}
         </span>
       </div>
@@ -89,7 +89,7 @@ export const FiringProbabilityCurve: React.FC<FiringProbabilityCurveProps> = ({
         </svg>
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
+      <div className="flex items-center justify-between text-[13px] text-slate-400 pt-1 border-t border-slate-800/60">
         <span>At {currentMa.toFixed(1)} mA — Synaptic Noise Distribution</span>
         <span className="text-emerald-300 font-bold">Rate ×{firingRatio.toFixed(2)}</span>
       </div>

@@ -72,8 +72,8 @@ export const SafetyBeacon: React.FC<SafetyBeaconProps> = ({ telemetry }) => {
         )}
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-[12.5px] font-semibold leading-tight">{label}</span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-[11px] leading-tight text-slate-400">
+        <span className="block truncate text-[14.5px] font-semibold leading-tight">{label}</span>
+        <span className="mt-0.5 flex items-center gap-1.5 text-[13px] leading-tight text-slate-400">
           <span className="font-mono font-medium text-slate-300">{marginLabel}</span>
           <span>margin</span>
           <span className="text-slate-600">·</span>

@@ -44,7 +44,7 @@ export const EvidenceBadge: React.FC<EvidenceBadgeProps> = ({ level, className =
   return (
     <span
       title={style.description}
-      className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold tracking-tight ${style.className} ${className}`}
+      className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[13px] font-semibold tracking-tight ${style.className} ${className}`}
     >
       <span className="h-1 w-1 rounded-full bg-current" />
       {style.short}

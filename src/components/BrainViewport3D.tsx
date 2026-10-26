@@ -3,18 +3,13 @@ import * as THREE from 'three';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { OrbitControls, Text, Html } from '@react-three/drei';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import {
-  createHumanFaceGeometry,
-  createCurvedPadGeometry,
-  createNeckAndShoulderGeometry
-} from '../utils/brainGeometry';
+import { createCurvedPadGeometry } from '../utils/brainGeometry';
+import { HeadBust } from './HeadBust';
 import { BRAIN_NODES } from '../data/brain_nodes';
 import { StreamlineParticles } from './StreamlineParticles';
 import { BiophysicalTelemetry } from '../utils/biophysicsEngine';
-import { Activity, AlertTriangle, ChevronDown, Pause, Play, FastForward, RotateCcw, Droplet } from 'lucide-react';
-import { EFieldThermalSpectrum } from './visuals/EFieldThermalSpectrum';
+import { AlertTriangle, Pause, Play, FastForward, RotateCcw, Droplet } from 'lucide-react';
 import { ViewportOrientationCube, type CameraView } from './visuals/ViewportOrientationCube';
-import { NeuronalMagnifyingLens } from './visuals/NeuronalMagnifyingLens';
 import type { LayerOpacity } from './visuals/IsometricLayerStack';
 
 interface BrainViewport3DProps {
@@ -36,9 +31,11 @@ interface BrainViewport3DProps {
   showBrodmannLabels: boolean;
   activePlacementMode: 'anode' | 'cathode' | null;
   setActivePlacementMode: (mode: 'anode' | 'cathode' | null) => void;
-  isLeftDockCollapsed?: boolean;
   layerOpacity: LayerOpacity;
   onTissueOpacityChange: (value: number) => void;
+  simSpeed: number;
+  onSimSpeedChange: (speed: number) => void;
+  lightStage: boolean;
 }
 
 /** Shared per-frame simulation state (read inside useFrame, never via React state). */
@@ -56,8 +53,12 @@ const CAMERA_VIEWS: Record<CameraView, { position: [number, number, number]; tar
   right: { position: [3.3, 0.35, 0.15], target: [0, 0.06, 0] },
   vertex: { position: [0, 3.4, 0.05], target: [0, 0.06, 0] },
   occipital: { position: [0, 0.3, -3.3], target: [0, 0.06, 0] },
-  reset: { position: [-1.32, 0.48, 3.72], target: [-0.2, 0.08, 0] }
+  bust: { position: [-3.1, -0.2, 7.2], target: [0, -1.25, 0] },
+  reset: { position: [-1.9, 0.2, 5.0], target: [-0.1, -0.35, 0] }
 };
+
+const SCALP_SCALE: [number, number, number] = [0.9, 0.965, 1.06];
+const SHUNT_SCALE: [number, number, number] = [0.925, 0.99, 1.085];
 
 // Error Boundary for WebGL Canvas
 interface ErrorBoundaryProps {
@@ -85,7 +86,7 @@ class CanvasErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
   render() {
     if (this.state.hasError) {
       return (
-        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#070B12]">
+        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-ink-0">
           <AlertTriangle className="w-12 h-12 text-amber-400 mb-3 animate-pulse" />
           <h3 className="text-sm font-semibold tracking-tight text-slate-200">
             WebGL context notice
@@ -407,51 +408,6 @@ const CorticalHeatmapShader = {
 // the same surface never z-fights.
 const DEPTH_ONLY_FRAGMENT = `void main() { gl_FragColor = vec4(0.0); }`;
 
-// Holographic Medical Face Shader with Fresnel Silhouette Rim Lighting
-const HolographicFaceShader = {
-  uniforms: {
-    uColor: { value: new THREE.Color('#38BDF8') },
-    uTime: { value: 0.0 },
-    uOpacity: { value: 0.85 },
-  },
-  vertexShader: `
-    varying vec3 vWorldNormal;
-    varying vec3 vWorldPosition;
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      vWorldNormal = normalize(normalMatrix * normal);
-      vec4 worldPos = modelMatrix * vec4(position, 1.0);
-      vWorldPosition = worldPos.xyz;
-      gl_Position = projectionMatrix * viewMatrix * worldPos;
-    }
-  `,
-  fragmentShader: `
-    uniform vec3 uColor;
-    uniform float uTime;
-    uniform float uOpacity;
-    varying vec3 vWorldNormal;
-    varying vec3 vWorldPosition;
-    varying vec2 vUv;
-
-    void main() {
-      vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-      float nDotV = max(dot(vWorldNormal, viewDir), 0.0);
-      // Fresnel silhouette rim glow
-      float fresnel = pow(1.0 - nDotV, 2.8);
-
-      // Soft holographic cyan glow on contours (profile, nose, lips, chin, ears)
-      vec3 glowColor = mix(vec3(0.04, 0.20, 0.36), uColor, fresnel);
-      glowColor += vec3(0.5, 0.85, 1.0) * pow(fresnel, 4.0) * 0.5;
-
-      // Optical transparency: high clarity when facing camera (0.05), luminous glow at edges (0.80)
-      float alpha = clamp(0.04 + fresnel * 0.72, 0.0, 0.88) * uOpacity;
-
-      gl_FragColor = vec4(glowColor, alpha);
-    }
-  `
-};
-
 // Custom Neural Point-Cloud Shader
 const NeuralPointCloudShader = {
   uniforms: {
@@ -566,6 +522,7 @@ interface BrainSceneProps {
   layerOpacity: LayerOpacity;
   simSpeed: number;
   resetNonce: number;
+  lightStage: boolean;
 }
 
 /**
@@ -648,7 +605,8 @@ const BrainScene: React.FC<BrainSceneProps> = ({
   cameraRequest,
   layerOpacity,
   simSpeed,
-  resetNonce
+  resetNonce,
+  lightStage
 }) => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [draggingElectrode, setDraggingElectrode] = useState<'anode' | 'cathode' | null>(null);
@@ -699,21 +657,13 @@ const BrainScene: React.FC<BrainSceneProps> = ({
     [cortexGeometry]
   );
 
-  const headSilhouetteGeometry = useMemo(
-    () => new THREE.SphereGeometry(1.035, 48, 36),
-    []
-  );
+  // Scalp ellipsoid through the 10-20 sites (matches the head bust's cranium).
+  const headSilhouetteGeometry = useMemo(() => new THREE.SphereGeometry(1, 64, 40), []);
 
   // Per-instance uniforms shared by the back-face and front-face tissue passes.
   const cortexUniforms = useMemo(() => THREE.UniformsUtils.clone(CorticalHeatmapShader.uniforms), []);
   const pointCloudUniforms = useMemo(() => THREE.UniformsUtils.clone(NeuralPointCloudShader.uniforms), []);
-  const faceUniforms = useMemo(() => THREE.UniformsUtils.clone(HolographicFaceShader.uniforms), []);
   const shuntUniforms = useMemo(() => THREE.UniformsUtils.clone(ShuntShellShader.uniforms), []);
-
-  const { facialContoursGeometry, facialMaskGeometry, orientationRingGeometry } = useMemo(
-    () => createHumanFaceGeometry(),
-    []
-  );
 
 
   // Dynamically scale curved pad geometry with padAreaCm2 slider
@@ -727,7 +677,6 @@ const BrainScene: React.FC<BrainSceneProps> = ({
     return createCurvedPadGeometry(w, h, 0.024, 1.0);
   }, [padScale]);
 
-  const neckShouldersGeo = useMemo(() => createNeckAndShoulderGeometry(), []);
 
   // Geometries passed as props are not owned by R3F, so release them here.
   useEffect(() => () => {
@@ -735,13 +684,7 @@ const BrainScene: React.FC<BrainSceneProps> = ({
     wireframeGeometry.dispose();
   }, [pointCloudGeometry, wireframeGeometry]);
   useEffect(() => () => headSilhouetteGeometry.dispose(), [headSilhouetteGeometry]);
-  useEffect(() => () => {
-    facialContoursGeometry.dispose();
-    facialMaskGeometry.dispose();
-    orientationRingGeometry.dispose();
-  }, [facialContoursGeometry, facialMaskGeometry, orientationRingGeometry]);
   useEffect(() => () => curvedPadGeo.dispose(), [curvedPadGeo]);
-  useEffect(() => () => neckShouldersGeo.dispose(), [neckShouldersGeo]);
 
   const anodeNode = BRAIN_NODES[anodeId] || BRAIN_NODES['F3'];
   const cathodeNode = BRAIN_NODES[cathodeId] || BRAIN_NODES['Fp2'];
@@ -789,7 +732,6 @@ const BrainScene: React.FC<BrainSceneProps> = ({
     pc.uAnodePos.value.set(...anodeNode.posCortical);
     pc.uCathodePos.value.set(...cathodeNode.posCortical);
 
-    faceUniforms.uOpacity.value = layerOpacity.face;
     shuntUniforms.uOpacity.value = layerOpacity.shunt;
   });
 
@@ -819,8 +761,8 @@ const BrainScene: React.FC<BrainSceneProps> = ({
         enableDamping
         dampingFactor={0.06}
         minDistance={1.4}
-        maxDistance={4.8}
-        target={[-0.20, 0.08, 0]}
+        maxDistance={9}
+        target={[-0.1, -0.35, 0]}
         enabled={!draggingElectrode && activePlacementMode === null}
       />
 
@@ -918,6 +860,7 @@ const BrainScene: React.FC<BrainSceneProps> = ({
           <mesh
             geometry={headSilhouetteGeometry}
             rotation={[0, Math.PI, 0]}
+            scale={SCALP_SCALE}
             onPointerMove={(e) => {
               if (draggingElectrode || activePlacementMode) {
                 e.stopPropagation();
@@ -974,57 +917,12 @@ const BrainScene: React.FC<BrainSceneProps> = ({
         </group>
       )}
 
-      {/* Layer 3.2: Human Face Overlay (Anterior Orientation Landmark - Video Feedback #1) */}
-      {showHumanFace && (
-        <group>
-          {/* Facial feature landmark wireframe contours */}
-          <lineSegments geometry={facialContoursGeometry}>
-            <lineBasicMaterial
-              color="#38BDF8"
-              transparent
-              opacity={0.80 * layerOpacity.face}
-              depthWrite={false}
-            />
-          </lineSegments>
-
-          {/* Continuous 3D Holographic Head and Face Mesh */}
-          <mesh geometry={facialMaskGeometry}>
-            <shaderMaterial
-              vertexShader={HolographicFaceShader.vertexShader}
-              fragmentShader={HolographicFaceShader.fragmentShader}
-              uniforms={faceUniforms}
-              transparent
-              depthWrite={false}
-              side={THREE.FrontSide}
-            />
-          </mesh>
-
-          {/* Skull Base Orientation Compass Ring */}
-          <lineSegments geometry={orientationRingGeometry}>
-            <lineBasicMaterial
-              color="#38BDF8"
-              transparent
-              opacity={0.50 * layerOpacity.face}
-              depthWrite={false}
-            />
-          </lineSegments>
-
-          {/* Anterior orientation indicator text */}
-          <Text
-            position={[0, -0.66, 1.22]}
-            fontSize={0.040}
-            color="#38BDF8"
-            anchorX="center"
-            anchorY="top"
-          >
-            ▲ Front (face)
-          </Text>
-        </group>
-      )}
+      {/* Layer 3.2: Translucent head, neck and shoulders */}
+      {showHumanFace && <HeadBust opacity={layerOpacity.face} lightStage={lightStage} />}
 
       {/* Layer 3.5: Skull shunt rim — a subtle Fresnel shell, never a bubble */}
       {showShuntHalo && (
-        <mesh geometry={headSilhouetteGeometry} scale={[1.028, 1.028, 1.028]}>
+        <mesh geometry={headSilhouetteGeometry} scale={SHUNT_SCALE}>
           <shaderMaterial
             vertexShader={ShuntShellShader.vertexShader}
             fragmentShader={ShuntShellShader.fragmentShader}
@@ -1037,15 +935,6 @@ const BrainScene: React.FC<BrainSceneProps> = ({
         </mesh>
       )}
 
-      {/* Stylized Neck and Shoulder Wireframe Anatomy for Extracephalic Nodes (BUG-06) */}
-      <lineSegments geometry={neckShouldersGeo}>
-        <lineBasicMaterial
-          color="#38BDF8"
-          transparent
-          opacity={0.25}
-          depthWrite={false}
-        />
-      </lineSegments>
 
       {/* Magnetic Snapping Candidate Ring Visual Indicator (BUG-05) */}
       {(draggingElectrode || activePlacementMode) && magneticCandidateNode && BRAIN_NODES[magneticCandidateNode] && (
@@ -1405,23 +1294,23 @@ const BrainScene: React.FC<BrainSceneProps> = ({
 
             {isHovered && (
               <Html distanceFactor={3.2} position={[0, 0.12, 0]} style={{ pointerEvents: 'none' }}>
-                <div className="bg-[#0F1623]/95 backdrop-blur-md border border-cyan-500/40 rounded-lg p-2.5 shadow-2xl text-xs w-48 text-slate-200">
+                <div className="bg-ink-3/95 backdrop-blur-md border border-cyan-500/40 rounded-lg p-2.5 shadow-2xl text-xs w-48 text-slate-200">
                   <div className="flex items-center justify-between font-mono font-bold text-cyan-400">
                     <span>10-20: {node.id}</span>
-                    <span className="text-[11px] bg-cyan-950/60 px-1.5 py-0.5 rounded text-cyan-300">
+                    <span className="text-[13px] bg-cyan-950/60 px-1.5 py-0.5 rounded text-cyan-300">
                       {node.lobe}
                     </span>
                   </div>
-                  <div className="text-[12px] font-semibold text-slate-100 mt-1 line-clamp-1">
+                  <div className="text-[14px] font-semibold text-slate-100 mt-1 line-clamp-1">
                     {node.name}
                   </div>
-                  <div className="text-[11px] text-amber-300 font-mono mt-0.5">
+                  <div className="text-[13px] text-amber-300 font-mono mt-0.5">
                     Brodmann: {node.brodmannAreas.join(', ')}
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                  <div className="text-[13px] text-slate-400 mt-1 line-clamp-2">
                     {node.primaryFunctions[0]}
                   </div>
-                  <div className="mt-1.5 pt-1 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400">
+                  <div className="mt-1.5 pt-1 border-t border-slate-700/60 flex items-center justify-between text-[13px] text-slate-400">
                     <span>Click to assign</span>
                     <span className="font-mono text-cyan-400 font-bold">
                       {activePlacementMode ? `Set ${activePlacementMode.toUpperCase()}` : 'SET ANODE'}
@@ -1506,14 +1395,12 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
   showBrodmannLabels,
   activePlacementMode,
   setActivePlacementMode,
-  isLeftDockCollapsed,
   layerOpacity,
-  onTissueOpacityChange
+  onTissueOpacityChange,
+  simSpeed,
+  onSimSpeedChange,
+  lightStage
 }) => {
-  const anodeNode = BRAIN_NODES[anodeId] || BRAIN_NODES['F3'];
-  const [isHudMinimized, setIsHudMinimized] = useState(false);
-  const [isLensOpen, setIsLensOpen] = useState(false);
-  const [simSpeed, setSimSpeed] = useState(1);
   const [resetNonce, setResetNonce] = useState(0);
   const [cameraRequest, setCameraRequest] = useState<{ view: CameraView; nonce: number } | null>(null);
   const fpsRef = useRef<HTMLSpanElement>(null);
@@ -1522,19 +1409,16 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
     setCameraRequest((prev) => ({ view, nonce: (prev?.nonce ?? 0) + 1 }));
   };
 
-  const shiftSign = telemetry.maxMembraneShiftMv >= 0 ? '+' : '';
-
   return (
     <div
-      className="relative h-full w-full select-none overflow-hidden bg-[#070B12]"
+      className="relative h-full w-full select-none overflow-hidden bg-ink-0"
       style={{
-        background:
-          'radial-gradient(ellipse at 50% 42%, #0E192A 0%, #09111D 48%, #070B12 100%)'
+        background: 'radial-gradient(ellipse at 50% 42%, var(--stage-a) 0%, var(--stage-b) 48%, var(--stage-c) 100%)'
       }}
     >
       <CanvasErrorBoundary>
         <Canvas
-          camera={{ position: [-1.32, 0.48, 3.72], fov: 40, near: 0.1, far: 20 }}
+          camera={{ position: [-1.9, 0.2, 5.0], fov: 40, near: 0.1, far: 30 }}
           gl={{ antialias: true, powerPreference: 'high-performance', alpha: true }}
           dpr={[1, 2]}
         >
@@ -1560,128 +1444,28 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
               layerOpacity={layerOpacity}
               simSpeed={simSpeed}
               resetNonce={resetNonce}
+              lightStage={lightStage}
             />
           </Suspense>
           <FpsProbe target={fpsRef} />
         </Canvas>
       </CanvasErrorBoundary>
 
-      {/* Top-right: camera snap views, then the cellular microscope beneath */}
-      <div className="pointer-events-none absolute right-4 top-4 z-10 flex flex-col items-end gap-2">
-        <div className="pointer-events-auto">
-          <ViewportOrientationCube onSnapCamera={handleSnapCamera} />
-        </div>
-        <NeuronalMagnifyingLens
-          anodeId={anodeId}
-          cathodeId={cathodeId}
-          currentMa={currentMa}
-          padAreaCm2={padAreaCm2}
-          montageType={montageType}
-          surroundNodes={surroundNodes}
-          simSpeed={simSpeed}
-          collapsed={!isLensOpen}
-          onToggle={() => setIsLensOpen((open) => !open)}
-        />
-      </div>
-
-      {/* Minimizable Floating HUD: Real-Time Biophysical Telemetry */}
-      <div className={`absolute top-4 ${isLeftDockCollapsed ? 'left-10' : 'left-4'} z-10 pointer-events-auto transition-all duration-300`}>
-        {isHudMinimized ? (
-          <button
-            onClick={() => setIsHudMinimized(false)}
-            className="group flex cursor-pointer items-center gap-2 rounded-full border border-cyan-500/50 bg-[#0F1623]/95 px-3.5 py-1.5 text-xs text-slate-200 shadow-2xl backdrop-blur-md transition-all hover:border-cyan-400"
-            title="Click to expand the cortical E-field HUD"
-          >
-            <Activity className="h-3.5 w-3.5 text-cyan-400" />
-            <span className="font-medium text-white">E-field</span>
-            <span className="font-mono font-semibold text-amber-300">{telemetry.peakEFieldVm.toFixed(3)} <span className="font-normal text-slate-500">V/m</span></span>
-            <span className="text-slate-600">|</span>
-            <span className="font-mono font-semibold text-cyan-300">{telemetry.currentDensityMaCm2.toFixed(3)} <span className="font-normal text-slate-500">mA/cm²</span></span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition" />
-          </button>
-        ) : (
-          <div className="bg-[#0F1623]/90 backdrop-blur-md border border-slate-800/80 rounded-xl p-3 shadow-xl text-xs w-[320px] select-none space-y-2">
-            {/* The whole header collapses the HUD back to its chip. */}
-            <button
-              type="button"
-              onClick={() => setIsHudMinimized(true)}
-              className="flex w-full items-center justify-between rounded-md border-b border-slate-800 pb-1.5 text-left text-slate-400 transition hover:text-white"
-              title="Collapse the telemetry panel"
-              aria-expanded
-            >
-              <span className="flex items-center gap-1.5 text-[12.5px] font-semibold tracking-tight text-cyan-300">
-                <Activity className="h-4 w-4 text-cyan-400" />
-                Cortical telemetry
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span
-                  ref={fpsRef}
-                  className="rounded bg-slate-800/80 px-1.5 py-0.5 font-mono text-[11.5px] text-slate-300"
-                  title="Measured WebGL frame rate"
-                >
-                  — FPS
-                </span>
-                <ChevronDown className="h-4 w-4 rotate-180" />
-              </span>
-            </button>
-
-            {/* E-Field Thermal Spectrum with Physiological Milestones */}
-            <EFieldThermalSpectrum peakEFieldVm={telemetry.peakEFieldVm} />
-
-            {/* Membrane Potential Shift Micro-Gauge */}
-            <div className="rounded-lg border border-slate-800/60 bg-slate-900/70 p-2 text-[11px]">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Peak membrane shift (ΔVm)</span>
-                <span className="font-mono font-semibold text-emerald-300">{shiftSign}{telemetry.maxMembraneShiftMv.toFixed(2)} mV</span>
-              </div>
-              <div className="relative w-full h-2 bg-slate-950 rounded-full mt-1.5 overflow-hidden border border-slate-800">
-                <div
-                  className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(100, (Math.abs(telemetry.maxMembraneShiftMv) / 15) * 100)}%` }}
-                />
-              </div>
-              <div className="mt-1 flex justify-between font-mono text-[9.5px] text-slate-500">
-                <span>−70 mV rest</span>
-                <span className="text-slate-400">bar = share of the 15 mV gap</span>
-                <span className="font-semibold text-rose-400">−55 mV</span>
-              </div>
-            </div>
-
-            {/* Grid Stats */}
-            <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-              <div className="rounded border border-slate-800/50 bg-slate-900/60 p-1.5">
-                <div className="text-slate-400">Current density J</div>
-                <div className="mt-0.5 font-mono text-xs font-semibold text-cyan-300">
-                  {telemetry.currentDensityMaCm2.toFixed(3)} <span className="text-[10.5px] font-normal text-slate-400">mA/cm²</span>
-                </div>
-              </div>
-
-              <div className="rounded border border-slate-800/50 bg-slate-900/60 p-1.5">
-                <div className="text-slate-400">Scalp shunt</div>
-                <div className="mt-0.5 font-mono text-xs font-semibold text-rose-300">
-                  {telemetry.shuntPercentage.toFixed(1)}% <span className="text-[10.5px] font-normal text-slate-400">lost</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-slate-800/60 pt-1 text-[11px]">
-              <span className="text-slate-400">Target areas</span>
-              <span className="font-mono font-semibold text-amber-300">{anodeNode.brodmannAreas.join(', ')}</span>
-            </div>
-          </div>
-        )}
+      {/* Top-right: camera snap views */}
+      <div className="pointer-events-auto absolute right-4 top-4 z-10">
+        <ViewportOrientationCube onSnapCamera={handleSnapCamera} />
       </div>
 
       {/* Bottom-centre: simulation playback and tissue translucency */}
-      <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-slate-800/80 bg-[#0E1524]/90 p-1 shadow-2xl backdrop-blur-md">
+      <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-slate-800/80 bg-ink-3/90 p-1 shadow-2xl backdrop-blur-md">
         {SPEEDS.map((speed) => (
           <button
             key={speed.value}
             type="button"
-            onClick={() => setSimSpeed(speed.value)}
+            onClick={() => onSimSpeedChange(speed.value)}
             aria-pressed={simSpeed === speed.value}
             title={speed.title}
-            className={`flex items-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-medium transition ${
+            className={`flex items-center gap-1 rounded-lg px-1.5 py-1.5 text-[13px] font-medium transition ${
               simSpeed === speed.value ? 'bg-cyan-500/15 text-cyan-200' : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-100'
             }`}
           >
@@ -1698,6 +1482,13 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
         >
           <RotateCcw className="h-3.5 w-3.5" />
         </button>
+        <span
+          ref={fpsRef}
+          className="whitespace-nowrap rounded-md px-1.5 font-mono text-[13px] text-slate-500"
+          title="Measured WebGL frame rate"
+        >
+          — FPS
+        </span>
         <label
           className="ml-1 flex items-center gap-1.5 border-l border-slate-800 pl-2 pr-1.5"
           title="Cortical tissue translucency: slide left to see current paths and deep nuclei inside"
@@ -1713,16 +1504,16 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
             className="slider w-20 text-rose-300"
             aria-label="Cortical tissue opacity"
           />
-          <span className="w-7 text-right font-mono text-[10.5px] text-slate-400">{Math.round(layerOpacity.tissue * 100)}%</span>
+          <span className="w-7 text-right font-mono text-[12.5px] text-slate-400">{Math.round(layerOpacity.tissue * 100)}%</span>
         </label>
       </div>
 
       {/* Calibrated scientific colorbar */}
       {showEField && (
-        <div className="absolute bottom-4 right-4 z-10 w-48 rounded-xl border border-slate-800/80 bg-[#0E1524]/90 p-2.5 shadow-2xl backdrop-blur-md">
+        <div className="absolute left-4 top-4 z-10 w-56 rounded-xl border border-slate-800/80 bg-ink-3/90 p-2.5 shadow-2xl backdrop-blur-md">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-slate-300">Cortical E-field</span>
-            <span className="font-mono text-[11px] font-semibold text-amber-300">
+            <span className="text-[13px] font-medium text-slate-300">Cortical E-field</span>
+            <span className="font-mono text-[13px] font-semibold text-amber-300">
               {telemetry.peakEFieldVm.toFixed(3)} <span className="font-normal text-slate-500">V/m</span>
             </span>
           </div>
@@ -1730,7 +1521,7 @@ export const BrainViewport3D: React.FC<BrainViewport3DProps> = ({
             className="mt-1.5 h-2 w-full rounded-full border border-slate-700/70"
             style={{ background: 'linear-gradient(90deg, #67E8F9 0%, #E2E8F0 50%, #FDBA74 100%)' }}
           />
-          <div className="mt-1 flex justify-between text-[9.5px] text-slate-500">
+          <div className="mt-1 flex justify-between text-[11.5px] text-slate-500">
             <span>− cathodal</span>
             <span>0</span>
             <span>anodal +</span>

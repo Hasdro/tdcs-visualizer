@@ -24,11 +24,11 @@ export const IntracellularSignalingCascade: React.FC<IntracellularSignalingCasca
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-amber-400" />
           Intracellular cascade
         </span>
-        <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${
+        <span className={`text-[13px] font-bold px-1.5 py-0.5 rounded border ${
           isAnode
             ? 'text-emerald-300 bg-emerald-950/60 border-emerald-800/60'
             : 'text-sky-300 bg-sky-950/60 border-sky-800/60'
@@ -165,7 +165,7 @@ export const IntracellularSignalingCascade: React.FC<IntracellularSignalingCasca
       </svg>
 
       {/* Legend / state footnote */}
-      <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 text-[10.5px]">
+      <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 text-[12.5px]">
         {isAnode ? (
           <span className="text-emerald-400/90">⚡ Ca²⁺→CaMKII→AMPA docking drives LTP — hover nodes for detail</span>
         ) : (

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Brain, ChevronDown, ChevronUp, Layers, Map as MapIcon, Skull } from 'lucide-react';
+import React from 'react';
+import { Brain, Map as MapIcon, Skull } from 'lucide-react';
 
 export interface LayerVisibility {
   face: boolean;
@@ -101,7 +101,7 @@ const NeuronIcon: React.FC<IconProps> = (p) => (
 
 // Ordered outside-in, the way current crosses the head.
 const ROWS: LayerRow[] = [
-  { id: 'face', Icon: FaceIcon, label: 'Skin & face', color: '#38BDF8', tooltip: 'Anterior face and neck contour', visibilityKey: 'face', opacityKey: 'face' },
+  { id: 'face', Icon: FaceIcon, label: 'Head & shoulders', color: '#F4B8A0', tooltip: 'See-through skin of the head, neck and shoulders', visibilityKey: 'face', opacityKey: 'face' },
   { id: 'scalp', Icon: GridHeadIcon, label: '10–20 grid', color: '#06B6D4', tooltip: '10–20 calvarium grid and electrode sites', visibilityKey: 'scalp', opacityKey: 'scalp' },
   { id: 'shunt', Icon: Skull, label: 'Skull shunt', color: '#FB7185', tooltip: 'Skull barrier and lateral shunt shell', visibilityKey: 'shunt', opacityKey: 'shunt' },
   {
@@ -121,115 +121,74 @@ const ROWS: LayerRow[] = [
 ];
 
 /**
- * Layer drawer for the 3D stage: a compact toggle strip that expands into
- * per-layer visibility checkboxes and opacity sliders.
+ * Layer list for the dashboard: one row per layer, outside-in, each with a
+ * visibility switch and an opacity slider.
  */
-export const IsometricLayerStack: React.FC<IsometricLayerStackProps> = ({
-  visibility,
-  onToggle,
-  opacity,
-  onOpacityChange
-}) => {
-  const [expanded, setExpanded] = useState(false);
-
-  if (!expanded) {
-    return (
-      <div className="flex items-center gap-1 rounded-xl border border-slate-800/80 bg-[#0E1524]/90 p-1 shadow-2xl backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          className="flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-slate-800/80"
-          title="Open the layer drawer (visibility and opacity)"
-          aria-expanded={false}
+export const LayerControlsPanel: React.FC<IsometricLayerStackProps> = ({ visibility, onToggle, opacity, onOpacityChange }) => (
+  <div className="custom-scrollbar flex h-full min-h-0 flex-col gap-2 overflow-y-auto p-3 [&>*]:shrink-0">
+    <p className="px-1 text-[13px] leading-relaxed text-slate-400">
+      Layers are listed in the order the current crosses them, from skin to neurons.
+    </p>
+    {ROWS.map((row) => {
+      const visible = row.visibilityKey ? visibility[row.visibilityKey] : true;
+      const value = row.opacityKey ? opacity[row.opacityKey] : 1;
+      const min = row.min ?? 0;
+      const max = row.max ?? 1;
+      return (
+        <div
+          key={row.id}
+          className={`rounded-xl border px-3 py-2.5 transition ${
+            visible ? 'border-slate-700/80 bg-slate-900/60' : 'border-slate-800/60 bg-slate-950/30'
+          }`}
         >
-          <Layers className="h-3.5 w-3.5 text-cyan-400" />
-          <span className="hidden min-[1440px]:inline">Layers</span>
-          <ChevronUp className="h-3 w-3 text-slate-500" />
-        </button>
-        <div className="flex items-center gap-0.5 border-l border-slate-800 pl-1">
-          {ROWS.filter((row) => row.visibilityKey).map((row) => {
-            const active = visibility[row.visibilityKey!];
-            return (
+          <div className="flex items-center gap-3">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-950/60"
+              style={{ color: visible ? row.color : '#64748B' }}
+            >
+              <row.Icon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className={`text-[14.5px] font-semibold ${visible ? 'text-slate-100' : 'text-slate-500'}`}>{row.label}</div>
+              <div className="truncate text-[12.5px] text-slate-500" title={row.tooltip}>
+                {row.tooltip}
+              </div>
+            </div>
+            {row.visibilityKey && (
               <button
-                key={row.id}
                 type="button"
+                role="switch"
+                aria-checked={visible}
+                aria-label={`Show ${row.label}`}
                 onClick={() => onToggle(row.visibilityKey!)}
-                className={`flex items-center gap-1.5 rounded-lg border px-1.5 py-1.5 text-[11px] font-medium transition ${
-                  active ? 'border-slate-700 bg-slate-800/80 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'
-                }`}
-                title={`${row.tooltip} (${active ? 'on' : 'off'})`}
-                aria-pressed={active}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${visible ? 'bg-cyan-500' : 'bg-slate-700'}`}
               >
-                <row.Icon className="h-[18px] w-[18px]" style={{ color: active ? row.color : '#64748B' }} />
-                <span className="hidden whitespace-nowrap min-[1600px]:inline">{row.label}</span>
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-[#fff] shadow transition-all ${visible ? 'left-[22px]' : 'left-0.5'}`}
+                />
               </button>
-            );
-          })}
+            )}
+          </div>
+          {row.opacityKey && (
+            <div className="mt-2 flex items-center gap-3 pl-12">
+              <input
+                type="range"
+                min={min}
+                max={max}
+                step={0.01}
+                value={value}
+                disabled={!visible}
+                onChange={(event) => onOpacityChange(row.opacityKey!, parseFloat(event.target.value))}
+                className="slider min-w-0 flex-1 text-cyan-400 disabled:opacity-30"
+                aria-label={`${row.label} opacity`}
+              />
+              <span className="w-10 shrink-0 text-right font-mono text-[12.5px] text-slate-400">{Math.round(value * 100)}%</span>
+            </div>
+          )}
         </div>
-      </div>
-    );
-  }
+      );
+    })}
+  </div>
+);
 
-  return (
-    <div className="w-[300px] rounded-xl border border-slate-800/80 bg-[#0E1524]/95 shadow-2xl backdrop-blur-md">
-      <button
-        type="button"
-        onClick={() => setExpanded(false)}
-        className="flex w-full items-center justify-between border-b border-slate-800 px-2.5 py-2 text-[11.5px] font-semibold text-slate-200"
-        aria-expanded
-      >
-        <span className="flex items-center gap-1.5">
-          <Layers className="h-3.5 w-3.5 text-cyan-400" />
-          Layers · scalp to cortex
-        </span>
-        <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
-      </button>
-      <ul className="space-y-1 p-2">
-        {ROWS.map((row) => {
-          const visible = row.visibilityKey ? visibility[row.visibilityKey] : true;
-          const value = row.opacityKey ? opacity[row.opacityKey] : 1;
-          const min = row.min ?? 0;
-          const max = row.max ?? 1;
-          return (
-            <li key={row.id} className="flex items-center gap-2" title={row.tooltip}>
-              <label className="flex w-[124px] shrink-0 cursor-pointer items-center gap-1.5 text-[11px] text-slate-300">
-                {row.visibilityKey ? (
-                  <input
-                    type="checkbox"
-                    checked={visible}
-                    onChange={() => onToggle(row.visibilityKey!)}
-                    className="h-3 w-3 accent-cyan-500"
-                  />
-                ) : (
-                  <span className="h-3 w-3" />
-                )}
-                <row.Icon className="h-4 w-4 shrink-0" style={{ color: row.color }} />
-                <span className="truncate">{row.label}</span>
-              </label>
-              {row.opacityKey ? (
-                <>
-                  <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    step={0.01}
-                    value={value}
-                    disabled={!visible}
-                    onChange={(event) => onOpacityChange(row.opacityKey!, parseFloat(event.target.value))}
-                    className="slider min-w-0 flex-1 text-cyan-400 disabled:opacity-30"
-                    aria-label={`${row.label} opacity`}
-                  />
-                  <span className="w-8 shrink-0 text-right font-mono text-[10.5px] text-slate-400">{Math.round(value * 100)}%</span>
-                </>
-              ) : (
-                <span className="flex-1 text-[10.5px] text-slate-600">on / off</span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-};
-
-export default IsometricLayerStack;
+export default LayerControlsPanel;

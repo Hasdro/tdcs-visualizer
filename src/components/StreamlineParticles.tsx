@@ -83,32 +83,38 @@ export const StreamlineParticles: React.FC<StreamlineParticlesProps> = ({
       const isExtra = targetC.y < -0.8 || pA.y < -0.8;
 
       if (isExtra) {
-        // Extracephalic Downward Deep Pathway (Head to Shoulder/Deltoid - BUG-06)
-        // Directs vertical current vector through deep subcortical/brainstem nuclei into shoulder
-        const pDeep = pACortical.clone();
-        const pBrainstem = new THREE.Vector3(pA.x * 0.25, -0.42, pA.z * 0.25);
-        const pNeck = new THREE.Vector3(targetC.x * 0.45, -0.82, targetC.z * 0.45 + (seeded(i, 2) - 0.5) * 0.08);
-        const pShoulder = new THREE.Vector3(targetC.x * 0.85, -1.10, targetC.z * 0.85).add(lateralOffset.clone().multiplyScalar(0.6));
+        // Extracephalic pathway (head to deltoid): the deep share runs down
+        // through the brainstem and neck; the shunted share hugs the skin.
+        const anodeOnShoulder = pA.y < -0.8;
+        const pHead = anodeOnShoulder ? targetC : pA;
+        const pHeadCortical = anodeOnShoulder ? targetC.clone().multiplyScalar(0.85) : pACortical;
+        const pArm = anodeOnShoulder ? pA : targetC;
+        const side = Math.sign(pArm.x) || 1;
+        const jitter = (seeded(i, 2) - 0.5) * 0.1;
 
-        const curve = isShunt
-          ? new THREE.CatmullRomCurve3([
-              pA.clone(),
-              new THREE.Vector3(pA.x * 1.04, -0.28, pA.z * 1.04),
-              new THREE.Vector3(targetC.x * 0.52, -0.72, targetC.z * 0.52 + 0.08),
-              new THREE.Vector3(targetC.x * 0.85, -1.05, targetC.z * 0.85),
-              targetC.clone()
-            ])
-          : new THREE.CatmullRomCurve3([
-              pA.clone(),
-              pDeep,
-              pBrainstem,
-              pNeck,
-              pShoulder,
-              targetC.clone()
-            ]);
+        const points = isShunt
+          ? [
+              pHead.clone(),
+              new THREE.Vector3(pHead.x * 0.9 + side * 0.25, -0.45, pHead.z * 0.75),
+              new THREE.Vector3(side * 0.58, -1.3, -0.12 + jitter),
+              new THREE.Vector3(side * 1.25, -2.0, -0.08 + jitter),
+              new THREE.Vector3(pArm.x * 0.92, pArm.y + 0.18, pArm.z),
+              pArm.clone()
+            ]
+          : [
+              pHead.clone(),
+              pHeadCortical.clone(),
+              new THREE.Vector3(pHead.x * 0.2, -0.5, -0.12 + jitter),
+              new THREE.Vector3(side * 0.12, -1.35, -0.12 + jitter),
+              new THREE.Vector3(side * 0.85, -2.05, -0.05).add(lateralOffset.clone().multiplyScalar(0.6)),
+              new THREE.Vector3(pArm.x * 0.88, pArm.y + 0.12, pArm.z),
+              pArm.clone()
+            ];
+        if (anodeOnShoulder) points.reverse();
+        const curve = new THREE.CatmullRomCurve3(points);
         generatedPaths.push(curve);
 
-        const curvePts = curve.getPoints(24);
+        const curvePts = curve.getPoints(32);
         for (let k = 0; k < curvePts.length - 1; k++) {
           linePositions.push(curvePts[k].x, curvePts[k].y, curvePts[k].z);
           linePositions.push(curvePts[k + 1].x, curvePts[k + 1].y, curvePts[k + 1].z);

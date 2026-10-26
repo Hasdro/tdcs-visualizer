@@ -18,11 +18,11 @@ export const HomunculusAvatar: React.FC<HomunculusAvatarProps> = ({ anodeId, cat
   return (
     <div className="panel-card select-none p-3 text-xs">
       <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-2">
-        <span className="flex items-center gap-2 text-[12px] font-semibold leading-snug tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-snug tracking-tight text-slate-100">
           <span className="w-2 h-2 rounded-full bg-emerald-400" />
           Body-map avatar
         </span>
-        <span className="text-[11px] text-slate-400">Body map · {anodeId} → {cathodeId}</span>
+        <span className="text-[13px] text-slate-400">Body map · {anodeId} → {cathodeId}</span>
       </div>
 
       <div className="my-2 flex items-center justify-center gap-4">
@@ -89,7 +89,7 @@ export const HomunculusAvatar: React.FC<HomunculusAvatarProps> = ({ anodeId, cat
         </svg>
 
         {/* Embodied Effect Description */}
-        <div className="flex-1 text-[11px] space-y-1">
+        <div className="flex-1 text-[13px] space-y-1">
           <div className="font-bold text-slate-200">
             {isMotor
               ? '⚡ Contralateral Motor Hand Strip'
